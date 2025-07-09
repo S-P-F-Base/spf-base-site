@@ -1,0 +1,97 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.page-background {
+    position: relative;
+    min-height: 100vh;
+    background-color: black;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.page-background::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.content-tile {
+    position: relative;
+    z-index: 1;
+    background-color: #111;
+    border-radius: 16px;
+    padding: 2rem 3rem;
+    max-width: 600px;
+    margin: 5vh auto 2rem;
+    color: #e0e0e0;
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.7);
+}
+
+.content-tile h1,
+.content-tile h2 {
+    color: orange;
+    margin-top: 0;
+}
+
+.content-tile .subtitle {
+    color: #ccc;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.links-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.links-list a {
+    display: block;
+    padding: 12px 20px;
+    background: #222;
+    border: 2px solid orange;
+    border-radius: 6px;
+    color: orange;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.links-list a:hover,
+.links-list a:focus {
+    background-color: orange;
+    color: black;
+    outline: none;
+}
+
+body::-webkit-scrollbar {
+    width: 10px;
+}
+
+body::-webkit-scrollbar-track {
+    background: #111;
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: orange;
+    border-radius: 10px;
+    border: 2px solid #111;
+}
+
+body {
+    scrollbar-width: thin;
+    scrollbar-color: orange #111;
+}

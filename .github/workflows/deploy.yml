@@ -1,0 +1,30 @@
+name: Deploy to SPF Server
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run deploy script on server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SPF_HOST }}
+          username: ${{ secrets.SPF_USER }}
+          key: ${{ secrets.SPF_SSH_KEY }}
+          script: |
+            cd /root/server-spf/
+            touch MAINTENANCE
+
+            sudo systemctl stop spf-base.service
+
+            git reset --hard HEAD
+            git rebase
+
+            chmod -R o+rX static
+
+            sudo systemctl start spf-base.service
+
+            rm -f MAINTENANCE

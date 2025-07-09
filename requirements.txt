@@ -1,0 +1,8 @@
+bcrypt
+fastapi
+uvicorn
+python-dotenv
+python-jose[cryptography]
+python-multipart
+jinja2
+markdown
