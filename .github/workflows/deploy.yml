@@ -21,7 +21,7 @@ jobs:
             sudo systemctl stop spf-base.service
 
             git reset --hard HEAD
-            git rebase
+            git rebase 
 
             chmod -R o+rX static
 
