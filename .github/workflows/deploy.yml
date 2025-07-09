@@ -20,8 +20,8 @@ jobs:
 
             sudo systemctl stop spf-base.service
 
-            git reset --hard HEAD
-            git rebase 
+            git fetch origin master
+            git reset --hard origin/master
 
             chmod -R o+rX static
 
