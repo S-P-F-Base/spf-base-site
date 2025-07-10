@@ -173,3 +173,7 @@ pip install -r requirements.txt
 ```
 
 После чего можете спокойно открывать vscode и работать над репозиторием
+
+
+ОСТАЛЬНОЕ КАК СОЗДАВАТЬ ПУЛ РЕКВЕСТ МОЖНО ПОСМОТРЕТЬ [ТУТ](https://bestprogrammer.ru/programmirovanie-i-razrabotka/kak-sdelat-pulrekvest-na-github-poshagovoe-rukovodstvo-dlya-nachinayushix)
+Да. Мне лень писать. Что вы мне сделаете?   
