@@ -137,7 +137,7 @@ class YoomoneyDB:
     def get_payments_by_id_range(cls, start_id: int, end_id: int) -> list[dict]:
         """
         Вернёт список платежей с id в диапазоне [start_id, end_id].
-        Каждый платеж — словарь с полями из таблицы.
+        Каждый платеж - словарь с полями из таблицы.
         """
         with cls._connect() as con:
             cur = con.cursor()
