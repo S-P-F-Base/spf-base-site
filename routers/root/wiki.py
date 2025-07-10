@@ -1,4 +1,5 @@
 import re
+import urllib.parse
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -15,7 +16,14 @@ WIKI_DIR = BASE_DIR / "wiki"
 
 def preprocess_wikilinks(md_text: str) -> str:
     pattern = re.compile(r"\[\[([^\|\]]+)\|([^\]]+)\]\]")
-    return pattern.sub(r"[\2](/wiki/\1)", md_text)
+
+    def replacer(match):
+        path = match.group(1).strip()
+        text = match.group(2).strip()
+        url_path = urllib.parse.quote(path)
+        return f"[{text}](/wiki/{url_path})"
+
+    return pattern.sub(replacer, md_text)
 
 
 @router.get("/wiki/{page:path}", response_class=HTMLResponse)
