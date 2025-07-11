@@ -45,3 +45,7 @@ Date: 2025-07-07
 
 ## Картиночка порнушная
 ![Мандаринка](/static/wiki/images/hehe.jpg "Мандаринка")
+
+## Кнопочка
+
+!btn[https://youtu.be/E4WlUXrJgy4?si=5kLpaTltJ7F2-Eqh|OwO]
