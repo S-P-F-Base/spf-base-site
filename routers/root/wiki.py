@@ -24,12 +24,19 @@ def preprocess_wikilinks(md_text: str) -> str:
         url_path = urllib.parse.quote(path)
         return f"[{text}](/wiki/{url_path})"
 
-    def button_replacer(match):
+    def button_block_replacer(match):
         url = match.group(1).strip()
         label = match.group(2).strip()
-        return f'<nav class="links-list"><a href="{url}">{label}</a></nav>'
+        return f'__BTN__<a href="{url}">{label}</a>__BTN__'
 
-    md_text = button_pattern.sub(button_replacer, md_text)
+    md_text = button_pattern.sub(button_block_replacer, md_text)
+
+    md_text = re.sub(
+        r"(?:__BTN__(<a .*?</a>)__BTN__\s*)+",
+        lambda m: f'<nav class="links-list">{"".join(re.findall(r"<a .*?</a>", m.group(0)))}</nav>',
+        md_text,
+    )
+
     md_text = wikilink_pattern.sub(wikilink_replacer, md_text)
 
     return md_text
@@ -37,7 +44,12 @@ def preprocess_wikilinks(md_text: str) -> str:
 
 @router.get("/wiki/{page:path}", response_class=HTMLResponse)
 def wiki_page(request: Request, page: Path):
-    md_path = (WIKI_DIR / page).with_suffix(".md")
+    md_path = WIKI_DIR / page
+    if md_path.is_dir() or str(page).endswith("/"):
+        md_path = md_path / "index.md"
+    else:
+        md_path = md_path.with_suffix(".md")
+
     if not md_path.resolve().is_relative_to(WIKI_DIR.resolve()):
         raise HTTPException(status_code=403, detail="Invalid path")
 
