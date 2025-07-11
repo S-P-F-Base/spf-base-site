@@ -15,15 +15,24 @@ WIKI_DIR = BASE_DIR / "wiki"
 
 
 def preprocess_wikilinks(md_text: str) -> str:
-    pattern = re.compile(r"\[\[([^\|\]]+)\|([^\]]+)\]\]")
+    wikilink_pattern = re.compile(r"\[\[([^\|\]]+)\|([^\]]+)\]\]")
+    button_pattern = re.compile(r"!btn\[(.*?)\|(.*?)\]")
 
-    def replacer(match):
+    def wikilink_replacer(match):
         path = match.group(1).strip()
         text = match.group(2).strip()
         url_path = urllib.parse.quote(path)
         return f"[{text}](/wiki/{url_path})"
 
-    return pattern.sub(replacer, md_text)
+    def button_replacer(match):
+        url = match.group(1).strip()
+        label = match.group(2).strip()
+        return f'<nav class="links-list"><a href="{url}">{label}</a></nav>'
+
+    md_text = button_pattern.sub(button_replacer, md_text)
+    md_text = wikilink_pattern.sub(wikilink_replacer, md_text)
+
+    return md_text
 
 
 @router.get("/wiki/{page:path}", response_class=HTMLResponse)
