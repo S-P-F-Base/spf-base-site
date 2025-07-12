@@ -1,1 +1,9 @@
-TODO: cooperation
+Title: Сотрудничество
+Author: Grom
+Date: 2025-13-07
+
+По вопросам сотрудничества просьба написать:
+
+|Имя|Discord|Telegram|
+|:---:|:---:|:---:|
+|Гром|foxyr20|@Foxyr20|
