@@ -24,7 +24,7 @@ Date: 2025-07-10
 
 Пример:
 ```
-[[inventory/weapons|Оружие]]
+[[/wiki/inventory/weapons|Оружие]]
 ```
 
 ---
@@ -91,8 +91,8 @@ Markdown поддерживает таблицы, пример:
 
 ### WikiLink
 Ссылки на другие страницы делаются через двойные квадратные скобки:
-`[[main|Главная]]` - ссылка на `wiki/main.md` с названием "Главная"
-`[[inventory/weapons]]` - ссылка на `wiki/inventory/weapons.md`, текст будет "weapons"
+`[[/wiki/main|Главная]]` - ссылка на `wiki/main.md` с названием "Главная"
+`[[/wiki/inventory/weapons]]` - ссылка на `wiki/inventory/weapons.md`, текст будет "weapons"
 
 ---
 
@@ -110,7 +110,7 @@ Markdown поддерживает таблицы, пример:
 Перейди по ссылке на новую страницу
 Если добавил ссылку вроде:
 ```
-[[inventory/weapons|Оружие]]
+[[/wiki/inventory/weapons|Оружие]]
 ```
 
 То её можно будет найти по адрессу `http://localhost:8000/wiki/inventory/weapons`
@@ -176,4 +176,4 @@ pip install -r requirements.txt
 
 
 ОСТАЛЬНОЕ КАК СОЗДАВАТЬ ПУЛ РЕКВЕСТ МОЖНО ПОСМОТРЕТЬ [ТУТ](https://bestprogrammer.ru/programmirovanie-i-razrabotka/kak-sdelat-pulrekvest-na-github-poshagovoe-rukovodstvo-dlya-nachinayushix)
-Да. Мне лень писать. Что вы мне сделаете?   
+Да. Мне лень писать. Что вы мне сделаете?

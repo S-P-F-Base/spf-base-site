@@ -22,7 +22,7 @@ def preprocess_wikilinks(md_text: str) -> str:
         path = match.group(1).strip()
         text = match.group(2).strip()
         url_path = urllib.parse.quote(path)
-        return f"[{text}](/wiki/{url_path})"
+        return f"[{text}]({url_path})"
 
     def button_block_replacer(match):
         url = match.group(1).strip()
