@@ -9,9 +9,15 @@ from threading import Lock
 class LogType(Enum):
     LOGIN = 1
     LOGOUT = 2
+
     CREATE_USER = 3
     DELETE_USER = 4
     UPDATE_USER = 5
+
+    PAY_CREATE = 6
+    PAY_UPDATE = 7
+    PAY_RESIVE = 8
+    PAY_CANSEL = 9
 
 
 class LogDB:

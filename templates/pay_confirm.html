@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <title>Подтверждение оплаты</title>
+
+    <meta property="og:title" content="S.P.F. Base" />
+    <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
+    <meta property="og:image" content="https://spf-base.ru/static/images/logo.jpg" />
+    <meta property="og:url" content="https://spf-base.ru/" />
+    <meta property="og:type" content="website" />
+
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/static/css/main.css" />
+    <link rel="stylesheet" href="/static/css/pay.css" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        <div class="content-tile">
+            <h1>Подтверждение оплаты</h1>
+            <p>Вы собираетесь оплатить <strong>{{ amount }}₽</strong></p>
+            <p>За услугу <strong>{{ reason }}</strong></p>
+
+            <div class="form-confirm" style="margin-top: 1.5em;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="agree-checkbox" />
+                    <span class="custom-checkbox"></span>
+                    <span>
+                        Я согласен с
+                        <a href="/wiki/docs/oferta.md" target="_blank">условиями оплаты</a>
+                    </span>
+                </label>
+            </div>
+
+
+            <nav class="links-list" style="margin-top: 2em;">
+                <a id="submit-button" class="disabled-link" href="/pay/{{ uuid }}?confirm=true">
+                    Перейти к оплате
+                </a>
+                <a href="/">Вернуться на главную</a>
+            </nav>
+        </div>
+    </div>
+
+    <script>
+        const checkbox = document.getElementById("agree-checkbox");
+        const submitButton = document.getElementById("submit-button");
+
+        checkbox.addEventListener("change", () => {
+            if (checkbox.checked) {
+                submitButton.classList.remove("disabled-link");
+            } else {
+                submitButton.classList.add("disabled-link");
+            }
+        });
+    </script>
+</body>
+
+</html>

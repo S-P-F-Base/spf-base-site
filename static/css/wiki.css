@@ -20,15 +20,6 @@
 }
 
 /* Ссылки */
-.markdown-body a {
-    color: orange;
-    text-decoration: underline;
-}
-
-.markdown-body a:hover {
-    color: #ffa500;
-}
-
 .links-list a {
     display: block;
     padding: 12px 20px;

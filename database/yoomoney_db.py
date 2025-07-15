@@ -1,3 +1,4 @@
+import pickle
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -10,11 +11,178 @@ from urllib.parse import urlencode
 from .config import Config
 
 
+# region Statuses
 class PaymentStatus(Enum):
     pending = 0
     done = 1
     cancel = 2
-    not_enough = 3
+
+
+class PaymentCancelReason(Enum):
+    none = 0
+    check_incorrect = 1
+    refund = 2
+
+
+# endregion
+
+
+class PaymentData:
+    def __init__(
+        self,
+        amount: float,
+        status: PaymentStatus,
+        buyer: int,
+        quantity: int,
+        what_buy: int,
+        cancel_reason: PaymentCancelReason = PaymentCancelReason.none,
+        bd_id: int | None = None,
+        fns_check_id: str | None = None,
+        received: float = 0,
+        user_pay: float = 0,
+    ) -> None:
+        # Немного говна с id для фнс и себя
+        self._bd_id: int | None = bd_id
+        self._fns_check_id: str | None = fns_check_id
+
+        # Считаем денюшки
+        self._amount: float = round(amount, 2)  # Сколько нужно
+        self._received: float = round(received, 2)  # Сколько получили
+        self._user_pay: float = round(user_pay, 2)  # Сколько юзер заплатил
+
+        # Статусы
+        self._status: PaymentStatus = status
+        self._cancel_reason: PaymentCancelReason = cancel_reason
+
+        # Информация о покупке
+        self._buyer: int = buyer  # id from player db
+        self._quantity: int = quantity
+        self._what_buy: int = what_buy  # id form goods db
+
+    # region geters
+    @property
+    def db_id(self) -> int | None:
+        return self._bd_id
+
+    @property
+    def fns_check_id(self) -> str | None:
+        return self._fns_check_id
+
+    @property
+    def amount(self) -> float:
+        return self._amount
+
+    @property
+    def received(self) -> float:
+        return self._received
+
+    @property
+    def user_pay(self) -> float:
+        return self._user_pay
+
+    @property
+    def status(self) -> PaymentStatus:
+        return self._status
+
+    @property
+    def cancel_reason(self) -> PaymentCancelReason:
+        return self._cancel_reason
+
+    @property
+    def buyer(self) -> int:
+        return self._buyer
+
+    @property
+    def quantity(self) -> int:
+        return self._quantity
+
+    @property
+    def what_buy(self) -> int:
+        return self._what_buy
+
+    # endregion
+
+    # region seters
+    @fns_check_id.setter
+    def fns_check_id(self, value: str | None) -> None:
+        self._fns_check_id = value
+
+    @amount.setter
+    def amount(self, value: float) -> None:
+        self._amount = round(value, 2)
+
+    @received.setter
+    def received(self, value: float) -> None:
+        self._received = round(value, 2)
+
+    @user_pay.setter
+    def user_pay(self, value: float) -> None:
+        self._user_pay = round(value, 2)
+
+    @status.setter
+    def status(self, value: PaymentStatus) -> None:
+        self._status = value
+
+    @cancel_reason.setter
+    def cancel_reason(self, value: PaymentCancelReason) -> None:
+        self._cancel_reason = value
+
+    @buyer.setter
+    def buyer(self, value: int) -> None:
+        self._buyer = value
+
+    @quantity.setter
+    def quantity(self, value: int) -> None:
+        self._quantity = value
+
+    @what_buy.setter
+    def what_buy(self, value: int) -> None:
+        self._what_buy = value
+
+    # endregion
+
+    # region status
+    def is_complete(self) -> bool:
+        return self._status == PaymentStatus.done
+
+    def is_cancel(self) -> bool:
+        return self._status == PaymentStatus.cancel
+
+    def update_status(self) -> None:
+        if self._status == PaymentStatus.cancel:
+            return
+
+        if YoomoneyDB.USER_PAYS_COMMISSION:
+            if self._amount >= self._received:
+                self._status = PaymentStatus.done
+
+        else:
+            if self._amount >= self._user_pay:
+                self._status = PaymentStatus.done
+
+    # endregion
+
+    # region serialize/deserialize
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        if "_bd_id" in state:
+            del state["_bd_id"]
+
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+    def serialize(self) -> bytes:
+        return pickle.dumps(self)
+
+    @staticmethod
+    def deserialize(bd_id: int, data: bytes) -> "PaymentData":
+        obj: PaymentData = pickle.loads(data)
+        obj._bd_id = bd_id
+        return obj
+
+    # endregion
 
 
 class YoomoneyDB:
@@ -40,18 +208,11 @@ class YoomoneyDB:
     def create_db_table(cls) -> None:
         Path("data").mkdir(parents=True, exist_ok=True)
 
-        with (
-            cls._connect() as con
-        ):  # Необходимо id товара и кол-во сколько отправил сам пользователь
+        with cls._connect() as con:
             con.executescript("""
                 CREATE TABLE IF NOT EXISTS payment (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user TEXT NOT NULL,
-                    amount REAL NOT NULL,
-                    receive REAL NOT NULL DEFAULT 0,
-                    status INTEGER NOT NULL DEFAULT 0,
-                    created DATETIME,
-                    updated DATETIME
+                    data BLOB NOT NULL 
                 );
                 
                 CREATE TABLE IF NOT EXISTS payment_links (
@@ -63,135 +224,7 @@ class YoomoneyDB:
             """)
             con.commit()
 
-    @classmethod
-    def create_payment(cls, user: str, amount: float) -> int:
-        with cls._connect() as con:
-            cur = con.cursor()
-            cur.execute(
-                """
-                INSERT INTO payment (user, amount, created, updated)
-                VALUES (?, ?, datetime('now'), datetime('now'))
-            """,
-                (user, amount),
-            )
-            con.commit()
-
-            if cur.lastrowid is None:
-                raise RuntimeError("Payment creation failed: lastrowid is None.")
-
-            return cur.lastrowid
-
-    @classmethod
-    def update_payment(
-        cls,
-        id: int,
-        status: PaymentStatus | Literal["auto"],
-        receive: float,
-        type_of_receive: Literal["add", "set"],
-    ) -> bool:
-        with cls._connect() as con:
-            cur = con.cursor()
-            cur.execute(
-                "SELECT amount, receive, status FROM payment WHERE id = ?", (id,)
-            )
-            row = cur.fetchone()
-
-            if row is None:
-                return False
-
-            amount_db, receive_db, status_db = row
-
-            if type_of_receive == "add":
-                new_receive = receive_db + receive
-            elif type_of_receive == "set":
-                new_receive = receive
-            else:
-                raise ValueError("Invalid type_of_receive, must be 'add' or 'set'")
-
-            if status == "auto":
-                if status_db == PaymentStatus.cancel.value:
-                    new_status = status_db
-                else:
-                    if new_receive >= amount_db:
-                        new_status = PaymentStatus.done.value
-                    elif new_receive > 0:
-                        new_status = PaymentStatus.not_enough.value
-                    else:
-                        new_status = PaymentStatus.pending.value
-            else:
-                new_status = status.value
-
-            cur.execute(
-                """
-                UPDATE payment
-                SET status = ?, receive = ?, updated = datetime('now')
-                WHERE id = ?
-                """,
-                (new_status, new_receive, id),
-            )
-            con.commit()
-
-            return cur.rowcount > 0
-
-    @classmethod
-    def get_payments_by_id_range(cls, start_id: int, end_id: int) -> list[dict]:
-        """
-        Вернёт список платежей с id в диапазоне [start_id, end_id].
-        Каждый платеж - словарь с полями из таблицы.
-        """
-        with cls._connect() as con:
-            cur = con.cursor()
-            cur.execute(
-                """
-                SELECT id, user, amount, receive, status, created, updated
-                FROM payment
-                WHERE id BETWEEN ? AND ?
-                ORDER BY id ASC
-                """,
-                (start_id, end_id),
-            )
-            rows = cur.fetchall()
-
-            payments = []
-            for row in rows:
-                payments.append(
-                    {
-                        "id": row[0],
-                        "user": row[1],
-                        "amount": row[2],
-                        "receive": row[3],
-                        "status": PaymentStatus(row[4]),
-                        "created": row[5],
-                        "updated": row[6],
-                    }
-                )
-            return payments
-
-    @classmethod
-    def get_payment_by_id(cls, payment_id: int) -> dict | None:
-        with cls._connect() as con:
-            cur = con.cursor()
-            cur.execute(
-                """
-                SELECT id, user, amount, receive, status, created, updated
-                FROM payment
-                WHERE id = ?
-                """,
-                (payment_id,),
-            )
-            row = cur.fetchone()
-            if row is None:
-                return None
-            return {
-                "id": row[0],
-                "user": row[1],
-                "amount": row[2],
-                "receive": row[3],
-                "status": PaymentStatus(row[4]),
-                "created": row[5],
-                "updated": row[6],
-            }
-
+    # region Redirect
     @classmethod
     def create_payment_link(cls, payment_id: int) -> str:
         link_uuid = str(uuid.uuid4())
@@ -217,6 +250,9 @@ class YoomoneyDB:
 
             return None
 
+    # endregion
+
+    # region Yoomoney etc
     @classmethod
     def price_calculation(
         cls,
@@ -240,6 +276,17 @@ class YoomoneyDB:
         return round(sum_to_pay, 2)
 
     @classmethod
+    def price_calculation_by_payment(
+        cls,
+        obj: PaymentData,
+        payment_type: Literal["PC", "AC"] = "AC",
+    ) -> float:
+        if cls.USER_PAYS_COMMISSION:
+            return cls.price_calculation(obj.amount - obj.received, payment_type)
+        else:
+            return cls.price_calculation(obj.amount - obj.user_pay, payment_type)
+
+    @classmethod
     def generate_yoomoney_payment_url(
         cls,
         amount: float,
@@ -256,3 +303,52 @@ class YoomoneyDB:
             "successURL": successURL,
         }
         return f"https://yoomoney.ru/quickpay/confirm?{urlencode(params)}"
+
+    # endregion
+
+    # region payment
+    @classmethod
+    def get_payment(cls, payment_id: int) -> PaymentData | None:
+        with cls._connect() as con:
+            cur = con.cursor()
+            cur.execute("SELECT data FROM payment WHERE id = ?", (payment_id,))
+            row = cur.fetchone()
+            if row is None:
+                return None
+            return PaymentData.deserialize(payment_id, row[0])
+
+    @classmethod
+    def set_payment(cls, payment: PaymentData) -> None:
+        if payment.db_id is None:
+            raise ValueError("Payment havent db_id — use append instead")
+
+        with cls._connect() as con:
+            cur = con.cursor()
+            cur.execute(
+                "UPDATE payment SET data = ? WHERE id = ?",
+                (payment.serialize(), payment.db_id),
+            )
+            con.commit()
+
+    @classmethod
+    def append_payment(cls, payment: PaymentData) -> int:
+        if payment.db_id is not None:
+            raise ValueError("Payment already has db_id — use set instead")
+
+        with cls._connect() as con:
+            cur = con.cursor()
+            cur.execute("SELECT MAX(id) FROM payment")
+            row = cur.fetchone()
+            next_id = (row[0] or 0) + 1
+
+            payment._bd_id = next_id
+
+            cur.execute(
+                "INSERT INTO payment (id, data) VALUES (?, ?)",
+                (next_id, payment.serialize()),
+            )
+            con.commit()
+
+        return next_id
+
+    # endregion

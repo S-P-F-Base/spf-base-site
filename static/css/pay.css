@@ -24,3 +24,8 @@
     background: rgba(255, 0, 0, 0.3);
     border-left: 4px solid #e60000;
 }
+
+.disabled-link {
+    pointer-events: none;
+    opacity: 0.5;
+}
