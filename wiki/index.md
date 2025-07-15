@@ -6,4 +6,4 @@ Date: 2025-07-11
 Увы пока что пусто. Пример wiki страницы можно глянуть [[/wiki/example|тут]]
 
 !btn[/wiki/ten_codes|Тен коды]
-!btn[how_to_create_wiki|Как залить новые страницы в википедию]
+!btn[/wiki/how_to_create_wiki|Как залить новые страницы в википедию]
