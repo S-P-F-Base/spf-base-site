@@ -280,3 +280,10 @@
     border-left: 4px solid #0000ff;
     color: #fff;
 }
+
+/* Мелкий текст */
+.small {
+    font-size: 0.8em;
+    color: #666;
+    margin-bottom: 10px;
+}
