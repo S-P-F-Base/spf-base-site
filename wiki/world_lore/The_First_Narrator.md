@@ -1,6 +1,6 @@
 Title: Первый рассказчик
 Author: Grom
-Date: 2025-10-07
+Date: 2025-07-14
 
 # Первый рассказчик
 
@@ -10,7 +10,16 @@ Date: 2025-10-07
 [TOC]
 
 ## Информация о Ч.В.К. S.P.F.
-[[SPF_info_1|Выбор первой книги]]
+!btn[/wiki/world_lore/Pages_narrator_1/Dolls_info_1/SPF_info_1|Выбор первой книги]
 
-## Информация о мире
-[[Lore_info_1|Выбор второй книги]]
+## История мира
+!btn[/wiki/world_lore/Pages_narrator_1/Dolls_info_1/Lore_info_1|Выбор второй книги]
+
+## Информация о куклах
+!btn[/wiki/world_lore/Pages_narrator_1/Dolls_info_1|Выбор третьей книги]
+
+## Информация об ELID
+!btn[/wiki/world_lore/Pages_narrator_1/ELID_info_1|Выбор чертвёртой книги]
+
+## Об организациях
+!btn[/wiki/world_lore/Organisations/Org_info|Выбор пятой книги]

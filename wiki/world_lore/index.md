@@ -1,6 +1,6 @@
 Title: Выбор рассказчика
 Author: Grom
-Date: 2025-10-07
+Date: 2025-07-10
 
 # Приветствую
 Просьба выбрать вашего "Рассказчика"
@@ -11,4 +11,4 @@ Date: 2025-10-07
 !btn[world_lore/The_First_Narrator|Первый рассказчик]
 !btn[world_lore/The_Second_Narrator|Второй рассказчик]
 
-![Персика](/static/wiki/images/wiki_choice.jpg "Персик")
+![Персика](/static/wiki/images/wiki_grom/wiki_choice.jpg "Персик")
