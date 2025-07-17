@@ -13,6 +13,7 @@ from .extensions import (
     ConstExtension,
     FolderTreeExtension,
     ImgBlockExtension,
+    SingleImgExtension,
     SmallTextExtension,
     StripCommentsExtension,
     WikiLinkExtension,
@@ -71,6 +72,7 @@ def wiki_page(request: Request, page: Path):
             WikiLinkExtension(),  # Поддержка [[url|name]] для вики-стилей
             ConstExtension(constants=CONSTANTS),  # Константы для замены
             ImgBlockExtension(),  # Для блоков с картинками и текстом
+            SingleImgExtension(),  # Макрос для картинок
             ButtonExtension(),  # Работа с кнопками и их оформлением
             StripCommentsExtension(),  # В пизду комментарии, так же стрипает весь текст
             FolderTreeExtension(),  # Для создания красивых деревьев
