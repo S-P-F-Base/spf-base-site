@@ -3,7 +3,7 @@ import hashlib
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 
-from database import Config, YoomoneyDB
+from database import Config, LogDB, LogType, UserDB, YoomoneyDB
 
 router = APIRouter()
 
@@ -11,16 +11,16 @@ router = APIRouter()
 @router.post("/notification", response_class=PlainTextResponse)
 def yoomoney_notification(
     request: Request,
-    notification_type: str = Form(...),
-    operation_id: str = Form(...),
-    amount: str = Form(...),
-    currency: str = Form(...),
-    datetime: str = Form(...),
-    sender: str = Form(...),
-    codepro: str = Form(...),
-    sha1_hash: str = Form(...),
+    notification_type: str = Form(...),  # Не важно для бд
+    operation_id: str = Form(...),  # Не важно для бд
+    currency: str = Form(...),  # Не важно для бд
+    sender: str = Form(...),  # Не важно для бд
+    codepro: str = Form(...),  # Не важно для бд
+    sha1_hash: str = Form(...),  # Не важно для бд
     label: str = Form(""),
-    withdraw_amount: str = Form(""),
+    datetime: str = Form(...),
+    withdraw_amount: str = Form(""),  # Сумма перевёл юзер
+    amount: str = Form(...),  # Сумма зачислена
 ):
     check_string = "&".join(
         [
@@ -49,17 +49,19 @@ def yoomoney_notification(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid label format")
 
-    payment = YoomoneyDB.get_payment_by_id(payment_id)
+    payment = YoomoneyDB.get_payment(payment_id)
     if payment is None:
         raise HTTPException(status_code=404, detail="Payment not found")
 
-    recive = amount if YoomoneyDB.USER_PAYS_COMMISSION else withdraw_amount
+    payment.received = float(amount)
+    payment.user_pay = float(withdraw_amount)
+    payment.update_status()
 
-    YoomoneyDB.update_payment(
-        id=payment_id,
-        status="auto",
-        receive=float(recive),
-        type_of_receive="add",
+    YoomoneyDB.set_payment(payment)
+
+    LogDB.add_log(
+        LogType.PAY_RESIVE,
+        f"Confirmation of payment: {payment_id}",
+        UserDB.system_user,
     )
-
     return "OK"

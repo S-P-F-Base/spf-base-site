@@ -95,3 +95,60 @@ body {
     scrollbar-width: thin;
     scrollbar-color: orange #111;
 }
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    font-size: 1rem;
+    color: #ccc;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.custom-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid orange;
+    border-radius: 3px;
+    display: inline-block;
+    position: relative;
+    background-color: #111;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.checkbox-label input[type="checkbox"]:checked+.custom-checkbox {
+    background-color: orange;
+    border-color: orange;
+}
+
+.custom-checkbox::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 4px;
+    height: 9px;
+    border: solid black;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.checkbox-label input[type="checkbox"]:checked+.custom-checkbox::after {
+    opacity: 1;
+}
+
+a {
+    color: orange;
+    text-decoration: underline;
+}
+
+a:hover {
+    color: #ffa500;
+}

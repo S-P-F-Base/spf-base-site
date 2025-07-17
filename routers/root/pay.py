@@ -1,40 +1,70 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
-from database import PaymentStatus, YoomoneyDB
+from database import PaymentData, YoomoneyDB
+from templates import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
 
-@router.get("/pay/{uuid}")
-def pay(uuid: str):
+def _get_payment_by_uuid(uuid: str) -> PaymentData:
     payment_id = YoomoneyDB.resolve_payment_id_by_uuid(uuid)
     if payment_id is None:
         raise HTTPException(status_code=404, detail="Payment link not found")
 
-    payment = YoomoneyDB.get_payment_by_id(payment_id)
+    payment = YoomoneyDB.get_payment(payment_id)
     if payment is None:
         raise HTTPException(status_code=404, detail="Payment not found")
 
-    if payment["status"] == PaymentStatus.done:
-        return RedirectResponse(f"/pay/{uuid}/success")
-    elif payment["status"] == PaymentStatus.cancel:
-        return RedirectResponse(f"/pay/{uuid}/cancel")
-    else:
-        amount = YoomoneyDB.price_calculation(
-            amount=payment["amount"] - payment["receive"],
-            payment_type="AC",
+    return payment
+
+
+@router.get("/pay/{uuid}", response_class=HTMLResponse)
+def pay_get(
+    request: Request,
+    uuid: str,
+    confirm: bool = False,
+):
+    if uuid == "test":
+        return templates.TemplateResponse(
+            "pay_confirm.html",
+            {
+                "request": request,
+                "uuid": uuid,
+                "amount": 199.99,
+                "test": True,
+                "reason": "Тестовая услуга",
+            },
         )
 
+    payment = _get_payment_by_uuid(uuid)
+
+    if payment.is_complete():
+        return RedirectResponse(f"/pay/{uuid}/success")
+    elif payment.is_cancel():
+        return RedirectResponse(f"/pay/{uuid}/cancel")
+
+    if payment.db_id is None:
+        raise HTTPException(status_code=500, detail="Empty id of payment")
+
+    if confirm:
         url = YoomoneyDB.generate_yoomoney_payment_url(
-            amount=amount,
+            amount=payment.price_calculation_by_payment("AC"),
             successURL=f"https://spf-base.ru/pay/{uuid}/success",
-            label=payment["id"],
+            label=str(payment.db_id),
             payment_type="AC",
         )
         return RedirectResponse(url)
+
+    return templates.TemplateResponse(
+        "pay_confirm.html",
+        {
+            "request": request,
+            "uuid": uuid,
+            "amount": payment.amount,
+            "reason": payment.what_buy,  # TODO: Сделать ресолв из id в строку
+        },
+    )
 
 
 @router.get("/pay/{uuid}/success", response_class=HTMLResponse)
@@ -45,15 +75,9 @@ def pay_success(request: Request, uuid: str):
             {"request": request, "uuid": uuid},
         )
 
-    payment_id = YoomoneyDB.resolve_payment_id_by_uuid(uuid)
-    if payment_id is None:
-        raise HTTPException(status_code=404, detail="Payment link not found")
+    payment = _get_payment_by_uuid(uuid)
 
-    payment = YoomoneyDB.get_payment_by_id(payment_id)
-    if payment is None:
-        raise HTTPException(status_code=404, detail="Payment not found")
-
-    if payment["status"] != PaymentStatus.done:
+    if not payment.is_complete():
         return RedirectResponse(f"/pay/{uuid}")
 
     return templates.TemplateResponse(
@@ -70,15 +94,9 @@ def pay_cancel(request: Request, uuid: str):
             {"request": request, "uuid": uuid},
         )
 
-    payment_id = YoomoneyDB.resolve_payment_id_by_uuid(uuid)
-    if payment_id is None:
-        raise HTTPException(status_code=404, detail="Payment link not found")
+    payment = _get_payment_by_uuid(uuid)
 
-    payment = YoomoneyDB.get_payment_by_id(payment_id)
-    if payment is None:
-        raise HTTPException(status_code=404, detail="Payment not found")
-
-    if payment["status"] != PaymentStatus.cancel:
+    if not payment.is_cancel():
         return RedirectResponse(f"/pay/{uuid}")
 
     return templates.TemplateResponse(
