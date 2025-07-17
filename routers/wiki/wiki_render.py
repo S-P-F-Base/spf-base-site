@@ -13,6 +13,7 @@ from .extensions import (
     ConstExtension,
     FolderTreeExtension,
     ImgBlockExtension,
+    SmallTextExtension,
     StripCommentsExtension,
     WikiLinkExtension,
 )
@@ -73,6 +74,7 @@ def wiki_page(request: Request, page: Path):
             ButtonExtension(),  # Работа с кнопками и их оформлением
             StripCommentsExtension(),  # В пизду комментарии, так же стрипает весь текст
             FolderTreeExtension(),  # Для создания красивых деревьев
+            SmallTextExtension(),  # Маленький текст
         ],
     )
     rendered_html = md.convert(content)

@@ -149,3 +149,7 @@ Background: /static/wiki/images/hehe.jpg <!-- Смена заднего изоб
     /god/example.md
     /god/wiki/ten_codes.md
 ]
+
+## Мелкий текст
+Текст маленький очень
+-# Да. Очень
