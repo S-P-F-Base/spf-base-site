@@ -1,17 +1,17 @@
 Изменение css:
-  - '**/*.css'
+  - "**/*.css"
 
 Изменение python:
-  - '**/*.py'
+  - "**/*.py"
 
 Изменение html:
-  - 'templates/**/*.html'
+  - "templates/**/*.html"
 
 Изменение wiki:
-  - 'wiki/**'
-  - 'static/wiki/**'
+  - "wiki/**"
+  - "static/wiki/**"
 
 Изменение git:
-  - '.gitignore'
-  - '.gitattributes'
-  - '.github/**'
+  - ".gitignore"
+  - ".gitattributes"
+  - ".github/**"
