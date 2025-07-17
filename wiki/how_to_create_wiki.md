@@ -11,14 +11,12 @@ Date: 2025-07-17
 ## Структура папок
 Все `.md`-файлы вики находятся в папке `wiki` в корне проекта. Допустимы вложенные подпапки - структура может выглядеть так:
 
-```
-/wiki
-├── main.md
-├── how_to_create_wiki.md
-├── example.md
-└── inventory/
-    └── weapons.md
-```
+!folder[
+    /wiki/main.md
+    /wiki/how_to_create_wiki.md
+    /wiki/example.md
+    /wiki/inventory/weapons.md
+]
 
 Для ссылок внутри вики используется `WikiLink`: Путь указывается относительно папки `wiki`, без расширения `.md`
 
@@ -114,12 +112,11 @@ Markdown поддерживает таблицы, пример:
 
 То её можно будет найти по адрессу `http://localhost:8000/wiki/inventory/weapons`
 Однако файл обязан быть
-```
-/wiki
-├── ...
-└── inventory/
-    └── weapons.md
-```
+
+!folder[
+    /wiki/...
+    /wiki/inventory/weapons.md
+]
 
 ---
 
