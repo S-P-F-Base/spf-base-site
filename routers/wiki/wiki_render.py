@@ -65,6 +65,7 @@ def wiki_page(request: Request, page: Path):
             "toc",  # Автоматическое оглавление по заголовкам
             "admonition",  # Поддержка блоков с предупреждениями, заметками и пр.
             "footnotes",  # Сноски
+            "smarty",  # Типографические ковычки
             WikiLinkExtension(),  # Поддержка [[url|name]] для вики-стилей
             ConstExtension(constants=CONSTANTS),  # Константы для замены
             ImgBlockExtension(),  # Для блоков с картинками и текстом
