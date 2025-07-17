@@ -50,7 +50,7 @@ def pay_get(
 
     if confirm:
         url = YoomoneyDB.generate_yoomoney_payment_url(
-            amount=YoomoneyDB.price_calculation_by_payment(payment, "AC"),
+            amount=payment.price_calculation_by_payment("AC"),
             successURL=f"https://spf-base.ru/pay/{uuid}/success",
             label=str(payment.db_id),
             payment_type="AC",

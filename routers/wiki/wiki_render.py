@@ -1,5 +1,5 @@
-import re
-import urllib.parse
+import json
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -7,39 +7,37 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from markdown import Markdown
 
+from .extensions import (
+    ButtonExtension,
+    ConstExtension,
+    ImgBlockExtension,
+    StripCommentsExtension,
+    WikiLinkExtension,
+)
+
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 WIKI_DIR = BASE_DIR / "wiki"
+CONSTANTS_PATH = WIKI_DIR / "constants.json"
 
 
-def preprocess_wikilinks(md_text: str) -> str:
-    wikilink_pattern = re.compile(r"\[\[([^\|\]]+)\|([^\]]+)\]\]")
-    button_pattern = re.compile(r"!btn\[(.*?)\|(.*?)\]")
+def load_constants() -> dict[str, str]:
+    try:
+        with open(CONSTANTS_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
 
-    def wikilink_replacer(match):
-        path = match.group(1).strip()
-        text = match.group(2).strip()
-        url_path = urllib.parse.quote(path)
-        return f"[{text}]({url_path})"
+    except FileNotFoundError:
+        logging.warning(f"Constants file not found: {CONSTANTS_PATH}")
+        return {}
 
-    def button_block_replacer(match):
-        url = match.group(1).strip()
-        label = match.group(2).strip()
-        return f'__BTN__<a href="{url}">{label}</a>__BTN__'
+    except json.JSONDecodeError as e:
+        logging.error(f"Invalid JSON in constants file: {e}")
+        return {}
 
-    md_text = button_pattern.sub(button_block_replacer, md_text)
 
-    md_text = re.sub(
-        r"(?:__BTN__(<a .*?</a>)__BTN__\s*)+",
-        lambda m: f'<nav class="links-list">{"".join(re.findall(r"<a .*?</a>", m.group(0)))}</nav>',
-        md_text,
-    )
-
-    md_text = wikilink_pattern.sub(wikilink_replacer, md_text)
-
-    return md_text
+CONSTANTS = load_constants()
 
 
 @router.get("/wiki/{page:path}", response_class=HTMLResponse)
@@ -64,21 +62,21 @@ def wiki_page(request: Request, page: Path):
             "nl2br",  # Превращает одиночные \n в <br />
             "tables",  # Markdown-таблицы
             "meta",  # Заголовки-мета в начале файла (например, автор, дата)
-            "wikilinks",  # Поддержка [[WikiLinks]] для вики-стилей
-            "toc",  # 	Автоматическое оглавление по заголовкам
+            "toc",  # Автоматическое оглавление по заголовкам
+            "admonition",  # Поддержка блоков с предупреждениями, заметками и пр.
+            "footnotes",  # Сноски
+            WikiLinkExtension(),  # Поддержка [[url|name]] для вики-стилей
+            ConstExtension(constants=CONSTANTS),  # Константы для замены
+            ImgBlockExtension(),  # Для блоков с картинками и текстом
+            ButtonExtension(),  # Работа с кнопками и их оформлением
+            StripCommentsExtension(),  # В пизду комментарии, так же стрипает весь текст
         ],
-        extension_configs={
-            "wikilinks": {
-                "base_url": "/wiki/",
-                "end_url": "",
-                "html_class": "wikilink",
-            }
-        },
     )
-    content = preprocess_wikilinks(content)
     rendered_html = md.convert(content)
     meta = getattr(md, "Meta", {})
-
+    background_url = (
+        meta.get("background", [None])[0] or "/static/images/wallpaper.jpeg"
+    )
     title = meta.get("title", [str(page)])[0] if meta else str(page)
 
     return templates.TemplateResponse(
@@ -88,5 +86,6 @@ def wiki_page(request: Request, page: Path):
             "content": rendered_html,
             "title": title,
             "meta": meta,
+            "background_url": background_url,
         },
     )

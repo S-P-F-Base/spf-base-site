@@ -5,14 +5,6 @@
     <meta charset="UTF-8">
     <title>{{ title }}</title>
 
-    {% if meta.author %}
-    <meta name="author" content="{{ meta.author[0] }}">
-    {% endif %}
-
-    {% if meta.date %}
-    <meta name="date" content="{{ meta.date[0] }}">
-    {% endif %}
-
     <meta property="og:title" content="S.P.F. Base" />
     <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
     <meta property="og:image" content="https://spf-base.ru/static/images/logo.jpg" />
@@ -25,8 +17,11 @@
 </head>
 
 <body>
-    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+    <div class="page-background" style="background-image: url('{{ background_url }}');">
         <div class="content-tile">
+            <div class="last-modified" style="font-size: 0.8em; color: #666; margin-bottom: 10px;">
+                Последнее изменение: {{ meta.date[0] }}
+            </div>
             <main class="markdown-body">
                 {{ content|safe }}
             </main>
