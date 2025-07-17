@@ -79,7 +79,7 @@ OGAS-Integrated Dolls (Продвинутые T-Dolls)
 Могут игнорировать приказы при угрозе миссии.
 ```
 
-![OGAS](/static/wiki/images/wiki_grom/OGAS.jpg "OGAS")
+!img[/static/wiki/images/wiki_grom/OGAS.jpg]
 
 ---
 

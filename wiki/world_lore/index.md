@@ -11,4 +11,4 @@ Date: 2025-07-10
 !btn[world_lore/The_First_Narrator|Первый рассказчик]
 !btn[world_lore/The_Second_Narrator|Второй рассказчик]
 
-![Персика](/static/wiki/images/wiki_grom/wiki_choice.jpg "Персик")
+!img[/static/wiki/images/wiki_grom/wiki_choice.jpg]
