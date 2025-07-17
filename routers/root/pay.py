@@ -1,11 +1,10 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from database import PaymentData, YoomoneyDB
+from templates import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
 
 def _get_payment_by_uuid(uuid: str) -> PaymentData:

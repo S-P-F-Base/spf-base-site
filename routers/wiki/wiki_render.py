@@ -4,8 +4,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from markdown import Markdown
+
+from templates import templates
 
 from .extensions import (
     ButtonExtension,
@@ -16,7 +17,6 @@ from .extensions import (
 )
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 WIKI_DIR = BASE_DIR / "wiki"

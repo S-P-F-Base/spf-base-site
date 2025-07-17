@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from database import AutoTax, Config, LogDB, UserDB, YoomoneyDB
@@ -22,8 +21,11 @@ from routers.root import (
     root_robots,
 )
 from routers.wiki import root_wiki
+from templates import templates
 
-ALLOWED_PATHS = {"/api/yoomoney/notification"}
+ALLOWED_PATHS = {
+    "/api/yoomoney/notification",
+}
 REQUIRED_AGENT = "spf-agent-v1"
 
 
@@ -49,7 +51,7 @@ app = FastAPI(
     openapi_url=None,
 )
 
-templates = Jinja2Templates(directory="templates")
+
 if os.getenv("DEBUG") == "1":
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
