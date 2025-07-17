@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 
 from dotenv import load_dotenv
 
@@ -15,10 +16,16 @@ class Config:
 
         load_dotenv()
 
-        cls._cache["YOOMONEY_ACCOUNT"] = os.getenv("YOOMONEY_ACCOUNT", None)
-        cls._cache["YOOMONEY_NOTIFICATION"] = os.getenv("YOOMONEY_NOTIFICATION", None)
-        cls._cache["BOT_TOKEN"] = os.getenv("BOT_TOKEN", None)
-        cls._cache["JWT_KEY"] = os.getenv("JWT_KEY", None)
+        for key in [
+            "YOOMONEY_ACCOUNT",
+            "YOOMONEY_NOTIFICATION",
+            "BOT_TOKEN",
+            "JWT_KEY",
+            "TAX_AGENT",
+            "TAX_AUTHORIZATION",
+            "TAX_INN",
+        ]:
+            cls._cache[key] = os.getenv(key, None)
 
         for key, val in cls._cache.items():
             if val is None:
@@ -26,6 +33,7 @@ class Config:
 
         cls._loaded = True
 
+    # region env
     @classmethod
     def yoomoney_client_id(cls) -> str:
         if not cls._loaded:
@@ -67,3 +75,44 @@ class Config:
             cls.load()
 
         return cls._cache["JWT_KEY"]
+
+    @classmethod
+    def tax_agent(cls) -> str:
+        if not cls._loaded:
+            cls.load()
+
+        return cls._cache["TAX_AGENT"]
+
+    @classmethod
+    def tax_authorization(cls) -> str:
+        if not cls._loaded:
+            cls.load()
+
+        return cls._cache["TAX_AUTHORIZATION"]
+
+    @classmethod
+    def tax_inn(cls) -> str:
+        if not cls._loaded:
+            cls.load()
+
+        return cls._cache["TAX_INN"]
+
+    # endregion
+
+    # region commission
+    @classmethod
+    def user_pays_commission(cls) -> bool:
+        return False
+
+    @classmethod
+    def get_commission_rates(cls, key: Literal["PC", "AC"]) -> float:
+        commission_rates = {
+            "PC": 0.01,  # Yoomoney
+            "AC": 0.03,  # Банковская карта
+        }.get(key, None)
+        if commission_rates is None:
+            raise ValueError(f"Unknown key for get_commission_rates {key}")
+
+        return commission_rates
+
+    # endregion

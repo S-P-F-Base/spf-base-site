@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from database import Config, LogDB, UserDB, YoomoneyDB
+from database import AutoTax, Config, LogDB, UserDB, YoomoneyDB
 from routers.api.auth import api_auth_login, api_auth_refresh
 from routers.api.yoomoney import (
     yoomoney_create_payment,
@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
         LogDB.create_db_table()
         UserDB.create_db_table()
         YoomoneyDB.create_db_table()
+        AutoTax.setup()
 
         yield
 
