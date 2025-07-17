@@ -131,15 +131,13 @@ Markdown поддерживает таблицы, пример:
 
 Далее необходимо зайти на [гитхаб сайта](https://github.com/S-P-F-Base/spf-base-site) и сделать форк
 
-!imgblock[/static/wiki/images/how_to_create_wiki/make_fork_1.png|middle|100]
-!endimgblock
+!img[/static/wiki/images/how_to_create_wiki/make_fork_1.png]
 
-!imgblock[/static/wiki/images/how_to_create_wiki/make_fork_2.png|middle|100]
-!endimgblock
+!img[/static/wiki/images/how_to_create_wiki/make_fork_2.png]
 
-!imgblock[/static/wiki/images/how_to_create_wiki/make_fork_3.png|middle|100]
 Нажимаете на create fork
-!endimgblock
+
+!img[/static/wiki/images/how_to_create_wiki/make_fork_3.png]
 
 Ждёте пару минут
 
