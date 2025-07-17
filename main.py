@@ -20,8 +20,8 @@ from routers.root import (
     root_index,
     root_pay,
     root_robots,
-    root_wiki,
 )
+from routers.wiki import root_wiki
 
 ALLOWED_PATHS = {"/api/yoomoney/notification"}
 REQUIRED_AGENT = "spf-agent-v1"

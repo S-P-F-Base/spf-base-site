@@ -83,6 +83,10 @@
     font-family: "Fira Code", "Courier New", monospace;
     font-size: 0.95rem;
     border: 1px solid #333;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    overflow-x: hidden;
 }
 
 .markdown-body pre code {
@@ -109,10 +113,52 @@
 }
 
 /* Изображения внутри Markdown */
-.markdown-body img {
-    max-width: 100%;
-    border-radius: 4px;
+.markdown-body .img-side {
+    display: flex;
+    align-items: flex-start;
     margin: 1rem 0;
+    gap: 1rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.markdown-body .img-side.left {
+    flex-direction: row;
+}
+
+.markdown-body .img-side.right {
+    flex-direction: row-reverse;
+}
+
+.markdown-body .img-side.middle {
+    flex-direction: column;
+    align-items: center;
+}
+
+.markdown-body .img-side img {
+    border-radius: 4px;
+    height: auto;
+    flex-shrink: 0;
+    display: block;
+}
+
+.markdown-body .img-side .content {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.markdown-body .img-side.middle img {
+    order: 1;
+    align-self: center;
+}
+
+.markdown-body .img-side.middle .content {
+    order: 0;
+    align-self: stretch;
 }
 
 /*  Оглавление */
@@ -194,4 +240,43 @@
     color: rgba(255, 165, 0, 0.7);
     left: -0.3em;
     font-size: 1em;
+}
+
+/* Общие стили для блока admonition */
+.admonition {
+    padding: 1rem 1.2rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Заголовок внутри admonition */
+.admonition-title {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.admonition.orange {
+    background: rgba(255, 165, 0, 0.25);
+    border-left: 4px solid orange;
+    color: #ffffff;
+}
+
+.admonition.red {
+    background: rgba(255, 0, 0, 0.3);
+    border-left: 4px solid #e60000;
+    color: #fff;
+}
+
+.admonition.green {
+    background: rgba(0, 128, 0, 0.3);
+    border-left: 4px solid #008000;
+    color: #fff;
+}
+
+.admonition.blue {
+    background: rgba(0, 0, 255, 0.2);
+    border-left: 4px solid #0000ff;
+    color: #fff;
 }
