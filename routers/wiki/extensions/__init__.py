@@ -1,5 +1,6 @@
 from .button_extension import ButtonExtension
 from .constant_extension import ConstExtension
+from .folder_tree_extension import FolderTreeExtension
 from .img_block_extension import ImgBlockExtension
 from .strip_comments_extension import StripCommentsExtension
 from .wiki_link_extension import WikiLinkExtension

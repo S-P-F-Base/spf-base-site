@@ -6,7 +6,7 @@ from markdown.inlinepatterns import InlineProcessor
 
 
 class WikiLinkProcessor(InlineProcessor):
-    WIKILINK_RE = r"\[\[([^\|\]]+)\|([^\]]+)\]\]"
+    RE = r"\[\[([^\|\]]+)\|([^\]]+)\]\]"
 
     def handleMatch(self, m, data):
         path = m.group(1).strip()
@@ -22,5 +22,5 @@ class WikiLinkProcessor(InlineProcessor):
 class WikiLinkExtension(Extension):
     def extendMarkdown(self, md):
         md.inlinePatterns.register(
-            WikiLinkProcessor(WikiLinkProcessor.WIKILINK_RE, md), "wikilink", 160
+            WikiLinkProcessor(WikiLinkProcessor.RE, md), "wikilink", 160
         )

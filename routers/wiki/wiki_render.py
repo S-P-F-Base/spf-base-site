@@ -11,6 +11,7 @@ from templates import templates
 from .extensions import (
     ButtonExtension,
     ConstExtension,
+    FolderTreeExtension,
     ImgBlockExtension,
     StripCommentsExtension,
     WikiLinkExtension,
@@ -59,18 +60,19 @@ def wiki_page(request: Request, page: Path):
     md = Markdown(
         extensions=[
             "fenced_code",  # Блоки кода через тройные кавычки (```), как на GitHub
-            "nl2br",  # Превращает одиночные \n в <br />
             "tables",  # Markdown-таблицы
             "meta",  # Заголовки-мета в начале файла (например, автор, дата)
             "toc",  # Автоматическое оглавление по заголовкам
             "admonition",  # Поддержка блоков с предупреждениями, заметками и пр.
             "footnotes",  # Сноски
             "smarty",  # Типографические ковычки
+            "nl2br",  # Превращает одиночные \n в <br />
             WikiLinkExtension(),  # Поддержка [[url|name]] для вики-стилей
             ConstExtension(constants=CONSTANTS),  # Константы для замены
             ImgBlockExtension(),  # Для блоков с картинками и текстом
             ButtonExtension(),  # Работа с кнопками и их оформлением
             StripCommentsExtension(),  # В пизду комментарии, так же стрипает весь текст
+            FolderTreeExtension(),  # Для создания красивых деревьев
         ],
     )
     rendered_html = md.convert(content)

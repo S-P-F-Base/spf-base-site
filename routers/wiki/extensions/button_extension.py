@@ -6,14 +6,14 @@ from markdown.treeprocessors import Treeprocessor
 
 
 class ButtonTreeProcessor(Treeprocessor):
-    BUTTON_RE = re.compile(r"!btn\[(.*?)\|(.*?)\]")
+    RE = re.compile(r"!btn\[(.*?)\|(.*?)\]")
 
     def run(self, root: etree.Element):
         for elem in list(root):
             if elem.text:
                 chunks = []
                 last = 0
-                for match in self.BUTTON_RE.finditer(elem.text):
+                for match in self.RE.finditer(elem.text):
                     prefix_text = elem.text[last : match.start()]
                     if prefix_text.strip():
                         span = etree.Element("span")

@@ -132,3 +132,20 @@ Background: /static/wiki/images/hehe.jpg <!-- Смена заднего изоб
 ## Блядушная замена номер раз
 
 Ковычки на "типографические"
+
+
+## Фолдеры
+
+Есть нативная поддержка автоматического создания фолдеров
+!folder[
+    /root/kill_all.py
+    /example.md
+    /wiki/ten_codes.md
+]
+
+Или если всё под одним рутом
+!folder[
+    /god/root/kill_all.py
+    /god/example.md
+    /god/wiki/ten_codes.md
+]

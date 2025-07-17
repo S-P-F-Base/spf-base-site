@@ -1,17 +1,18 @@
 import re
 from xml.etree import ElementTree as etree
-from markdown.extensions import Extension
+
 from markdown.blockprocessors import BlockProcessor
+from markdown.extensions import Extension
 
 
 class ImgBlockProcessor(BlockProcessor):
     RE = re.compile(
         r"^!imgblock\[(.+?)\|(\s*left\s*|\s*right\s*|\s*middle\s*)(?:\|(\d{1,3}))?\]\s*$",
-        re.IGNORECASE
+        re.IGNORECASE,
     )
 
     def test(self, parent, block):
-        return bool(self.RE.match(block.split('\n', 1)[0]))
+        return bool(self.RE.match(block.split("\n", 1)[0]))
 
     def run(self, parent, blocks):
         raw = blocks.pop(0)
@@ -35,7 +36,7 @@ class ImgBlockProcessor(BlockProcessor):
                 break
             content_lines.append(line)
 
-        content = '\n'.join(content_lines).strip()
+        content = "\n".join(content_lines).strip()
 
         wrapper = etree.SubElement(parent, "div")
         wrapper.set("class", f"img-side {pos}")
@@ -49,6 +50,9 @@ class ImgBlockProcessor(BlockProcessor):
         content_div.set("class", "content")
         content_div.text = content
 
+
 class ImgBlockExtension(Extension):
     def extendMarkdown(self, md):
-        md.parser.blockprocessors.register(ImgBlockProcessor(md.parser), 'imgblock', 100)
+        md.parser.blockprocessors.register(
+            ImgBlockProcessor(md.parser), "imgblock", 100
+        )

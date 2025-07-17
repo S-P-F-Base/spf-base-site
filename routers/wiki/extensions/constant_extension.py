@@ -5,7 +5,7 @@ from markdown.inlinepatterns import InlineProcessor
 
 
 class ConstInlineProcessor(InlineProcessor):
-    CONST_RE = r"!const\[(.*?)\]"
+    RE = r"!const\[(.*?)\]"
 
     def __init__(self, pattern, constants, md):
         super().__init__(pattern, md)
@@ -28,7 +28,7 @@ class ConstExtension(Extension):
 
     def extendMarkdown(self, md):
         constants = self.getConfig("constants")
-        pattern = ConstInlineProcessor.CONST_RE
+        pattern = ConstInlineProcessor.RE
         md.inlinePatterns.register(
             ConstInlineProcessor(pattern, constants, md), "const", 0
         )
