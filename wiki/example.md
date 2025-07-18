@@ -36,6 +36,28 @@ Background: /static/wiki/images/hehe.jpg <!-- Смена заднего изоб
 
 НЕ ВСТАВЛЯТЬ ТЕКСТ ВПРИТЫК К ТАБЛИЦЕ, ИНАЧЕ ТАБЛИЦА СКОНЧАЕТСЯ
 
+Немного по другому центруем
+
+| Имя                                      | Класс        | Ранг |
+|:-----------------------------------------|-------------:|:----:|
+| !tblimg[/static/wiki/images/hehe.jpg|30] | AR Team      | A    |
+| UMP45                                    | 404 Squad    | B    |
+| G11                                      | Experimental | S    |
+
+| Имя   | Класс                                          | Ранг |
+|:------|-----------------------------------------------:|:----:|
+| M4A1  | AR Team                                        | A    |
+| UMP45 | !tblimg[/static/wiki/images/hehe.jpg|30]       | B    |
+| G11   | Experimental                                   | S    |
+
+
+| Имя   | Класс        | Ранг                                     |
+|:------|-------------:|:----------------------------------------:|
+| M4A1  | AR Team      | A                                        |
+| UMP45 | 404 Squad    | B                                        |
+| G11   | Experimental | !tblimg[/static/wiki/images/hehe.jpg|10] |
+
+
 ---
 
 ## WikiLink
