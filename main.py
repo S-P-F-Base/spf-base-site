@@ -86,6 +86,20 @@ def custom_http_exception_handler(request: Request, exc: StarletteHTTPException)
             status_code=404,
         )
 
+    elif exc.status_code == 418:
+        return templates.TemplateResponse(
+            "error_code/418.html",
+            {"request": request},
+            status_code=418,
+        )
+
+    elif exc.status_code == 500:
+        return templates.TemplateResponse(
+            "error_code/500.html",
+            {"request": request},
+            status_code=500,
+        )
+
     elif exc.status_code == 502:
         return templates.TemplateResponse(
             "error_code/502.html",
