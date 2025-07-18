@@ -14,6 +14,7 @@ from routers.api.yoomoney import (
     yoomoney_notification,
 )
 from routers.root import (
+    root_code,
     root_discord,
     root_download,
     root_index,
@@ -96,6 +97,7 @@ def custom_http_exception_handler(request: Request, exc: StarletteHTTPException)
 
 
 # /
+app.include_router(root_code)
 app.include_router(root_discord)
 app.include_router(root_download)
 app.include_router(root_index)
