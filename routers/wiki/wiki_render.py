@@ -79,12 +79,16 @@ def wiki_page(request: Request, page: Path):
             SmallTextExtension(),  # Маленький текст
         ],
     )
+
     rendered_html = md.convert(content)
+
     meta = getattr(md, "Meta", {})
+
+    title = meta.get("title", [None])[0] or "ЗАБЫЛИ НАИМЕНОВАНИЕ УСТАНОВИТЬ"
+    data = meta.get("date", [None])[0] or "ЗАБЫЛИ ДАТУ УСТАНОВИТЬ"
     background_url = (
         meta.get("background", [None])[0] or "/static/images/wallpaper.jpeg"
     )
-    title = meta.get("title", [str(page)])[0] if meta else str(page)
 
     return templates.TemplateResponse(
         "wiki_template.html",
@@ -92,7 +96,7 @@ def wiki_page(request: Request, page: Path):
             "request": request,
             "content": rendered_html,
             "title": title,
-            "meta": meta,
+            "data": data,
             "background_url": background_url,
         },
     )
