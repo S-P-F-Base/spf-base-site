@@ -1,6 +1,6 @@
 Title: Как создать страницу вики
 Author: Cain
-Date: 2025-07-10
+Date: 2025-07-17
 
 # Как создать страницу вики
 
@@ -11,20 +11,18 @@ Date: 2025-07-10
 ## Структура папок
 Все `.md`-файлы вики находятся в папке `wiki` в корне проекта. Допустимы вложенные подпапки - структура может выглядеть так:
 
-```
-/wiki
-├── main.md
-├── how_to_create_wiki.md
-├── example.md
-└── inventory/
-    └── weapons.md
-```
+!folder[
+    /wiki/main.md
+    /wiki/how_to_create_wiki.md
+    /wiki/example.md
+    /wiki/inventory/weapons.md
+]
 
 Для ссылок внутри вики используется `WikiLink`: Путь указывается относительно папки `wiki`, без расширения `.md`
 
 Пример:
 ```
-[[inventory/weapons|Оружие]]
+[[/wiki/inventory/weapons|Оружие]]
 ```
 
 ---
@@ -91,8 +89,7 @@ Markdown поддерживает таблицы, пример:
 
 ### WikiLink
 Ссылки на другие страницы делаются через двойные квадратные скобки:
-`[[main|Главная]]` - ссылка на `wiki/main.md` с названием "Главная"
-`[[inventory/weapons]]` - ссылка на `wiki/inventory/weapons.md`, текст будет "weapons"
+`[[/wiki|Главная]]` - ссылка на `wiki/index.md` с названием "Главная"
 
 ---
 
@@ -110,17 +107,16 @@ Markdown поддерживает таблицы, пример:
 Перейди по ссылке на новую страницу
 Если добавил ссылку вроде:
 ```
-[[inventory/weapons|Оружие]]
+[[/wiki/inventory/weapons|Оружие]]
 ```
 
 То её можно будет найти по адрессу `http://localhost:8000/wiki/inventory/weapons`
 Однако файл обязан быть
-```
-/wiki
-├── ...
-└── inventory/
-    └── weapons.md
-```
+
+!folder[
+    /wiki/...
+    /wiki/inventory/weapons.md
+]
 
 ---
 
@@ -135,11 +131,14 @@ Markdown поддерживает таблицы, пример:
 
 Далее необходимо зайти на [гитхаб сайта](https://github.com/S-P-F-Base/spf-base-site) и сделать форк
 
-![make fork 1](/static/wiki/images/how_to_create_wiki/make_fork_1.png "make fork 1")
-![make fork 2](/static/wiki/images/how_to_create_wiki/make_fork_2.png "make fork 2")
+!img[/static/wiki/images/how_to_create_wiki/make_fork_1.png]
+
+!img[/static/wiki/images/how_to_create_wiki/make_fork_2.png]
 
 Нажимаете на create fork
-![make fork 3](/static/wiki/images/how_to_create_wiki/make_fork_3.png "make fork 3")
+
+!img[/static/wiki/images/how_to_create_wiki/make_fork_3.png]
+
 Ждёте пару минут
 
 ---
@@ -176,4 +175,4 @@ pip install -r requirements.txt
 
 
 ОСТАЛЬНОЕ КАК СОЗДАВАТЬ ПУЛ РЕКВЕСТ МОЖНО ПОСМОТРЕТЬ [ТУТ](https://bestprogrammer.ru/programmirovanie-i-razrabotka/kak-sdelat-pulrekvest-na-github-poshagovoe-rukovodstvo-dlya-nachinayushix)
-Да. Мне лень писать. Что вы мне сделаете?   
+Да. Мне лень писать. Что вы мне сделаете?

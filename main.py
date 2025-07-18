@@ -4,10 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from database import Config, LogDB, UserDB, YoomoneyDB
+from database import AutoTax, Config, LogDB, UserDB, YoomoneyDB
 from routers.api.auth import api_auth_login, api_auth_refresh
 from routers.api.yoomoney import (
     yoomoney_create_payment,
@@ -20,10 +19,13 @@ from routers.root import (
     root_index,
     root_pay,
     root_robots,
-    root_wiki,
 )
+from routers.wiki import root_wiki
+from templates import templates
 
-ALLOWED_PATHS = {"/api/yoomoney/notification"}
+ALLOWED_PATHS = {
+    "/api/yoomoney/notification",
+}
 REQUIRED_AGENT = "spf-agent-v1"
 
 
@@ -34,6 +36,7 @@ async def lifespan(app: FastAPI):
         LogDB.create_db_table()
         UserDB.create_db_table()
         YoomoneyDB.create_db_table()
+        AutoTax.setup()
 
         yield
 
@@ -48,7 +51,7 @@ app = FastAPI(
     openapi_url=None,
 )
 
-templates = Jinja2Templates(directory="templates")
+
 if os.getenv("DEBUG") == "1":
     app.mount("/static", StaticFiles(directory="static"), name="static")
 

@@ -1,0 +1,19 @@
+Изменение css:
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.css"]
+
+Изменение python:
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.py"]
+
+Изменение html:
+  - changed-files:
+      - any-glob-to-any-file: ["templates/**/*.html"]
+
+Изменение wiki:
+  - changed-files:
+      - any-glob-to-any-file: ["wiki/**", "static/wiki/**"]
+
+Изменение git:
+  - changed-files:
+      - any-glob-to-any-file: [".gitignore", ".gitattributes", ".github/**"]
