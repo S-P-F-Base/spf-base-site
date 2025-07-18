@@ -41,9 +41,6 @@ def load_constants() -> dict[str, str]:
         return {}
 
 
-CONSTANTS = load_constants()
-
-
 @router.get("/wiki/{page:path}", response_class=HTMLResponse)
 def wiki_page(request: Request, page: Path):
     md_path = WIKI_DIR / page
@@ -72,7 +69,7 @@ def wiki_page(request: Request, page: Path):
             "smarty",  # Типографические ковычки
             "nl2br",  # Превращает одиночные \n в <br />
             WikiLinkExtension(),  # Поддержка [[url|name]] для вики-стилей
-            ConstExtension(constants=CONSTANTS),  # Константы для замены
+            ConstExtension(constants=load_constants()),  # Константы для замены
             ImgBlockExtension(),  # Для блоков с картинками и текстом
             SingleImgExtension(),  # Макрос для картинок
             ButtonExtension(),  # Работа с кнопками и их оформлением
