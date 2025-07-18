@@ -7,3 +7,4 @@ Date: 2025-07-13
 | Имя  | Discord | Telegram | Аватар                                     |
 |:----:|:-------:|:--------:|:------------------------------------------:|
 | Гром | foxyr20 | @Foxyr20 | !img[/static/wiki/images/docs/foxyr20.png] |
+
