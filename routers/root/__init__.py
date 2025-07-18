@@ -1,3 +1,4 @@
+from .code import router as root_code
 from .discord import router as root_discord
 from .download import router as root_download
 from .index import router as root_index
