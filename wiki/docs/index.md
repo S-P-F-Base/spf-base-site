@@ -1,3 +1,7 @@
+Title: Индекс
+Author: Grom
+Date: 2025-07-18
+
 # Информация
 
 !btn[docs/about|О проекте]

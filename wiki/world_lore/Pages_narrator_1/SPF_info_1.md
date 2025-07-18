@@ -1,6 +1,7 @@
 Title: Инфа о куклах
 Author: Grom
 Date: 2025-07-18
+Background: 
 
 # ЧВК S.P.F.
 ## S.P.F. - Secure. Protect. Future.

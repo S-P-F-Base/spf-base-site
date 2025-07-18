@@ -1,3 +1,7 @@
+Title: Выбор организации
+Author: Grom
+Date: 2025-07-18
+
 # Организации и их некоторые разработки как пример:
 
 !btn[/wiki/world_lore/Organisations/42Lab|42 Lab]
