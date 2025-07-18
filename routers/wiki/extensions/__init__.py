@@ -5,4 +5,5 @@ from .img_block_extension import ImgBlockExtension
 from .single_img_extension import SingleImgExtension
 from .small_text_extension import SmallTextExtension
 from .strip_comments_extension import StripCommentsExtension
+from .table_img_extension import TableImgExtension
 from .wiki_link_extension import WikiLinkExtension

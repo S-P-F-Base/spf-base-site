@@ -16,6 +16,7 @@ from .extensions import (
     SingleImgExtension,
     SmallTextExtension,
     StripCommentsExtension,
+    TableImgExtension,
     WikiLinkExtension,
 )
 
@@ -63,6 +64,7 @@ def wiki_page(request: Request, page: Path):
         extensions=[
             "fenced_code",  # Блоки кода через тройные кавычки (```), как на GitHub
             "tables",  # Markdown-таблицы
+            TableImgExtension(),  # Поддержка картинок в таблицах
             "meta",  # Заголовки-мета в начале файла (например, автор, дата)
             "toc",  # Автоматическое оглавление по заголовкам
             "admonition",  # Поддержка блоков с предупреждениями, заметками и пр.

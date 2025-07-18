@@ -61,16 +61,22 @@
     border-collapse: collapse;
     margin-bottom: 1.5rem;
     background: #222;
+    table-layout: fixed;
 }
 
 .markdown-body th,
 .markdown-body td {
     border: 1px solid #444;
     padding: 0.5rem;
+    word-break: break-word;
 }
 
 .markdown-body th {
     background: #333;
+}
+
+.markdown-body table img {
+    height: auto;
 }
 
 /* Блоки кода */

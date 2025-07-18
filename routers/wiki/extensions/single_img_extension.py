@@ -33,10 +33,6 @@ class SingleImgBlockProcessor(BlockProcessor):
         img.set("alt", "")
         img.set("style", f"max-width: {width}%;")
 
-        content = etree.SubElement(wrapper, "div")
-        content.set("class", "content")
-        content.text = ""
-
 
 class SingleImgExtension(Extension):
     def extendMarkdown(self, md):
