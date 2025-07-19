@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
 from fastapi import HTTPException, Request, status
-from jose import JWTError, jwt
+from jose import ExpiredSignatureError, JWTError, jwt
 
 from .config import Config
 
@@ -33,27 +33,40 @@ class JWTControl:
         )
 
     @classmethod
-    def decode(cls, token: str) -> dict | None:
-        try:
-            payload = jwt.decode(token, Config.jwt_key(), algorithms=[cls._ALGORITHM])
-            return payload
-
-        except JWTError:
-            return None
+    def decode(cls, token: str) -> dict:
+        payload = jwt.decode(token, Config.jwt_key(), algorithms=[cls._ALGORITHM])
+        return payload
 
 
-def _base_access(request: Request) -> dict[str, Any]:
-    auth = request.headers.get("Authorization")
+def _get_authorization_header_payload(request: Request, header_name: str) -> str:
+    auth = request.headers.get(header_name)
     if not auth or not auth.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid Authorization header",
+            detail=f"Missing or invalid {header_name} header",
         )
 
     token = auth.removeprefix("Bearer ").strip()
-    payload = JWTControl.decode(token)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Missing or invalid {header_name} header",
+        )
 
-    if not payload:
+    return token
+
+
+def _jwt_sanity_check(token: str) -> dict[str, Any]:
+    try:
+        payload = JWTControl.decode(token)
+
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired",
+        )
+
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -62,8 +75,9 @@ def _base_access(request: Request) -> dict[str, Any]:
     return payload
 
 
-def req_login(request: Request) -> str:
-    payload = _base_access(request)
+def req_authorization(request: Request) -> str:
+    token = _get_authorization_header_payload(request, "Authorization")
+    payload = _jwt_sanity_check(token)
 
     if "usr" not in payload or payload.get("typ") == "ref":
         raise HTTPException(
@@ -75,7 +89,8 @@ def req_login(request: Request) -> str:
 
 
 def req_refresh(request: Request) -> str:
-    payload = _base_access(request)
+    token = _get_authorization_header_payload(request, "X-Authorization-Refresh")
+    payload = _jwt_sanity_check(token)
 
     if "usr" not in payload or payload.get("typ") != "ref":
         raise HTTPException(
