@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <title>S.P.F. Base клиент</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta property="og:title" content="S.P.F. Base" />
+    <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
+    <meta property="og:image" content="https://spf-base.ru/static/images/logo.jpg" />
+    <meta property="og:url" content="https://spf-base.ru/" />
+    <meta property="og:type" content="website" />
+
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="{{ 'main.css' | ver }}" />
+    <link rel="stylesheet" href="{{ 'popup.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        <div class="content-tile">
+            <h1>Клиент</h1>
+            <p class="subtitle">Здесь вы можете скачать актуальный клиент SPF base. Просьба учитывать, что на текущий
+                момент это только приложение для администрации</p>
+
+            <h2>Доступные сборки</h2>
+            <ul class="links-list">
+                <li><a href="#" data-target="windows-64bit">Windows 64-bit</a></li>
+                <li><a href="#" data-target="windows-32bit">Windows 32-bit</a></li>
+                <li><a href="#" data-target="windows-arm64">Windows ARM64</a></li>
+                <li><a href="#" data-target="linux-64bit">Linux 64-bit</a></li>
+                <li><a href="#" data-target="linux-32bit">Linux 32-bit</a></li>
+                <li><a href="#" data-target="linux-arm64">Linux ARM64</a></li>
+            </ul>
+
+            <p class="subtitle">Текущая версия: <span id="version">загрузка...</span></p>
+        </div>
+    </div>
+
+    <script>
+        fetch("/download/version")
+            .then(res => res.ok ? res.json() : { version: "неизвестна" })
+            .then(data => {
+                document.getElementById("version").textContent = data.version || "неизвестна";
+            })
+            .catch(() => {
+                document.getElementById("version").textContent = "ошибка загрузки";
+            });
+
+        document.querySelectorAll(".links-list a").forEach(link => {
+            link.addEventListener("click", (e) => {
+                e.preventDefault();
+                const os = link.dataset.target;
+
+                fetch(`/download/${os}`, {
+                    method: "GET"
+                }).then(res => {
+                    if (res.ok) {
+                        window.location.href = `/download/${os}`;
+                    } else {
+                        showPopup(`Файл для ${os} не найден.`);
+                    }
+                }).catch(() => {
+                    showPopup(`Ошибка при попытке загрузки файла для ${os}.`);
+                });
+            });
+        });
+
+        function showPopup(message) {
+            const overlay = document.getElementById("popup-overlay");
+            const msg = document.getElementById("popup-message");
+            msg.innerHTML = message;
+            overlay.style.display = "flex";
+            overlay.focus();
+        }
+
+        function closePopup() {
+            const overlay = document.getElementById("popup-overlay");
+            overlay.style.display = "none";
+        }
+
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape") {
+                closePopup();
+            }
+        });
+    </script>
+
+    <div id="popup-overlay" style="display: none;">
+        <div id="popup">
+            <p id="popup-message">Ошибка</p>
+            <button onclick="closePopup()">Закрыть</button>
+        </div>
+    </div>
+</body>
+
+</html>
