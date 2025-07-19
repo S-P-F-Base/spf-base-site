@@ -9,5 +9,6 @@ def robots_txt():
     content = """
 User-agent: *
 Disallow: /api/
+Disallow: /download/
 """
     return content.strip()
