@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from database import AutoTax, Config, LogDB, UserDB, YoomoneyDB
-from routers.api.auth import api_auth_login, api_auth_refresh
+from routers.api.auth import api_auth_login, api_auth_refresh, api_auth_register
 from routers.api.yoomoney import (
     yoomoney_create_payment,
     yoomoney_create_payment_url,
@@ -122,7 +122,7 @@ app.include_router(root_wiki)
 # /api/auth
 app.include_router(api_auth_login, prefix="/api/auth")
 app.include_router(api_auth_refresh, prefix="/api/auth")
-
+app.include_router(api_auth_register, prefix="/api/auth")
 
 # /api/yoomoney
 app.include_router(yoomoney_notification, prefix="/api/yoomoney")

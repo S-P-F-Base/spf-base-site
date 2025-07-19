@@ -118,3 +118,8 @@ class UserDB:
             con.commit()
 
         LogDB.add_log(LogType.DELETE_USER, f"Deleted user {login}", creator)
+
+    @classmethod
+    def user_exists(cls, login: str) -> bool:
+        with cls._connect() as con:
+            return cls._has_user(login, con)
