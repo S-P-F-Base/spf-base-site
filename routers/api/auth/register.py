@@ -8,11 +8,14 @@ router = APIRouter()
 
 
 def clean_username(username: str) -> str:
-    return re.sub(r"\s+", " ", username.strip())
+    return re.sub(r"\s+", "_", username.strip())
 
 
 @router.post("/register")
 def register(data: LoginData):
+    if not data.username.isascii():
+        raise HTTPException(status_code=400, detail="Username contain non-ascii")
+
     username = clean_username(data.username)
     if not username:
         raise HTTPException(status_code=400, detail="Username cannot be empty")
