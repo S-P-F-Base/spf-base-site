@@ -5,13 +5,11 @@ from database import TargetUserData, UserAccess, UserDB, req_authorization
 router = APIRouter()
 
 
-@router.post("/get_access")
-def get_access(request: Request, data: TargetUserData):
+@router.post("/get_info")
+def get_info(request: Request, data: TargetUserData):
     username = req_authorization(request)
 
     target = data.target
-    if target == "self":
-        target = username
 
     if not (
         username == target
@@ -26,4 +24,4 @@ def get_access(request: Request, data: TargetUserData):
     if access is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return {"access": access}
+    return {"login": target, "access": access}
