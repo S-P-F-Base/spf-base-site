@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from database import AutoTax, Config, LogDB, UserDB, YoomoneyDB
 from routers.api.auth import api_auth_login, api_auth_refresh, api_auth_register
+from routers.api.user_control import api_user_control_get_access
 from routers.api.yoomoney import (
     yoomoney_create_payment,
     yoomoney_create_payment_url,
@@ -20,8 +21,8 @@ from routers.root import (
     root_index,
     root_pay,
     root_robots,
+    root_wiki,
 )
-from routers.wiki import root_wiki
 from templates import templates
 
 ALLOWED_PATHS = {
@@ -123,6 +124,9 @@ app.include_router(root_wiki)
 app.include_router(api_auth_login, prefix="/api/auth")
 app.include_router(api_auth_refresh, prefix="/api/auth")
 app.include_router(api_auth_register, prefix="/api/auth")
+
+# /api/user_control
+app.include_router(api_user_control_get_access, prefix="/api/user_control")
 
 # /api/yoomoney
 app.include_router(yoomoney_notification, prefix="/api/yoomoney")

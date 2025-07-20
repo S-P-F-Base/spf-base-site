@@ -10,8 +10,10 @@ import bcrypt
 from .log_db import LogDB, LogType
 
 
+# НЕ ИСПОЛЬЗОВАТЬ БИТЫ ВЫШЕ 1 << 62!
 class UserAccess(Enum):
-    NO_ACCESS = 0b0000
+    NO_ACCESS = 1 << 0
+    READ_USER_DATA = 1 << 1
 
 
 class UserDB:
@@ -123,3 +125,13 @@ class UserDB:
     def user_exists(cls, login: str) -> bool:
         with cls._connect() as con:
             return cls._has_user(login, con)
+
+    @classmethod
+    def get_user_access(cls, login: str) -> int | None:
+        with cls._connect() as con:
+            cur = con.execute("SELECT access FROM user_unit WHERE login = ?", (login,))
+            row = cur.fetchone()
+            if row is None:
+                return False
+
+            return row[0]
