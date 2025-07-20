@@ -1,14 +1,15 @@
 from fastapi import APIRouter, HTTPException, Request
 
-from database import UserAccess, UserDB, req_authorization
+from database import TargetUserData, UserAccess, UserDB, req_authorization
 
 router = APIRouter()
 
 
 @router.post("/get_access")
-def get_access(request: Request, target: str):
+def get_access(request: Request, data: TargetUserData):
     username = req_authorization(request)
 
+    target = data.target
     if target == "self":
         target = username
 
