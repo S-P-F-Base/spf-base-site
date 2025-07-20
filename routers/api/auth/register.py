@@ -1,9 +1,8 @@
 import re
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, HTTPException
 
-from database import JWTControl, UserDB
+from database import JWTControl, LoginData, UserDB
 
 router = APIRouter()
 
@@ -13,8 +12,8 @@ def clean_username(username: str) -> str:
 
 
 @router.post("/register")
-def register(form_data: OAuth2PasswordRequestForm = Depends()):
-    username = clean_username(form_data.username)
+def register(data: LoginData):
+    username = clean_username(data.username)
     if not username:
         raise HTTPException(status_code=400, detail="Username cannot be empty")
 
@@ -23,7 +22,7 @@ def register(form_data: OAuth2PasswordRequestForm = Depends()):
 
     UserDB.create_user(
         username,
-        form_data.password,
+        data.password,
         UserDB.system_user,
     )
 
