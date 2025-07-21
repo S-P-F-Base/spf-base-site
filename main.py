@@ -8,7 +8,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from database import AutoTax, Config, LogDB, UserDB, YoomoneyDB
 from routers.api.auth import api_auth_login, api_auth_refresh, api_auth_register
-from routers.api.user_control import api_user_control_get_info, api_user_control_me
+from routers.api.user_control import (
+    api_user_control_get_all,
+    api_user_control_get_info,
+    api_user_control_me,
+)
 from routers.api.yoomoney import (
     yoomoney_create_payment,
     yoomoney_create_payment_url,
@@ -126,6 +130,7 @@ app.include_router(api_auth_refresh, prefix="/api/auth")
 app.include_router(api_auth_register, prefix="/api/auth")
 
 # /api/user_control
+app.include_router(api_user_control_get_all, prefix="/api/user_control")
 app.include_router(api_user_control_get_info, prefix="/api/user_control")
 app.include_router(api_user_control_me, prefix="/api/user_control")
 

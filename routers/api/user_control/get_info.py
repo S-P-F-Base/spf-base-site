@@ -15,7 +15,7 @@ def get_info(request: Request, data: TargetUserData):
         username == target
         or UserDB.has_access(
             username,
-            UserAccess.READ_USER_DATA.value,
+            UserAccess.READ_USER.value,
         )
     ):
         raise HTTPException(status_code=403, detail="Insufficient access")

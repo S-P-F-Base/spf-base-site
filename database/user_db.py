@@ -21,6 +21,14 @@ class UserAccess(Enum):
     READ_GAME_SERVER = 1 << 3
     CONTROL_GAME_SERVER = 1 << 4
 
+    READ_PAYMENT = 1 << 5
+    GIVE_PAYMENT = 1 << 6
+    CONTROL_PAYMENT = 1 << 7
+
+    READ_PLAYER = 1 << 8
+    CONTROL_PLAYER = 1 << 9
+
+
 class UserDB:
     system_user: Final[str] = "System"
     _db_path = Path("data/user.db")
@@ -143,3 +151,9 @@ class UserDB:
                 return False
 
             return row[0]
+
+    @classmethod
+    def get_all_users(cls) -> list[str]:
+        with cls._connect() as con:
+            cur = con.execute("SELECT login FROM user_unit")
+            return [row[0] for row in cur.fetchall()]
