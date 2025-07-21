@@ -12,9 +12,14 @@ from .log_db import LogDB, LogType
 
 # НЕ ИСПОЛЬЗОВАТЬ БИТЫ ВЫШЕ 1 << 62!
 class UserAccess(Enum):
-    NO_ACCESS = 1 << 0
-    READ_USER_DATA = 1 << 1
+    NO_ACCESS = 0
+    ALL_ACCESS = 1 << 0
 
+    READ_USER = 1 << 1
+    CONTROL_USER = 1 << 2
+
+    READ_GAME_SERVER = 1 << 3
+    CONTROL_GAME_SERVER = 1 << 4
 
 class UserDB:
     system_user: Final[str] = "System"
@@ -76,6 +81,9 @@ class UserDB:
                 return False
 
             user_access = row[0]
+
+        if (user_access & UserAccess.ALL_ACCESS.value) == UserAccess.ALL_ACCESS.value:
+            return True
 
         return (user_access & required_access) == required_access
 
