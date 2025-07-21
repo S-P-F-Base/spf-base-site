@@ -147,8 +147,6 @@ class UserDB:
         with cls._connect() as con:
             cur = con.execute("SELECT access FROM user_unit WHERE login = ?", (login,))
             row = cur.fetchone()
-            if row is None:
-                return False
 
             return row[0]
 
