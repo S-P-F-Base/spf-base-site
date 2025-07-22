@@ -1,3 +1,3 @@
-from .get_all import router as api_user_control_get_all
-from .get_info import router as api_user_control_get_info
-from .me import router as api_user_control_me
+from include_routers import include_routers_from_package
+
+router = include_routers_from_package(__name__)

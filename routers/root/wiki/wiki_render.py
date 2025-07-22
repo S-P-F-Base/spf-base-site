@@ -22,7 +22,7 @@ from .extensions import (
 
 router = APIRouter()
 
-BASE_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = Path(__file__).resolve().parents[3]
 WIKI_DIR = BASE_DIR / "wiki"
 CONSTANTS_PATH = WIKI_DIR / "constants.json"
 

@@ -8,3 +8,7 @@ class TargetUserData(BaseModel):
 class LoginData(BaseModel):
     username: str
     password: str
+
+
+class AccessData(TargetUserData):
+    access: int

@@ -90,7 +90,7 @@ class UserDB:
 
             user_access = row[0]
 
-        if (user_access & UserAccess.ALL_ACCESS.value) == UserAccess.ALL_ACCESS.value:
+        if user_access & UserAccess.ALL_ACCESS.value:
             return True
 
         return (user_access & required_access) == required_access
