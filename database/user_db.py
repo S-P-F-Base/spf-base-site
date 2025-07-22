@@ -28,6 +28,9 @@ class UserAccess(Enum):
     READ_PLAYER = 1 << 8
     CONTROL_PLAYER = 1 << 9
 
+    READ_LOGS = 1 << 10
+    CONTROL_LOGS = 1 << 11
+
 
 class UserDB:
     system_user: Final[str] = "System"
