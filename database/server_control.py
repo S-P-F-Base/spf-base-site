@@ -99,5 +99,5 @@ class ServerControl:
         except Exception as e:
             raise RuntimeError(f"Failed to {action} server: {e}")
 
-        cls._cache["last_checked"] = datetime.datetime.min
+        cls._cache["last_checked"] = SAFE_MIN_DATETIME
         cls._save_cache()
