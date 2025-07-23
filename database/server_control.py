@@ -1,5 +1,6 @@
 import datetime
 import json
+from datetime import UTC
 from pathlib import Path
 from typing import Literal
 
@@ -11,7 +12,11 @@ CACHE_PATH = Path("data/server_status_cache.json")
 
 
 class ServerControl:
-    _cache = {"last_checked": datetime.datetime.min, "status": None, "text": None}
+    _cache = {
+        "last_checked": datetime.datetime.min.astimezone(UTC),
+        "status": None,
+        "text": None,
+    }
 
     _session = Session()
     STATUS_TTL = 60
@@ -28,7 +33,7 @@ class ServerControl:
                 data = json.load(f)
                 cls._cache["last_checked"] = datetime.datetime.fromisoformat(
                     data["last_checked"]
-                )
+                ).astimezone(UTC)
                 cls._cache["status"] = data["status"]
                 cls._cache["text"] = data["text"]
         except Exception:
