@@ -9,11 +9,12 @@ from requests import Session
 from .config import Config
 
 CACHE_PATH = Path("data/server_status_cache.json")
+SAFE_MIN_DATETIME = datetime.datetime(2000, 1, 1, tzinfo=UTC)
 
 
 class ServerControl:
     _cache = {
-        "last_checked": datetime.datetime.min.astimezone(UTC),
+        "last_checked": SAFE_MIN_DATETIME,
         "status": None,
         "text": None,
     }
