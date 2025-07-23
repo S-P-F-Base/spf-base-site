@@ -20,3 +20,5 @@ def delete(request: Request, data: TargetUserData):
         UserDB.delete_user(target, username)
     except ValueError:
         raise HTTPException(status_code=404, detail="User not found")
+
+    return 200

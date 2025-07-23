@@ -24,3 +24,5 @@ def set_access(request: Request, data: AccessData):
         UserDB.set_user_access(target, access, username)
     except ValueError:
         raise HTTPException(status_code=404, detail="User not found")
+
+    return 200

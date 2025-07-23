@@ -19,6 +19,9 @@ class LogType(Enum):
     PAY_RESIVE = 8
     PAY_CANSEL = 9
 
+    GAME_SERVER_START = 10
+    GAME_SERVER_STOP = 11
+
 
 class LogDB:
     _db_path = Path("data/log.db")
