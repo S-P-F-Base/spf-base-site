@@ -9,6 +9,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from database import AutoTax, Config, LogDB, ServerControl, UserDB, YoomoneyDB
 from routers.api.auth import router as api_auth
+from routers.api.logs import router as api_logs
 from routers.api.server_control import router as api_server_control
 from routers.api.user_control import router as api_user_control
 from routers.api.yoomoney import router as api_yoomoney
@@ -103,6 +104,7 @@ def custom_http_exception_handler(request: Request, exc: StarletteHTTPException)
 
 
 app.include_router(api_auth, prefix="/api/auth")
+app.include_router(api_logs, prefix="/api/logs")
 app.include_router(api_server_control, prefix="/api/server_control")
 app.include_router(api_user_control, prefix="/api/user_control")
 app.include_router(api_yoomoney, prefix="/api/yoomoney")

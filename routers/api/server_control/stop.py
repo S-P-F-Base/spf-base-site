@@ -15,10 +15,7 @@ router = APIRouter()
 @router.get("/stop")
 def stop(request: Request):
     username = req_authorization(request)
-    if not UserDB.has_access(
-        username,
-        UserAccess.CONTROL_GAME_SERVER.value,
-    ):
+    if not UserDB.has_access(username, UserAccess.CONTROL_GAME_SERVER.value):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
     ServerControl.perform_action("stop")

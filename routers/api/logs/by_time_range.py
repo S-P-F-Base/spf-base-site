@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from database import (
-    ServerControl,
+    LogDB,
+    LogTimeRangeData,
     UserAccess,
     UserDB,
     req_authorization,
@@ -10,11 +11,10 @@ from database import (
 router = APIRouter()
 
 
-@router.get("/status")
-def status(request: Request):
+@router.post("/by_time_range")
+def by_time_range(request: Request, data: LogTimeRangeData):
     username = req_authorization(request)
-    if not UserDB.has_access(username, UserAccess.READ_GAME_SERVER.value):
+    if not UserDB.has_access(username, UserAccess.READ_LOGS.value):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
-    status, text = ServerControl.get_status()
-    return {"status": status, "text": text}
+    return LogDB.get_logs_by_time_range(data.start_time, data.end_time)

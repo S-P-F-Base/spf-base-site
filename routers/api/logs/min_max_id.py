@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from database import (
-    ServerControl,
+    LogDB,
     UserAccess,
     UserDB,
     req_authorization,
@@ -10,11 +10,12 @@ from database import (
 router = APIRouter()
 
 
-@router.get("/status")
-def status(request: Request):
+@router.get("/min_max_id")
+def min_max_id(request: Request):
     username = req_authorization(request)
-    if not UserDB.has_access(username, UserAccess.READ_GAME_SERVER.value):
+    if not UserDB.has_access(username, UserAccess.READ_LOGS.value):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
-    status, text = ServerControl.get_status()
-    return {"status": status, "text": text}
+    start_id, end_id = LogDB.get_min_max_log_id()
+
+    return {"start_id": start_id, "end_id": end_id}

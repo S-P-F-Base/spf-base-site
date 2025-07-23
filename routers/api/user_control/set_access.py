@@ -8,10 +8,7 @@ router = APIRouter()
 @router.post("/set_access")
 def set_access(request: Request, data: AccessData):
     username = req_authorization(request)
-    if not UserDB.has_access(
-        username,
-        UserAccess.CONTROL_USER.value,
-    ):
+    if not UserDB.has_access(username, UserAccess.CONTROL_USER.value):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
     target = data.target

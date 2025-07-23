@@ -74,18 +74,13 @@ class LogDB:
             con.commit()
 
     @classmethod
-    def get_min_log_id(cls) -> int | None:
+    def get_min_max_log_id(cls) -> tuple[int | None, int | None]:
         with cls._connect() as con:
-            cur = con.execute("SELECT MIN(id) FROM log_unit")
+            cur = con.execute("SELECT MIN(id), MAX(id) FROM log_unit")
             row = cur.fetchone()
-            return row[0] if row and row[0] is not None else None
-
-    @classmethod
-    def get_max_log_id(cls) -> int | None:
-        with cls._connect() as con:
-            cur = con.execute("SELECT MAX(id) FROM log_unit")
-            row = cur.fetchone()
-            return row[0] if row and row[0] is not None else None
+            if row:
+                return row[0], row[1]
+            return None, None
 
     @classmethod
     def get_logs_range(cls, start_id: int, end_id: int) -> list[dict]:
@@ -93,6 +88,55 @@ class LogDB:
             cur = con.execute(
                 "SELECT id, type, time, value, creator FROM log_unit WHERE id BETWEEN ? AND ? ORDER BY id ASC",
                 (start_id, end_id),
+            )
+            rows = cur.fetchall()
+
+        logs = []
+        for row in rows:
+            log = {
+                "id": row[0],
+                "type": LogType(row[1]),
+                "time": datetime.fromtimestamp(row[2], tz=UTC),
+                "value": row[3],
+                "creator": row[4],
+            }
+            logs.append(log)
+
+        return logs
+
+    @classmethod
+    def get_logs_by_creator(cls, creator: str) -> list[dict]:
+        with cls._connect() as con:
+            cur = con.execute(
+                "SELECT id, type, time, value, creator FROM log_unit WHERE creator = ? ORDER BY time ASC",
+                (creator,),
+            )
+            rows = cur.fetchall()
+
+        logs = []
+        for row in rows:
+            log = {
+                "id": row[0],
+                "type": LogType(row[1]),
+                "time": datetime.fromtimestamp(row[2], tz=UTC),
+                "value": row[3],
+                "creator": row[4],
+            }
+            logs.append(log)
+
+        return logs
+
+    @classmethod
+    def get_logs_by_time_range(
+        cls, start_time: datetime, end_time: datetime
+    ) -> list[dict]:
+        start_ts = int(start_time.timestamp())
+        end_ts = int(end_time.timestamp())
+
+        with cls._connect() as con:
+            cur = con.execute(
+                "SELECT id, type, time, value, creator FROM log_unit WHERE time BETWEEN ? AND ? ORDER BY time ASC",
+                (start_ts, end_ts),
             )
             rows = cur.fetchall()
 
