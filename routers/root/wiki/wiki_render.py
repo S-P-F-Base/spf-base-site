@@ -17,6 +17,7 @@ from .extensions import (
     SmallTextExtension,
     StripCommentsExtension,
     TableImgExtension,
+    TocTreeExtension,
     WikiLinkExtension,
 )
 
@@ -63,7 +64,7 @@ def wiki_page(request: Request, page: Path):
             "tables",  # Markdown-таблицы
             TableImgExtension(),  # Поддержка картинок в таблицах
             "meta",  # Заголовки-мета в начале файла (например, автор, дата)
-            "toc",  # Автоматическое оглавление по заголовкам
+            TocTreeExtension(),  # Автоматическое оглавление по заголовкам
             "admonition",  # Поддержка блоков с предупреждениями, заметками и пр.
             "footnotes",  # Сноски
             "smarty",  # Типографические ковычки
