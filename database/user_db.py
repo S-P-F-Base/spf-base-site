@@ -127,7 +127,11 @@ class UserDB:
             )
             con.commit()
 
-        LogDB.add_log(LogType.UPDATE_USER, f"User access updated to {access}", creator)
+        LogDB.add_log(
+            LogType.UPDATE_USER,
+            f"User '{login}' access updated to {access}",
+            creator,
+        )
 
     @classmethod
     def delete_user(cls, login: str, creator: str) -> None:
