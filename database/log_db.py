@@ -152,3 +152,25 @@ class LogDB:
             logs.append(log)
 
         return logs
+
+    @classmethod
+    def get_logs_by_type(cls, log_type: LogType) -> list[dict]:
+        with cls._connect() as con:
+            cur = con.execute(
+                "SELECT id, type, time, value, creator FROM log_unit WHERE type = ? ORDER BY time ASC",
+                (log_type.value,),
+            )
+            rows = cur.fetchall()
+
+        logs = []
+        for row in rows:
+            log = {
+                "id": row[0],
+                "type": LogType(row[1]),
+                "time": datetime.fromtimestamp(row[2], tz=UTC),
+                "value": row[3],
+                "creator": row[4],
+            }
+            logs.append(log)
+
+        return logs

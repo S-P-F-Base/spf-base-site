@@ -8,7 +8,7 @@ from .pydantic_models import (
     LoginData,
     LogRangeData,
     LogTimeRangeData,
-    TargetUserData,
+    TargetUserData,LogTypeData
 )
 from .server_control import ServerControl
 from .user_db import UserAccess, UserDB

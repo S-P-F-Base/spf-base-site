@@ -19,5 +19,5 @@ def stop(request: Request):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
     ServerControl.perform_action("stop")
-    LogDB.add_log(LogType.GAME_SERVER_START, "The server has stopped", username)
+    LogDB.add_log(LogType.GAME_SERVER_STOP, "The server has stopped", username)
     return 200

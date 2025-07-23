@@ -7,6 +7,16 @@ class TargetUserData(BaseModel):
     target: str
 
 
+class LoginData(BaseModel):
+    username: str
+    password: str
+
+
+class AccessData(TargetUserData):
+    access: int
+
+
+# region LOGS DATA
 class LogRangeData(BaseModel):
     start_id: int
     end_id: int
@@ -17,10 +27,8 @@ class LogTimeRangeData(BaseModel):
     end_time: datetime
 
 
-class LoginData(BaseModel):
-    username: str
-    password: str
+class LogTypeData(BaseModel):
+    log_type: int
 
 
-class AccessData(TargetUserData):
-    access: int
+# endregion
