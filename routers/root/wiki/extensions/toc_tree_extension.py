@@ -66,9 +66,12 @@ class TocTreePreprocessor(Preprocessor):
         new_lines: list[str] = []
         for line in lines:
             if self.RE_TOC.match(line):
-                new_lines.append('<div class="foldertree"><pre>')
+                new_lines.append('<div class="foldertree">')
+                new_lines.append('<div class="toc-title">Оглавление</div>')
+                new_lines.append("<pre>")
                 new_lines.extend(tree_lines)
-                new_lines.append("</pre></div>")
+                new_lines.append("</pre>")
+                new_lines.append("</div>")
             else:
                 new_lines.append(line)
 
