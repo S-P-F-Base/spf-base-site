@@ -39,7 +39,7 @@ def download_by_os(os_name: str):
     file_path = None
 
     if os_name.lower() in _FILES_BUILDS:
-        file_path = Path("data/builds") / os_name.lower() / ".zip"
+        file_path = Path("data/builds") / f"{os_name.lower()}.zip"
 
     if file_path and file_path.exists():
         return FileResponse(
