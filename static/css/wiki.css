@@ -168,84 +168,14 @@
 }
 
 /*  Оглавление */
-.toc {
-    background: #111;
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 2rem;
-    width: 100%;
-    font-size: 0.95rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-/* Верхняя метка */
-.toc::before {
-    content: "Оглавление";
-    display: block;
-    font-weight: 700;
-    font-size: 1rem;
+.toc-title {
+    font-size: 1.25em;
+    font-weight: bold;
+    margin-bottom: 0.75em;
     color: orange;
-    margin-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 165, 0, 0.5);
+    padding-bottom: 0.25em;
     text-align: center;
-}
-
-/* Сброс отступов */
-.toc ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-/* Элемент списка */
-.toc li {
-    position: relative;
-    margin-bottom: 0.5rem;
-}
-
-/* Иконка‑буллет слева */
-.toc li::before {
-    content: "•";
-    position: absolute;
-    left: 0;
-    top: 0.1em;
-    color: orange;
-    font-size: 1.2em;
-    line-height: 1;
-}
-
-/* Отступ текста, чтобы не налезало на буллет */
-.toc a {
-    display: block;
-    margin-left: 1.2em;
-    padding: 0.2rem 0.4rem;
-    color: #ccc;
-    text-decoration: none;
-    border-radius: 4px;
-    transition: background 0.2s, color 0.2s;
-}
-
-/* Hover и активный раздел */
-.toc a:hover,
-.toc a:focus,
-.toc a.active {
-    background: rgba(255, 165, 0, 0.1);
-    color: white;
-}
-
-/* Вложенные списки чуть сжаты и подсвечены линией */
-.toc li ul {
-    margin-top: 0.3rem;
-    margin-left: 1.5rem;
-    border-left: 2px solid rgba(255, 165, 0, 0.3);
-    padding-left: 0.75rem;
-}
-
-/* Для вложенных пунктов делаем буллеты поменьше */
-.toc li ul li::before {
-    content: "–";
-    color: rgba(255, 165, 0, 0.7);
-    left: -0.3em;
-    font-size: 1em;
 }
 
 /* Общие стили для блока admonition */
