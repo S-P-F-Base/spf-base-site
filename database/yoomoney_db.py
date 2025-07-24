@@ -11,7 +11,7 @@ from .payment_datatype import PaymentData
 
 
 class YoomoneyDB:
-    _db_path = Path("data/payment.db")
+    _db_path = Path("data/yoomoney.db")
     _lock = Lock()
 
     @classmethod
