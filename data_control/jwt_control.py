@@ -4,7 +4,7 @@ from typing import Final, Literal
 from fastapi import HTTPException, Request, status
 from jose import ExpiredSignatureError, JWTError, jwt
 
-from data_bases import UserDB
+from data_bases.user_db import UserDB
 
 from .config import Config
 

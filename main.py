@@ -7,7 +7,8 @@ from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from data_control import AutoTax, Config, DonateDB, LogDB, ServerControl, UserDB, YoomoneyDB
+from data_bases import DonateDB, LogDB, UserDB, YoomoneyDB
+from data_control import AutoTax, Config, ServerControl
 from routers.api.auth import router as api_auth
 from routers.api.logs import router as api_logs
 from routers.api.server_control import router as api_server_control

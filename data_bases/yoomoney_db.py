@@ -3,7 +3,8 @@ from decimal import Decimal
 from typing import Literal
 from urllib.parse import urlencode
 
-from data_control import Config, PaymentData
+from data_control.config import Config
+from data_control.payment_datatype import PaymentData
 
 from .base_db import BaseDB
 

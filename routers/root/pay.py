@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from data_control import PaymentData, YoomoneyDB
+from data_bases import YoomoneyDB
+from data_control import PaymentData
 from templates import templates
 
 router = APIRouter()
