@@ -7,4 +7,3 @@ python-multipart
 jinja2
 markdown
 requests
-decimal
