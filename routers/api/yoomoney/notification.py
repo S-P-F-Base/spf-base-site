@@ -1,4 +1,5 @@
 import hashlib
+from decimal import Decimal
 
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
@@ -54,8 +55,8 @@ def yoomoney_notification(
     if payment is None:
         raise HTTPException(status_code=404, detail="Payment not found")
 
-    payment.received = float(amount)
-    payment.user_pay = float(withdraw_amount)
+    payment.received = Decimal(amount)
+    payment.user_pay = Decimal(withdraw_amount)
     payment.update_status()
 
     YoomoneyDB.set_payment(payment)

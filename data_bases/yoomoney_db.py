@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from typing import Literal
 from urllib.parse import urlencode
 
@@ -63,7 +64,7 @@ class YoomoneyDB(BaseDB):
     @classmethod
     def generate_yoomoney_payment_url(
         cls,
-        amount: float,
+        amount: Decimal,
         successURL: str,
         label: str,
         payment_type: Literal["PC", "AC"] = "AC",
@@ -72,7 +73,7 @@ class YoomoneyDB(BaseDB):
             "receiver": Config.yoomoney_account(),
             "quickpay-form": "button",
             "paymentType": payment_type,
-            "sum": amount,
+            "sum": str(amount),
             "label": label,
             "successURL": successURL,
         }
