@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 
-from database import JWTControl, req_refresh
+from data_control import JWTControl, req_refresh
 
 router = APIRouter()
 

@@ -1,32 +1,18 @@
-import sqlite3
 import uuid
-from contextlib import contextmanager
-from pathlib import Path
-from threading import Lock
 from typing import Literal
 from urllib.parse import urlencode
 
-from .config import Config
-from .payment_datatype import PaymentData
+from data_control import Config, PaymentData
+
+from .base_db import BaseDB
 
 
-class YoomoneyDB:
-    _db_path = Path("data/yoomoney.db")
-    _lock = Lock()
-
-    @classmethod
-    @contextmanager
-    def _connect(cls):
-        with cls._lock:
-            conn = sqlite3.connect(cls._db_path)
-            try:
-                yield conn
-            finally:
-                conn.close()
+class YoomoneyDB(BaseDB):
+    _db_name = "yoomoney"
 
     @classmethod
     def create_db_table(cls) -> None:
-        Path("data").mkdir(parents=True, exist_ok=True)
+        super().create_db_table()
 
         with cls._connect() as con:
             con.executescript("""

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
-from database import JWTControl, LoginData, UserDB
+from data_bases import UserDB
+from data_control import JWTControl, LoginData
 
 router = APIRouter()
 

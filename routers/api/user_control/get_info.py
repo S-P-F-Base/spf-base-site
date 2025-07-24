@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 
-from database import TargetUserData, UserAccess, UserDB, req_authorization
+from data_bases import UserAccess, UserDB
+from data_control import TargetUserData, req_authorization
 
 router = APIRouter()
 
@@ -11,9 +12,7 @@ def get_info(request: Request, data: TargetUserData):
 
     target = data.target
 
-    if not (
-        username == target or UserDB.has_access(username, UserAccess.READ_USER.value)
-    ):
+    if not (username == target or UserDB.has_access(username, UserAccess.READ_USER)):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
     access = UserDB.get_user_access(target)

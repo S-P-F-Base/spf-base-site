@@ -3,7 +3,8 @@ import hashlib
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 
-from database import Config, LogDB, LogType, UserDB, YoomoneyDB
+from data_bases import LogDB, LogType, UserDB, YoomoneyDB
+from data_control import Config
 
 router = APIRouter()
 

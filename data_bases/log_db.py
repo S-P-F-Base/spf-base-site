@@ -1,9 +1,7 @@
-import sqlite3
-from contextlib import contextmanager
 from datetime import UTC, datetime
 from enum import Enum
-from pathlib import Path
-from threading import Lock
+
+from .base_db import BaseDB
 
 
 class LogType(Enum):
@@ -23,23 +21,12 @@ class LogType(Enum):
     GAME_SERVER_STOP = 11
 
 
-class LogDB:
-    _db_path = Path("data/log.db")
-    _lock = Lock()
-
-    @classmethod
-    @contextmanager
-    def _connect(cls):
-        with cls._lock:
-            conn = sqlite3.connect(cls._db_path)
-            try:
-                yield conn
-            finally:
-                conn.close()
+class LogDB(BaseDB):
+    _db_name = "log"
 
     @classmethod
     def create_db_table(cls) -> None:
-        Path("data").mkdir(parents=True, exist_ok=True)
+        super().create_db_table()
 
         with cls._connect() as con:
             con.execute("""

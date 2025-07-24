@@ -2,7 +2,8 @@ import re
 
 from fastapi import APIRouter, HTTPException
 
-from database import JWTControl, LoginData, UserDB
+from data_bases import LogDB, LogType, UserDB
+from data_control import JWTControl, LoginData
 
 router = APIRouter()
 
@@ -23,11 +24,8 @@ def register(data: LoginData):
     if UserDB.user_exists(username):
         raise HTTPException(status_code=400, detail="User already exists")
 
-    UserDB.create_user(
-        username,
-        data.password,
-        UserDB.system_user,
-    )
+    UserDB.create_user(username, data.password)
+    LogDB.add_log(LogType.CREATE_USER, f"Created user {username}", UserDB.system_user)
 
     access_token = JWTControl.create_access(username)
     refresh_token = JWTControl.create_refresh(username)

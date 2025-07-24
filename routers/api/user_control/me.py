@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 
-from database import UserDB, req_authorization
+from data_bases import UserDB
+from data_control import req_authorization
 
 router = APIRouter()
 

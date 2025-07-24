@@ -7,7 +7,7 @@ from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from database import AutoTax, Config, LogDB, ServerControl, UserDB, YoomoneyDB
+from data_control import AutoTax, Config, DonateDB, LogDB, ServerControl, UserDB, YoomoneyDB
 from routers.api.auth import router as api_auth
 from routers.api.logs import router as api_logs
 from routers.api.server_control import router as api_server_control
@@ -29,6 +29,7 @@ async def lifespan(app: FastAPI):
         LogDB.create_db_table()
         UserDB.create_db_table()
         YoomoneyDB.create_db_table()
+        DonateDB.create_db_table()
         AutoTax.setup()
         ServerControl.setup()
 

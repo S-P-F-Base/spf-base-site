@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 
-from database import req_authorization
+from data_control import req_authorization
 
 router = APIRouter()
 

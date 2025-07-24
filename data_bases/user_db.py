@@ -1,17 +1,14 @@
-import sqlite3
-from contextlib import contextmanager
-from enum import Enum
-from pathlib import Path
-from threading import Lock
+from enum import IntFlag
+from sqlite3 import Connection
 from typing import Final
 
 import bcrypt
 
-from .log_db import LogDB, LogType
+from .base_db import BaseDB
 
 
 # НЕ ИСПОЛЬЗОВАТЬ БИТЫ ВЫШЕ 1 << 62!
-class UserAccess(Enum):
+class UserAccess(IntFlag):
     NO_ACCESS = 0
     ALL_ACCESS = 1 << 0
 
@@ -32,31 +29,13 @@ class UserAccess(Enum):
     CONTROL_LOGS = 1 << 11
 
 
-class UserDB:
+class UserDB(BaseDB):
+    _db_name = "user"
     system_user: Final[str] = "System"
-    _db_path = Path("data/user.db")
-    _lock = Lock()
-
-    @classmethod
-    @contextmanager
-    def _connect(cls):
-        with cls._lock:
-            conn = sqlite3.connect(cls._db_path)
-            try:
-                yield conn
-            finally:
-                conn.close()
-
-    @classmethod
-    def _has_user(cls, login: str, con: sqlite3.Connection) -> bool:
-        return (
-            con.execute("SELECT 1 FROM user_unit WHERE login = ?", (login,)).fetchone()
-            is not None
-        )
 
     @classmethod
     def create_db_table(cls) -> None:
-        Path("data").mkdir(parents=True, exist_ok=True)
+        super().create_db_table()
 
         with cls._connect() as con:
             con.execute("""
@@ -66,6 +45,14 @@ class UserDB:
                     access INTEGER NOT NULL
                 )
             """)
+            con.commit()
+
+    @classmethod
+    def _has_user(cls, login: str, con: Connection) -> bool:
+        return (
+            con.execute("SELECT 1 FROM user_unit WHERE login = ?", (login,)).fetchone()
+            is not None
+        )
 
     @classmethod
     def _hash_password(cls, password: str) -> bytes:
@@ -99,7 +86,7 @@ class UserDB:
         return (user_access & required_access) == required_access
 
     @classmethod
-    def create_user(cls, login: str, password: str, creator: str) -> None:
+    def create_user(cls, login: str, password: str) -> None:
         if len(password.encode()) > 72:
             raise ValueError("Password too long for bcrypt (max 72 bytes)")
 
@@ -110,14 +97,12 @@ class UserDB:
             hashed = cls._hash_password(password)
             con.execute(
                 "INSERT INTO user_unit (login, password, access) VALUES (?, ?, ?)",
-                (login, hashed, UserAccess.NO_ACCESS.value),
+                (login, hashed, UserAccess.NO_ACCESS),
             )
             con.commit()
 
-        LogDB.add_log(LogType.CREATE_USER, f"Created user {login}", creator)
-
     @classmethod
-    def set_user_access(cls, login: str, access: int, creator: str) -> None:
+    def set_user_access(cls, login: str, access: int) -> None:
         with cls._connect() as con:
             if not cls._has_user(login, con):
                 raise ValueError("User doesn't exist")
@@ -127,22 +112,14 @@ class UserDB:
             )
             con.commit()
 
-        LogDB.add_log(
-            LogType.UPDATE_USER,
-            f"User '{login}' access updated to {access}",
-            creator,
-        )
-
     @classmethod
-    def delete_user(cls, login: str, creator: str) -> None:
+    def delete_user(cls, login: str) -> None:
         with cls._connect() as con:
             if not cls._has_user(login, con):
                 raise ValueError("User doesn't exist")
 
             con.execute("DELETE FROM user_unit WHERE login = ?", (login,))
             con.commit()
-
-        LogDB.add_log(LogType.DELETE_USER, f"Deleted user {login}", creator)
 
     @classmethod
     def user_exists(cls, login: str) -> bool:
