@@ -6,5 +6,8 @@
     "contact_mail": "bryn25472547@gmail.com",
 
     "site_domain": "https://spf-base.ru/",
-    "site_name": "S.P.F. (Secure Protect Future)"
+    "site_name": "S.P.F. (Secure Protect Future)",
+
+    "server_ip": "82.202.197.109",
+    "server_port": "27315"
 }
