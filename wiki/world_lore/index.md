@@ -11,6 +11,6 @@ Date: 2025-07-10
 !btn[world_lore/The_First_Wiki|Первая Wiki]
 !btn[world_lore/The_Second_Wiki|Вторая Wiki]
 
-!img[/static/wiki/images/wiki_grom/wiki_choice.jpg]
+!img[/static/wiki/images/world_lore/world_lore/wiki_choice.jpg]
 
 !btn[/wiki|Вернуться на главную страницу]
