@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Literal
 
@@ -24,6 +25,7 @@ class Config:
             "TAX_AGENT",
             "TAX_AUTHORIZATION",
             "TAX_INN",
+            "OVERHOSTING_COOKIES",
         ]:
             cls._cache[key] = os.getenv(key, None)
 
@@ -96,6 +98,13 @@ class Config:
             cls.load()
 
         return cls._cache["TAX_INN"]
+
+    @classmethod
+    def OVERHOSTING_COOKIES(cls) -> dict:
+        if not cls._loaded:
+            cls.load()
+
+        return json.loads(cls._cache["OVERHOSTING_COOKIES"])
 
     # endregion
 

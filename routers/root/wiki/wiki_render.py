@@ -17,12 +17,13 @@ from .extensions import (
     SmallTextExtension,
     StripCommentsExtension,
     TableImgExtension,
+    TocTreeExtension,
     WikiLinkExtension,
 )
 
 router = APIRouter()
 
-BASE_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = Path(__file__).resolve().parents[3]
 WIKI_DIR = BASE_DIR / "wiki"
 CONSTANTS_PATH = WIKI_DIR / "constants.json"
 
@@ -39,9 +40,6 @@ def load_constants() -> dict[str, str]:
     except json.JSONDecodeError as e:
         logging.error(f"Invalid JSON in constants file: {e}")
         return {}
-
-
-CONSTANTS = load_constants()
 
 
 @router.get("/wiki/{page:path}", response_class=HTMLResponse)
@@ -66,13 +64,13 @@ def wiki_page(request: Request, page: Path):
             "tables",  # Markdown-таблицы
             TableImgExtension(),  # Поддержка картинок в таблицах
             "meta",  # Заголовки-мета в начале файла (например, автор, дата)
-            "toc",  # Автоматическое оглавление по заголовкам
+            TocTreeExtension(),  # Автоматическое оглавление по заголовкам
             "admonition",  # Поддержка блоков с предупреждениями, заметками и пр.
             "footnotes",  # Сноски
             "smarty",  # Типографические ковычки
             "nl2br",  # Превращает одиночные \n в <br />
             WikiLinkExtension(),  # Поддержка [[url|name]] для вики-стилей
-            ConstExtension(constants=CONSTANTS),  # Константы для замены
+            ConstExtension(constants=load_constants()),  # Константы для замены
             ImgBlockExtension(),  # Для блоков с картинками и текстом
             SingleImgExtension(),  # Макрос для картинок
             ButtonExtension(),  # Работа с кнопками и их оформлением

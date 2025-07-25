@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Request
 
-from database import JWTControl, req_refresh
+from data_control import JWTControl, req_refresh
 
 router = APIRouter()
 
 
-@router.post("/refresh")
+@router.get("/refresh")
 def refresh(request: Request):
     username = req_refresh(request)
 

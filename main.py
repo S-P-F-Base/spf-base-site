@@ -3,25 +3,18 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from database import AutoTax, Config, LogDB, UserDB, YoomoneyDB
-from routers.api.auth import api_auth_login, api_auth_refresh
-from routers.api.yoomoney import (
-    yoomoney_create_payment,
-    yoomoney_create_payment_url,
-    yoomoney_notification,
-)
-from routers.root import (
-    root_code,
-    root_discord,
-    root_download,
-    root_index,
-    root_pay,
-    root_robots,
-)
-from routers.wiki import root_wiki
+from data_bases import DonateDB, LogDB, UserDB, YoomoneyDB
+from data_control import AutoTax, Config, ServerControl
+from routers.api.auth import router as api_auth
+from routers.api.logs import router as api_logs
+from routers.api.server_control import router as api_server_control
+from routers.api.user_control import router as api_user_control
+from routers.api.yoomoney import router as api_yoomoney
+from routers.root import router as root
 from templates import templates
 
 ALLOWED_PATHS = {
@@ -37,7 +30,9 @@ async def lifespan(app: FastAPI):
         LogDB.create_db_table()
         UserDB.create_db_table()
         YoomoneyDB.create_db_table()
+        DonateDB.create_db_table()
         AutoTax.setup()
+        ServerControl.setup()
 
         yield
 
@@ -53,7 +48,7 @@ app = FastAPI(
 )
 
 
-if os.getenv("DEBUG") == "1":
+if os.getenv("FASTAPISTATIC") == "1":
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -110,21 +105,16 @@ def custom_http_exception_handler(request: Request, exc: StarletteHTTPException)
     return HTMLResponse(content=exc.detail, status_code=exc.status_code)
 
 
-# /
-app.include_router(root_code)
-app.include_router(root_discord)
-app.include_router(root_download)
-app.include_router(root_index)
-app.include_router(root_pay)
-app.include_router(root_robots)
-app.include_router(root_wiki)
+app.include_router(api_auth, prefix="/api/auth")
+app.include_router(api_logs, prefix="/api/logs")
+app.include_router(api_server_control, prefix="/api/server_control")
+app.include_router(api_user_control, prefix="/api/user_control")
+app.include_router(api_yoomoney, prefix="/api/yoomoney")
+app.include_router(root)
 
-# /api/auth
-app.include_router(api_auth_login, prefix="/api/auth")
-app.include_router(api_auth_refresh, prefix="/api/auth")
-
-
-# /api/yoomoney
-app.include_router(yoomoney_notification, prefix="/api/yoomoney")
-app.include_router(yoomoney_create_payment, prefix="/api/yoomoney")
-app.include_router(yoomoney_create_payment_url, prefix="/api/yoomoney")
+if os.getenv("DEBUG") == "1":
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            methods = ", ".join(route.methods)
+            path = route.path
+            print(f"{methods} -> {path}")

@@ -3,59 +3,44 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse
 
+from templates import templates
+
 router = APIRouter()
 
 
-_FILE_MAP = {
-    "windows": Path("data/windows.zip"),
-    # "mac": Path("data/mac.zip"),
-    "linux": Path("data/linux.zip"),
-}
-
-
-def detect_os(user_agent: str) -> str | None:
-    ua = user_agent.lower()
-    if "windows" in ua:
-        return "windows"
-    elif "macintosh" in ua or "mac os" in ua:
-        return "mac"
-    elif "linux" in ua:
-        return "linux"
-    return None
+_FILES_BUILDS = [
+    "linux-64bit",
+    "linux-32bit",
+    "linux-arm64",
+    "windows-64bit",
+    "windows-32bit",
+    "windows-arm64",
+]
 
 
 @router.get("/download")
 def download(request: Request):
-    user_agent = request.headers.get("user-agent", "")
-    os_name = detect_os(user_agent)
+    return templates.TemplateResponse("download.html", {"request": request})
 
-    if os_name is None:
-        html_content = """
-        <html>
-            <body>
-                <h2>Select your OS to download:</h2>
-                <button onclick="window.location.href='/download/windows'">Windows</button>
-                <!--<button onclick="window.location.href='/download/mac'">Mac</button>-->
-                <button onclick="window.location.href='/download/linux'">Linux</button>
-            </body>
-        </html>
-        """
-        return HTMLResponse(content=html_content)
 
-    file_path = _FILE_MAP.get(os_name)
-    if file_path and file_path.exists():
-        return FileResponse(
-            path=file_path,
-            filename=file_path.name,
-            media_type="application/octet-stream",
-        )
-    else:
-        return HTMLResponse("File not found for your OS", status_code=404)
+@router.get("/download/version")
+def get_current_version():
+    version_file = Path("data/builds/version")
+
+    if version_file.exists():
+        version = version_file.read_text(encoding="utf-8").strip()
+        return {"version": version}
+
+    return HTMLResponse("Version file not found", status_code=404)
 
 
 @router.get("/download/{os_name}")
 def download_by_os(os_name: str):
-    file_path = _FILE_MAP.get(os_name.lower())
+    file_path = None
+
+    if os_name.lower() in _FILES_BUILDS:
+        file_path = Path("data/builds") / f"{os_name.lower()}.zip"
+
     if file_path and file_path.exists():
         return FileResponse(
             path=file_path,
