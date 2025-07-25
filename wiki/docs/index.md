@@ -7,3 +7,5 @@ Date: 2025-07-18
 !btn[/wiki/docs/about|О проекте]
 !btn[/wiki/docs/cooperation|Сотрудничество и партнёрство]
 !btn[/wiki/docs/oferta|Публичная оферта]
+!btn[/wiki/docs/rules|Правила проекта]
+!btn[/wiki/docs/termins|Терминология и расшифровка]
