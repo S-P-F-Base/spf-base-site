@@ -30,6 +30,37 @@
             </main>
         </div>
     </div>
+
+    <script>
+        function highlightById(decodedId) {
+            const el = document.getElementById(decodedId);
+            if (!el) return;
+            el.classList.remove("anchor-highlight");
+            void el.offsetWidth;
+            el.classList.add("anchor-highlight");
+            setTimeout(() => el.classList.remove("anchor-highlight"), 1500);
+        }
+
+        function highlightAnchor() {
+            const rawHash = window.location.hash;
+            if (!rawHash) return;
+            const decoded = decodeURIComponent(rawHash.slice(1));
+            highlightById(decoded);
+        }
+
+        document.addEventListener("DOMContentLoaded", highlightAnchor);
+
+        window.addEventListener("hashchange", highlightAnchor);
+
+        document.querySelectorAll("a[href^='#']").forEach(anchor => {
+            anchor.addEventListener("click", (e) => {
+                const rawHref = anchor.getAttribute("href");
+                const decoded = decodeURIComponent(rawHref.slice(1));
+                setTimeout(() => highlightById(decoded), 0);
+            });
+        });
+    </script>
+
 </body>
 
 </html>
