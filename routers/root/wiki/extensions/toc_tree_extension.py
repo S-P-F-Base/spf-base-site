@@ -28,7 +28,24 @@ class TocTreePreprocessor(Preprocessor):
 
     def run(self, lines: list[str]) -> list[str]:
         headers: list[tuple[int, str, str]] = []
+        in_code_block = False
+        code_block_delim = None
+
         for line in lines:
+            m_code = re.match(r"^(```)", line)
+            if m_code:
+                delim = m_code.group(1)
+                if not in_code_block:
+                    in_code_block = True
+                    code_block_delim = delim
+                elif code_block_delim and line.startswith(code_block_delim):
+                    in_code_block = False
+                    code_block_delim = None
+                continue
+
+            if in_code_block:
+                continue
+
             m = self.RE_HEADER.match(line)
             if m:
                 level = len(m.group(1))
