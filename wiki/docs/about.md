@@ -25,4 +25,4 @@ Date: 2025-07-14
 
 Историю мира и организации можно изучить в [Wiki](/wiki/world_lore).
 Подключиться к Discord серверу [можно тут](/discord).
-Подключение к серверу Garrys mod осуществляется через ссылку [ссылка автозаход на сервер](steam://connect/!const[server_ip]:!const[server_port]), или введением команды в консоль игры `connect !const[server_ip]:!const[server_port]`.
+Подключение к серверу Garrys mod осуществляется через ссылку [ссылка автозаход на сервер](steam://run/4000//+connect !const[server_ip]:!const[server_port]), или введением команды в консоль игры `connect !const[server_ip]:!const[server_port]`.
