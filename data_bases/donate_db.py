@@ -20,12 +20,12 @@ class DonateDB(BaseDB):
 
         with cls._connect() as con:
             con.executescript("""
-                CREATE TABLE services (
-                id TEXT PRIMARY KEY,
-                price TEXT,
-                discount INTEGER,
-                meta BLOB,
-                status INTEGER NOT NULL
+                CREATE TABLE IF NOT EXISTS services (
+                    id TEXT PRIMARY KEY,
+                    price TEXT,
+                    discount INTEGER,
+                    meta BLOB,
+                    status INTEGER NOT NULL
                 );
             """)
             con.commit()
