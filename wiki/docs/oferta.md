@@ -1,6 +1,6 @@
 Title: Оферта
 Author: Cain, vergrey
-Date: 2025-07-18
+Date: 2025-07-25
 
 [TOC]
 
