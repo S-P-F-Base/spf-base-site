@@ -26,6 +26,7 @@ class Config:
             "TAX_AUTHORIZATION",
             "TAX_INN",
             "OVERHOSTING_COOKIES",
+            "RESEND_API",
         ]:
             cls._cache[key] = os.getenv(key, None)
 
@@ -100,11 +101,18 @@ class Config:
         return cls._cache["TAX_INN"]
 
     @classmethod
-    def OVERHOSTING_COOKIES(cls) -> dict:
+    def overhosting_cookies(cls) -> dict:
         if not cls._loaded:
             cls.load()
 
         return json.loads(cls._cache["OVERHOSTING_COOKIES"])
+
+    @classmethod
+    def resend_api(cls) -> dict:
+        if not cls._loaded:
+            cls.load
+
+        return cls._cache["RESEND_API"]
 
     # endregion
 

@@ -67,6 +67,7 @@ class LogDB(BaseDB):
             row = cur.fetchone()
             if row:
                 return row[0], row[1]
+
             return None, None
 
     @classmethod
@@ -78,18 +79,16 @@ class LogDB(BaseDB):
             )
             rows = cur.fetchall()
 
-        logs = []
-        for row in rows:
-            log = {
+        return [
+            {
                 "id": row[0],
                 "type": LogType(row[1]),
                 "time": datetime.fromtimestamp(row[2], tz=UTC),
                 "value": row[3],
                 "creator": row[4],
             }
-            logs.append(log)
-
-        return logs
+            for row in rows
+        ]
 
     @classmethod
     def get_logs_by_creator(cls, creator: str) -> list[dict]:
@@ -100,18 +99,16 @@ class LogDB(BaseDB):
             )
             rows = cur.fetchall()
 
-        logs = []
-        for row in rows:
-            log = {
+        return [
+            {
                 "id": row[0],
                 "type": LogType(row[1]),
                 "time": datetime.fromtimestamp(row[2], tz=UTC),
                 "value": row[3],
                 "creator": row[4],
             }
-            logs.append(log)
-
-        return logs
+            for row in rows
+        ]
 
     @classmethod
     def get_logs_by_time_range(
@@ -127,18 +124,16 @@ class LogDB(BaseDB):
             )
             rows = cur.fetchall()
 
-        logs = []
-        for row in rows:
-            log = {
+        return [
+            {
                 "id": row[0],
                 "type": LogType(row[1]),
                 "time": datetime.fromtimestamp(row[2], tz=UTC),
                 "value": row[3],
                 "creator": row[4],
             }
-            logs.append(log)
-
-        return logs
+            for row in rows
+        ]
 
     @classmethod
     def get_logs_by_type(cls, log_type: LogType) -> list[dict]:
@@ -149,15 +144,13 @@ class LogDB(BaseDB):
             )
             rows = cur.fetchall()
 
-        logs = []
-        for row in rows:
-            log = {
+        return [
+            {
                 "id": row[0],
                 "type": LogType(row[1]),
                 "time": datetime.fromtimestamp(row[2], tz=UTC),
                 "value": row[3],
                 "creator": row[4],
             }
-            logs.append(log)
-
-        return logs
+            for row in rows
+        ]

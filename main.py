@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from data_bases import DonateDB, LogDB, UserDB, YoomoneyDB
-from data_control import AutoTax, Config, ServerControl
+from data_control import AutoTax, Config, MailControl, ServerControl
 from routers.api.auth import router as api_auth
 from routers.api.logs import router as api_logs
 from routers.api.server_control import router as api_server_control
@@ -33,6 +33,7 @@ async def lifespan(app: FastAPI):
         DonateDB.create_db_table()
         AutoTax.setup()
         ServerControl.setup()
+        MailControl.setup()
 
         yield
 

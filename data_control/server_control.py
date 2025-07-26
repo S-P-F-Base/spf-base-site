@@ -57,7 +57,7 @@ class ServerControl:
 
     @classmethod
     def setup(cls) -> None:
-        cls._session.cookies.update(Config.OVERHOSTING_COOKIES())
+        cls._session.cookies.update(Config.overhosting_cookies())
         cls._load_cache()
 
     @classmethod
