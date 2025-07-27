@@ -1,17 +1,27 @@
-/* Расширяем плитку под контент вики */
+/* Расширенная вики-плитка */
 .page-background .content-tile {
-    max-width: 800px;
     margin: 5vh auto 2rem;
+    max-width: 800px;
     padding: 2.5rem 3rem;
 }
 
-/* Стили для Markdown-контента */
+/* Блок Markdown-контента */
 .markdown-body {
-    width: 100%;
-    margin: 0;
     color: white;
-    line-height: 1.7;
     font-size: 1rem;
+    line-height: 1.7;
+    margin: 0;
+    width: 100%;
+}
+
+/* Заголовки в Markdown */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
+    color: orange;
 }
 
 /* Абзацы */
@@ -19,53 +29,43 @@
     margin-bottom: 1rem;
 }
 
-/* Ссылки */
+/* Списки */
+.markdown-body ol,
+.markdown-body ul {
+    margin: 1rem 0 1rem 1.5rem;
+}
+
+/* Ссылки в списках */
 .links-list a {
-    display: block;
-    padding: 12px 20px;
     background: #222;
     border: 2px solid orange;
     border-radius: 6px;
     color: orange;
+    display: block;
     font-weight: 600;
+    padding: 12px 20px;
     text-decoration: none;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.links-list a:hover,
-.links-list a:focus {
+.links-list a:focus,
+.links-list a:hover {
     background-color: orange;
     color: black;
     outline: none;
 }
 
-/* Заголовки */
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3 {
-    color: orange;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
-    line-height: 1.2;
-}
-
-/* Списки */
-.markdown-body ul,
-.markdown-body ol {
-    margin: 1rem 0 1rem 1.5rem;
-}
-
 /* Таблицы */
 .markdown-body table {
-    width: 100%;
+    background: #222;
     border-collapse: collapse;
     margin-bottom: 1.5rem;
-    background: #222;
     table-layout: fixed;
+    width: 100%;
 }
 
-.markdown-body th,
-.markdown-body td {
+.markdown-body td,
+.markdown-body th {
     border: 1px solid #444;
     padding: 0.5rem;
     word-break: break-word;
@@ -79,76 +79,85 @@
     height: auto;
 }
 
-/* Блоки кода */
+/* Кодовые блоки */
 .markdown-body pre {
     background: #1a1a1a;
-    padding: 1rem 1.25rem;
+    border: 1px solid #333;
     border-radius: 8px;
-    overflow: auto;
-    margin-bottom: 1.5rem;
     font-family: "Fira Code", "Courier New", monospace;
     font-size: 0.95rem;
-    border: 1px solid #333;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
     overflow-wrap: anywhere;
     overflow-x: hidden;
+    padding: 1rem 1.25rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .markdown-body pre code {
     background: none;
-    padding: 0;
     border-radius: 0;
-    font-family: inherit;
     color: inherit;
+    font-family: inherit;
+    padding: 0;
 }
 
 .markdown-body code {
     background: #333;
-    color: #ffa500;
-    padding: 0.15rem 0.4rem;
     border-radius: 4px;
-    font-size: 0.95em;
+    color: #ffa500;
     font-family: "Fira Code", "Courier New", monospace;
+    font-size: 0.95em;
+    padding: 0.15rem 0.4rem;
 }
 
-.markdown-body p code,
-.markdown-body li code {
+.markdown-body li code,
+.markdown-body p code {
     background: #2a2a2a;
     color: #ffb84d;
 }
 
-/* Изображения внутри Markdown */
+/* Изображения в тексте */
 .markdown-body .img-side {
-    display: flex;
-    align-items: flex-start;
-    margin: 1rem 0;
-    gap: 1rem;
-    max-width: 100%;
     box-sizing: border-box;
+    display: flex;
     flex-wrap: nowrap;
-    overflow: hidden;
+    gap: 1rem;
+    margin: 1rem 0;
+    max-width: 100%;
     min-width: 0;
+    overflow: hidden;
+}
+
+.markdown-body .img-side img {
+    border-radius: 4px;
+    display: block;
+    flex-shrink: 0;
+    height: auto;
 }
 
 .markdown-body .img-side.left {
     flex-direction: row;
 }
 
+.markdown-body .img-side.middle {
+    align-items: center;
+    flex-direction: column;
+}
+
+.markdown-body .img-side.middle .content {
+    align-self: stretch;
+    order: 0;
+}
+
+.markdown-body .img-side.middle img {
+    align-self: center;
+    order: 1;
+}
+
 .markdown-body .img-side.right {
     flex-direction: row-reverse;
-}
-
-.markdown-body .img-side.middle {
-    flex-direction: column;
-    align-items: center;
-}
-
-.markdown-body .img-side img {
-    border-radius: 4px;
-    height: auto;
-    flex-shrink: 0;
-    display: block;
 }
 
 .markdown-body .img-side .content {
@@ -157,74 +166,59 @@
     overflow-wrap: anywhere;
 }
 
-.markdown-body .img-side.middle img {
-    order: 1;
-    align-self: center;
-}
-
-.markdown-body .img-side.middle .content {
-    order: 0;
-    align-self: stretch;
-}
-
-/*  Оглавление */
+/* Оглавление */
 .toc-title {
+    border-bottom: 1px solid rgba(255, 165, 0, 0.5);
+    color: orange;
     font-size: 1.25em;
     font-weight: bold;
     margin-bottom: 0.75em;
-    color: orange;
-    border-bottom: 1px solid rgba(255, 165, 0, 0.5);
     padding-bottom: 0.25em;
     text-align: center;
 }
 
-/* Общие стили для блока admonition */
+/* Admonition */
 .admonition {
-    padding: 1rem 1.2rem;
-    border-radius: 8px;
-    margin: 1rem 0;
     color: #fff;
+    margin: 1rem 0;
+    padding: 1rem 1.2rem;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
 }
 
-/* Заголовок внутри admonition */
 .admonition-title {
     font-weight: 700;
     margin-bottom: 0.5rem;
 }
 
-.admonition.orange {
-    background: rgba(255, 165, 0, 0.25);
-    border-left: 4px solid orange;
-    color: #ffffff;
-}
-
-.admonition.red {
-    background: rgba(255, 0, 0, 0.3);
-    border-left: 4px solid #e60000;
-    color: #fff;
+.admonition.blue {
+    background: rgba(0, 0, 255, 0.2);
+    border-left: 4px solid #0000ff;
 }
 
 .admonition.green {
     background: rgba(0, 128, 0, 0.3);
     border-left: 4px solid #008000;
-    color: #fff;
 }
 
-.admonition.blue {
-    background: rgba(0, 0, 255, 0.2);
-    border-left: 4px solid #0000ff;
-    color: #fff;
+.admonition.orange {
+    background: rgba(255, 165, 0, 0.25);
+    border-left: 4px solid orange;
+}
+
+.admonition.red {
+    background: rgba(255, 0, 0, 0.3);
+    border-left: 4px solid #e60000;
 }
 
 /* Мелкий текст */
 .small {
-    font-size: 0.8em;
     color: #666;
+    font-size: 0.8em;
     margin-bottom: 10px;
 }
 
-/* Анимация подсветки якорного заголовка */
+/* Подсветка якоря */
 .anchor-highlight {
     animation: anchorHighlight 2s ease;
     border-radius: 0.5rem;

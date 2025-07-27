@@ -7,13 +7,13 @@ class TargetUserData(BaseModel):
     target: str
 
 
+class AccessData(TargetUserData):
+    access: int
+
+
 class LoginData(BaseModel):
     username: str
     password: str
-
-
-class AccessData(TargetUserData):
-    access: int
 
 
 # region LOGS DATA

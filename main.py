@@ -7,9 +7,10 @@ from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from data_bases import DonateDB, LogDB, UserDB, YoomoneyDB
+from data_bases import LogDB, PaymentDB, UserDB
 from data_control import AutoTax, Config, MailControl, ServerControl
 from routers.api.auth import router as api_auth
+from routers.api.donate_control import router as api_donate_control
 from routers.api.logs import router as api_logs
 from routers.api.server_control import router as api_server_control
 from routers.api.user_control import router as api_user_control
@@ -29,8 +30,7 @@ async def lifespan(app: FastAPI):
         Config.load()
         LogDB.create_db_table()
         UserDB.create_db_table()
-        YoomoneyDB.create_db_table()
-        DonateDB.create_db_table()
+        PaymentDB.create_db_table()
         AutoTax.setup()
         ServerControl.setup()
         MailControl.setup()
@@ -107,6 +107,7 @@ def custom_http_exception_handler(request: Request, exc: StarletteHTTPException)
 
 
 app.include_router(api_auth, prefix="/api/auth")
+app.include_router(api_donate_control, prefix="/api/donate_control")
 app.include_router(api_logs, prefix="/api/logs")
 app.include_router(api_server_control, prefix="/api/server_control")
 app.include_router(api_user_control, prefix="/api/user_control")
