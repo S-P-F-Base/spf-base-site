@@ -14,6 +14,7 @@ from routers.api.donate_control import router as api_donate_control
 from routers.api.logs import router as api_logs
 from routers.api.server_control import router as api_server_control
 from routers.api.user_control import router as api_user_control
+from routers.api.websocket import router as api_websocket
 from routers.api.yoomoney import router as api_yoomoney
 from routers.root import router as root
 from templates import templates
@@ -111,6 +112,7 @@ app.include_router(api_donate_control, prefix="/api/donate_control")
 app.include_router(api_logs, prefix="/api/logs")
 app.include_router(api_server_control, prefix="/api/server_control")
 app.include_router(api_user_control, prefix="/api/user_control")
+app.include_router(api_websocket, prefix="/api/websocket")
 app.include_router(api_yoomoney, prefix="/api/yoomoney")
 app.include_router(root)
 

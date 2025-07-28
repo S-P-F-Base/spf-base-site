@@ -1,9 +1,10 @@
 bcrypt
 fastapi
-uvicorn
+jinja2
+markdown
 python-dotenv
 python-jose[cryptography]
 python-multipart
-jinja2
-markdown
 requests
+uvicorn
+websockets
