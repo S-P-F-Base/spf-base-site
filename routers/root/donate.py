@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 
-from data_bases import DonateDB, DonateStatus
+from data_bases import PaymentDB, ServiceStatus
 from templates import templates
 
 router = APIRouter()
@@ -8,7 +8,9 @@ router = APIRouter()
 
 @router.get("/donate")
 def donate(request: Request):
-    donate_variants = DonateDB.get_donates(DonateStatus.NO_STOCK | DonateStatus.ACTIVE)
+    donate_variants = PaymentDB.services.get_by_status(
+        ServiceStatus.NO_STOCK | ServiceStatus.ACTIVE
+    )
 
     active_list = []
     no_stock_list = []
@@ -16,11 +18,11 @@ def donate(request: Request):
     for entry in donate_variants:
         entry["meta"].recalculate_discount()
 
-        if entry["status"] & DonateStatus.NO_STOCK:
+        if entry["status"] & ServiceStatus.NO_STOCK:
             no_stock_list.append(entry)
             continue
 
-        if entry["status"] & DonateStatus.ACTIVE:
+        if entry["status"] & ServiceStatus.ACTIVE:
             active_list.append(entry)
 
     return templates.TemplateResponse(

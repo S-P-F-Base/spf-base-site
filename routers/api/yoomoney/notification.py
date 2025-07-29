@@ -4,7 +4,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 
-from data_bases import LogDB, LogType, UserDB, YoomoneyDB
+from data_bases import LogDB, LogType, PaymentDB
 from data_control import Config
 
 router = APIRouter()
@@ -47,11 +47,12 @@ def yoomoney_notification(
         )
 
     try:
-        payment_id = int(label)
+        payment_id = label
+
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid label format")
 
-    payment = YoomoneyDB.get_payment(payment_id)
+    payment = PaymentDB.payments.get_by_u_id(payment_id)
     if payment is None:
         raise HTTPException(status_code=404, detail="Payment not found")
 
@@ -59,11 +60,12 @@ def yoomoney_notification(
     payment.user_pay = Decimal(withdraw_amount)
     payment.update_status()
 
-    YoomoneyDB.set_payment(payment)
+    PaymentDB.payments.edit(payment_id, payment)
 
     LogDB.add_log(
         LogType.PAY_RESIVE,
         f"Confirmation of payment: {payment_id}",
-        UserDB.system_user,
+        "Yoomoney notification",
     )
-    return "OK"
+
+    return 200

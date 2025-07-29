@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -7,12 +8,16 @@ from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from data_bases import DonateDB, LogDB, UserDB, YoomoneyDB
+from data_bases import LogDB, PaymentDB, UserDB
 from data_control import AutoTax, Config, MailControl, ServerControl
 from routers.api.auth import router as api_auth
+from routers.api.donate_control import router as api_donate_control
 from routers.api.logs import router as api_logs
+from routers.api.player_control import router as api_player_control
 from routers.api.server_control import router as api_server_control
+from routers.api.site_control import router as api_site_control
 from routers.api.user_control import router as api_user_control
+from routers.api.websocket import router as api_websocket
 from routers.api.yoomoney import router as api_yoomoney
 from routers.root import router as root
 from templates import templates
@@ -29,11 +34,12 @@ async def lifespan(app: FastAPI):
         Config.load()
         LogDB.create_db_table()
         UserDB.create_db_table()
-        YoomoneyDB.create_db_table()
-        DonateDB.create_db_table()
+        PaymentDB.create_db_table()
         AutoTax.setup()
         ServerControl.setup()
         MailControl.setup()
+
+        asyncio.create_task(ServerControl.server_status_updater())
 
         yield
 
@@ -68,6 +74,13 @@ async def user_agent_blocker(request: Request, call_next):
 # Error Code
 @app.exception_handler(StarletteHTTPException)
 def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    accept = request.headers.get("accept", "")
+    if "application/json" in accept:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
+
     if exc.status_code == 403:
         return templates.TemplateResponse(
             "error_code/403.html",
@@ -107,9 +120,13 @@ def custom_http_exception_handler(request: Request, exc: StarletteHTTPException)
 
 
 app.include_router(api_auth, prefix="/api/auth")
+app.include_router(api_donate_control, prefix="/api/donate_control")
 app.include_router(api_logs, prefix="/api/logs")
+app.include_router(api_player_control, prefix="/api/player_control")
 app.include_router(api_server_control, prefix="/api/server_control")
+app.include_router(api_site_control, prefix="/api/site_control")
 app.include_router(api_user_control, prefix="/api/user_control")
+app.include_router(api_websocket, prefix="/api/websocket")
 app.include_router(api_yoomoney, prefix="/api/yoomoney")
 app.include_router(root)
 

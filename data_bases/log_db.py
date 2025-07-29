@@ -8,9 +8,9 @@ class LogType(Enum):
     LOGIN = 1
     LOGOUT = 2
 
-    CREATE_USER = 3
-    DELETE_USER = 4
-    UPDATE_USER = 5
+    USER_CREATE = 3
+    USER_DELETE = 4
+    USER_UPDATE = 5
 
     PAY_CREATE = 6
     PAY_UPDATE = 7
@@ -19,6 +19,10 @@ class LogType(Enum):
 
     GAME_SERVER_START = 10
     GAME_SERVER_STOP = 11
+
+    PLAYER_CREATED = 12
+    PLAYER_UPDATE = 13
+    PLAYER_DELETE = 14
 
 
 class LogDB(BaseDB):

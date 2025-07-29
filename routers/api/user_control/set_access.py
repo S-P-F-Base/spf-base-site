@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from data_bases import LogDB, LogType, UserAccess, UserDB
-from data_control import AccessData, req_authorization
+from data_control import AccessAPIData, req_authorization
 
 router = APIRouter()
 
 
 @router.post("/set_access")
-def set_access(request: Request, data: AccessData):
+def set_access(request: Request, data: AccessAPIData):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.CONTROL_USER):
         raise HTTPException(status_code=403, detail="Insufficient access")
@@ -20,10 +20,10 @@ def set_access(request: Request, data: AccessData):
 
     try:
         UserDB.set_user_access(target, access)
-
         LogDB.add_log(
-            LogType.UPDATE_USER, f"User '{target}' access updated to {access}", username
+            LogType.USER_UPDATE, f"User '{target}' access updated to {access}", username
         )
+
     except ValueError:
         raise HTTPException(status_code=404, detail="User not found")
 

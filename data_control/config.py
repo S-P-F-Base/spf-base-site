@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Literal
+from typing import Any, Literal
 
 from dotenv import load_dotenv
 
@@ -27,6 +27,7 @@ class Config:
             "TAX_INN",
             "OVERHOSTING_COOKIES",
             "RESEND_API",
+            "STEAM_API",
         ]:
             cls._cache[key] = os.getenv(key, None)
 
@@ -38,81 +39,59 @@ class Config:
 
     # region env
     @classmethod
-    def yoomoney_client_id(cls) -> str:
+    def _base_get_env(cls, key: str) -> Any:
         if not cls._loaded:
             cls.load()
 
-        return cls._cache["YOOMONEY_CLIENT_ID"]
+        return cls._cache[key]
+
+    @classmethod
+    def yoomoney_client_id(cls) -> str:
+        return cls._base_get_env("YOOMONEY_CLIENT_ID")
 
     @classmethod
     def yoomoney_client_secret(cls) -> str:
-        if not cls._loaded:
-            cls.load()
-
-        return cls._cache["YOOMONEY_CLIENT_SECRET"]
+        return cls._base_get_env("YOOMONEY_CLIENT_SECRET")
 
     @classmethod
     def yoomoney_account(cls) -> str:
-        if not cls._loaded:
-            cls.load()
-
-        return cls._cache["YOOMONEY_ACCOUNT"]
+        return cls._base_get_env("YOOMONEY_ACCOUNT")
 
     @classmethod
     def yoomoney_notification(cls) -> str:
-        if not cls._loaded:
-            cls.load()
-
-        return cls._cache["YOOMONEY_NOTIFICATION"]
+        return cls._base_get_env("YOOMONEY_NOTIFICATION")
 
     @classmethod
     def bot_token(cls) -> str:
-        if not cls._loaded:
-            cls.load()
-
-        return cls._cache["BOT_TOKEN"]
+        return cls._base_get_env("BOT_TOKEN")
 
     @classmethod
     def jwt_key(cls) -> str:
-        if not cls._loaded:
-            cls.load()
-
-        return cls._cache["JWT_KEY"]
+        return cls._base_get_env("JWT_KEY")
 
     @classmethod
     def tax_agent(cls) -> str:
-        if not cls._loaded:
-            cls.load()
-
-        return cls._cache["TAX_AGENT"]
+        return cls._base_get_env("TAX_AGENT")
 
     @classmethod
     def tax_authorization(cls) -> str:
-        if not cls._loaded:
-            cls.load()
-
-        return cls._cache["TAX_AUTHORIZATION"]
+        return cls._base_get_env("TAX_AUTHORIZATION")
 
     @classmethod
     def tax_inn(cls) -> str:
-        if not cls._loaded:
-            cls.load()
-
-        return cls._cache["TAX_INN"]
+        return cls._base_get_env("TAX_INN")
 
     @classmethod
     def overhosting_cookies(cls) -> dict:
-        if not cls._loaded:
-            cls.load()
-
-        return json.loads(cls._cache["OVERHOSTING_COOKIES"])
+        return json.loads(cls._base_get_env("OVERHOSTING_COOKIES"))
 
     @classmethod
-    def resend_api(cls) -> dict:
-        if not cls._loaded:
-            cls.load
+    def resend_api(cls) -> str:
+        return cls._base_get_env("RESEND_API")
 
-        return cls._cache["RESEND_API"]
+    @classmethod
+    def steam_api(cls) -> str:
+        return cls._base_get_env("STEAM_API")
 
     # endregion
 

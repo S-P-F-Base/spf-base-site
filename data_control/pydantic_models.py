@@ -3,31 +3,36 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class TargetUserData(BaseModel):
+class TargetUserAPIData(BaseModel):
     target: str
 
 
-class LoginData(BaseModel):
+class AccessAPIData(TargetUserAPIData):
+    access: int
+
+
+class LoginAPIData(BaseModel):
     username: str
     password: str
 
 
-class AccessData(TargetUserData):
-    access: int
+class PlayerAPIData(BaseModel):
+    discord_name: str
+    steam_url: str
 
 
 # region LOGS DATA
-class LogRangeData(BaseModel):
+class LogRangeAPIData(BaseModel):
     start_id: int
     end_id: int
 
 
-class LogTimeRangeData(BaseModel):
+class LogTimeRangeAPIData(BaseModel):
     start_time: datetime
     end_time: datetime
 
 
-class LogTypeData(BaseModel):
+class LogTypeAPIData(BaseModel):
     log_type: int
 
 

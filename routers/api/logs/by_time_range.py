@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from data_bases import LogDB, UserAccess, UserDB
-from data_control import LogTimeRangeData, req_authorization
+from data_control import LogTimeRangeAPIData, req_authorization
 
 router = APIRouter()
 
 
 @router.post("/by_time_range")
-def by_time_range(request: Request, data: LogTimeRangeData):
+def by_time_range(request: Request, data: LogTimeRangeAPIData):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.READ_LOGS):
         raise HTTPException(status_code=403, detail="Insufficient access")
