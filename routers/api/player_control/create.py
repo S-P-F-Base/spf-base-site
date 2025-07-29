@@ -90,7 +90,7 @@ def create(request: Request, data: PlayerAPIData):
     except requests.RequestException as e:
         raise HTTPException(status_code=502, detail="Error contacting Discord API")
     # endregion
-
+    # TODO: Создание игрока в БД
     return {
         "steamid64": steamid64,
         "discord_id": discord_data,

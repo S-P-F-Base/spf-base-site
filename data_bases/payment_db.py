@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum, IntFlag
-from typing import Literal
+from typing import Any, Literal
 from urllib.parse import urlencode
 
 from data_control.config import Config
@@ -413,7 +413,9 @@ class PaymentDB(BaseDB):
             return cur.rowcount > 0
 
         @classmethod
-        def get_by_u_id(cls, u_id: str) -> dict | None:
+        def get_by_u_id(
+            cls, u_id: str
+        ) -> dict[str, str | ServiceMeta | ServiceStatus] | None:
             with PaymentDB._connect() as con:
                 cur = con.execute("SELECT * FROM services WHERE uuid = ?", (u_id,))
                 row = cur.fetchone()
