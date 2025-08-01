@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>S.P.F. Base</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta property="og:title" content="S.P.F. Base" />
+    <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
+    <meta property="og:image" content="https://spf-base.ru/static/images/logo/site.jpg" />
+    <meta property="og:url" content="https://spf-base.ru/" />
+    <meta property="og:type" content="website" />
+
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="{{ 'main.css' | ver }}" />
+    <link rel="stylesheet" href="{{ 'dashboard.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        <div class="content-tile">
+            <h2>Добро пожаловать!</h2>
+
+            <div class="info-row">
+                <div class="row-header">
+                    <img src="/static/images/logo/discord.png" alt="Discord" class="icon" />
+                    <strong>Discord:</strong>
+                    {% if player.discord_id %}
+                    <span class="status-ok">привязан</span>
+                    {% else %}
+                    <span class="status-warning">не привязан</span>
+                    {% endif %}
+                </div>
+
+                {% if not player.discord_id %}
+                <nav class="links-list">
+                    <a href="/api/discord/login">Привязать Discord</a>
+                </nav>
+                {% endif %}
+            </div>
+
+            <div class="info-row">
+                <div class="row-header">
+                    <img src="/static/images/logo/steam.png" alt="Steam" class="icon" />
+                    <strong>Steam:</strong>
+                    {% if player.steam_id %}
+                    <span class="status-ok">привязан</span>
+                    {% else %}
+                    <span class="status-warning">не привязан</span>
+                    {% endif %}
+                </div>
+
+                {% if not player.steam_id %}
+                <nav class="links-list">
+                    <a href="/api/steam/login">Привязать Steam</a>
+                </nav>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</body>
+
+</html>

@@ -7,6 +7,7 @@ from .jwt_control import (
     req_refresh,
 )
 from .mail_control import MailControl
+from .player_jwt import PlayerSession
 from .pydantic_models import (
     AccessAPIData,
     LoginAPIData,

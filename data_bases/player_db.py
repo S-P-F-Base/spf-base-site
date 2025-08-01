@@ -1,5 +1,5 @@
 import pickle
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .base_db import BaseDB
 
@@ -9,7 +9,7 @@ class PlayerData:
     discord_id: str
     discord_name: str
     steam_id: str
-    payments_uuid: list[str]
+    payments_uuid: list[str] = field(default_factory=list)
 
 
 class PlayerDB(BaseDB):
@@ -41,6 +41,20 @@ class PlayerDB(BaseDB):
             )
             con.commit()
             return cur.lastrowid
+
+    @classmethod
+    def update_player(cls, u_id: int, data: PlayerData) -> None:
+        blob = pickle.dumps(data.payments_uuid)
+        with cls._connect() as con:
+            con.execute(
+                """
+                UPDATE player_unit 
+                SET discord_id = ?, discord_name = ?, steam_id = ?, payments_uuid = ?
+                WHERE id = ?
+                """,
+                (data.discord_id, data.discord_name, data.steam_id, blob, u_id),
+            )
+            con.commit()
 
     @classmethod
     def remove_player(cls, u_id: int) -> None:

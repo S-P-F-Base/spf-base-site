@@ -1,0 +1,8 @@
+.error-reason {
+    margin: 1em 0;
+    padding: 1em;
+    background: rgba(255, 50, 50, 0.1);
+    border-left: 4px solid #ff4040;
+    color: #ffaaaa;
+    font-weight: bold;
+}

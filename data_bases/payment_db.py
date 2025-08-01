@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum, IntFlag
-from typing import Any, Literal
+from typing import Literal
 from urllib.parse import urlencode
 
 from data_control.config import Config

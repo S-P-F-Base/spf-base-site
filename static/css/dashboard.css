@@ -1,0 +1,27 @@
+.row-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.info-row {
+    margin-bottom: 1.5rem;
+}
+
+.status-ok {
+    color: #8f8;
+    font-weight: bold;
+}
+
+.status-warning {
+    color: orange;
+    font-weight: bold;
+}

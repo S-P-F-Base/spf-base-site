@@ -3,7 +3,7 @@ import re
 import requests
 from fastapi import APIRouter, HTTPException, Request
 
-from data_bases import LogDB, LogType, UserAccess, UserDB
+from data_bases import LogDB, LogType, PlayerData, PlayerDB, UserAccess, UserDB
 from data_control import Config, PlayerAPIData, req_authorization
 
 router = APIRouter()
@@ -12,13 +12,10 @@ router = APIRouter()
 # region discord
 def get_discord_id_by_name(username: str) -> tuple[str, str]:
     response = requests.get(
-        "https://discord.com/api/v10/guilds/1321306723423883284/members/search",
-        headers={"Authorization": f"Bot {Config.bot_token()}"},
+        f"https://discord.com/api/v10/guilds/{Config.discord_guild_id()}/members/search",
+        headers={"Authorization": f"Bot {Config.discord_bot()}"},
         params={"query": username},
-        proxies={  # РКН привет
-            "http": "socks5h://127.0.0.1:1080",
-            "https": "socks5h://127.0.0.1:1080",
-        },
+        proxies=Config.proxy(),
     )
     response.raise_for_status()
     members = response.json()
@@ -26,7 +23,7 @@ def get_discord_id_by_name(username: str) -> tuple[str, str]:
     if not members:
         raise ValueError("Unable to get discord user information")
 
-    return members[0]["user"]["id"], members[0]["user"]["username"]
+    return members[0]["user"]["id"], members[0]["user"]["global_name"]
 
 
 # endregion
@@ -76,7 +73,7 @@ def create(request: Request, data: PlayerAPIData):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    except requests.RequestException as e:
+    except requests.RequestException:
         raise HTTPException(status_code=502, detail="Error contacting Steam API")
     # endregion
 
@@ -87,12 +84,18 @@ def create(request: Request, data: PlayerAPIData):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    except requests.RequestException as e:
+    except requests.RequestException:
         raise HTTPException(status_code=502, detail="Error contacting Discord API")
     # endregion
-    # TODO: Создание игрока в БД
-    return {
-        "steamid64": steamid64,
-        "discord_id": discord_data,
-        "discord_username": discord_name,
-    }
+
+    player = PlayerData(
+        discord_id=discord_data, discord_name=discord_name, steam_id=steamid64
+    )
+    PlayerDB.add_player(player)
+    LogDB.add_log(
+        LogType.PLAYER_CREATED,
+        f"Player {discord_data=}, {steamid64=} created",
+        username,
+    )
+
+    return 200

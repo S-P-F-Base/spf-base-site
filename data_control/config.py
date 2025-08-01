@@ -20,7 +20,6 @@ class Config:
         for key in [
             "YOOMONEY_ACCOUNT",
             "YOOMONEY_NOTIFICATION",
-            "BOT_TOKEN",
             "JWT_KEY",
             "TAX_AGENT",
             "TAX_AUTHORIZATION",
@@ -28,6 +27,8 @@ class Config:
             "OVERHOSTING_COOKIES",
             "RESEND_API",
             "STEAM_API",
+            "DISCORD_BOT",
+            "DISCORD_APP",
         ]:
             cls._cache[key] = os.getenv(key, None)
 
@@ -62,10 +63,6 @@ class Config:
         return cls._base_get_env("YOOMONEY_NOTIFICATION")
 
     @classmethod
-    def bot_token(cls) -> str:
-        return cls._base_get_env("BOT_TOKEN")
-
-    @classmethod
     def jwt_key(cls) -> str:
         return cls._base_get_env("JWT_KEY")
 
@@ -93,6 +90,14 @@ class Config:
     def steam_api(cls) -> str:
         return cls._base_get_env("STEAM_API")
 
+    @classmethod
+    def discord_bot(cls) -> str:
+        return cls._base_get_env("DISCORD_BOT")
+
+    @classmethod
+    def discord_app(cls) -> str:
+        return cls._base_get_env("DISCORD_APP")
+
     # endregion
 
     # region commission
@@ -110,5 +115,26 @@ class Config:
             raise ValueError(f"Unknown key for get_commission_rates {key}")
 
         return commission_rates
+
+    # endregion
+
+    # region proxy
+    @classmethod
+    def proxy(cls) -> dict:
+        return {  # РКН привет
+            "http": "socks5h://127.0.0.1:1080",
+            "https": "socks5h://127.0.0.1:1080",
+        }
+
+    # endregion
+
+    # region discord
+    @classmethod
+    def discord_guild_id(cls) -> str:
+        return "1321306723423883284"
+
+    @classmethod
+    def discord_oauth2(cls) -> str:
+        return "https://discord.com/oauth2/authorize?client_id=1370825296839839795&response_type=code&redirect_uri=https%3A%2F%2Fspf-base.ru%2Fapi%2Fdiscord%2Fredirect&scope=identify+guilds+guilds.join"
 
     # endregion
