@@ -10,15 +10,19 @@ router = APIRouter()
 @router.get("/dashboard")
 def dashboard(request: Request):
     session = PlayerSession(request)
-    player = session.get_player()
+    pdata = session.get_player()
 
-    if not player:
+    if not pdata:
         return RedirectResponse("/api/discord/login", status_code=302)
+    else:
+        u_id, discord_id, steam_id, data = pdata
 
     return templates.TemplateResponse(
         "dashboard/index.html",
         {
             "request": request,
-            "player": player,
+            "discord_id": discord_id,
+            "steam_id": steam_id,
+            "data": data,
         },
     )

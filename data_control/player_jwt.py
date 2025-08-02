@@ -31,7 +31,7 @@ class PlayerSession:
     def get_steam_id(self) -> str | None:
         return self.token_data.get("steam_id") if self.token_data else None
 
-    def get_player(self) -> PlayerData | None:
+    def get_player(self) -> tuple[int, str | None, str | None, PlayerData] | None:
         steam_id = self.get_steam_id()
         discord_id = self.get_discord_id()
 
@@ -41,7 +41,7 @@ class PlayerSession:
         if not player and discord_id:
             player = PlayerDB.get_pdata_discord(discord_id)
 
-        return player[3] if player else None
+        return player if player else None
 
     def create_token(self, discord_id: str | None, steam_id: str | None) -> str:
         payload = {

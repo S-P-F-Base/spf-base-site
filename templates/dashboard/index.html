@@ -21,42 +21,57 @@
 <body>
     <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
         <div class="content-tile">
-            <h2>Добро пожаловать!</h2>
 
-            <div class="info-row">
-                <div class="row-header">
-                    <img src="/static/images/logo/discord.png" alt="Discord" class="icon" />
-                    <strong>Discord:</strong>
-                    {% if player.discord_id %}
-                    <span class="status-ok">привязан</span>
-                    {% else %}
-                    <span class="status-warning">не привязан</span>
-                    {% endif %}
+            <h2 class="welcome-title">Добро пожаловать!</h2>
+
+            {% if discord_id and data.discord_avatar %}
+            <div class="player-profile">
+                <h3>Профиль игрока</h3>
+                <div class="profile-card">
+                    <img class="profile-avatar"
+                        src="https://cdn.discordapp.com/avatars/{{ discord_id }}/{{ data.discord_avatar }}.png"
+                        alt="Avatar" />
+                    <div class="profile-name">{{ data.discord_name }}</div>
                 </div>
-
-                {% if not player.discord_id %}
-                <nav class="links-list">
-                    <a href="/api/discord/login">Привязать Discord</a>
-                </nav>
-                {% endif %}
             </div>
+            {% endif %}
 
-            <div class="info-row">
-                <div class="row-header">
-                    <img src="/static/images/logo/steam.png" alt="Steam" class="icon" />
-                    <strong>Steam:</strong>
-                    {% if player.steam_id %}
-                    <span class="status-ok">привязан</span>
-                    {% else %}
-                    <span class="status-warning">не привязан</span>
+            <div class="linked-services">
+                <div class="info-row">
+                    <div class="row-header">
+                        <img src="/static/images/logo/discord.png" alt="Discord" class="icon" />
+                        <strong>Discord:</strong>
+                        {% if discord_id %}
+                        <span class="status-ok">привязан</span>
+                        {% else %}
+                        <span class="status-warning">не привязан</span>
+                        {% endif %}
+                    </div>
+
+                    {% if not discord_id %}
+                    <nav class="links-list">
+                        <a href="/api/discord/login">Привязать Discord</a>
+                    </nav>
                     {% endif %}
                 </div>
 
-                {% if not player.steam_id %}
-                <nav class="links-list">
-                    <a href="/api/steam/login">Привязать Steam</a>
-                </nav>
-                {% endif %}
+                <div class="info-row">
+                    <div class="row-header">
+                        <img src="/static/images/logo/steam.png" alt="Steam" class="icon" />
+                        <strong>Steam:</strong>
+                        {% if steam_id %}
+                        <span class="status-ok">привязан</span>
+                        {% else %}
+                        <span class="status-warning">не привязан</span>
+                        {% endif %}
+                    </div>
+
+                    {% if not steam_id %}
+                    <nav class="links-list">
+                        <a href="/api/steam/login">Привязать Steam</a>
+                    </nav>
+                    {% endif %}
+                </div>
             </div>
 
         </div>
