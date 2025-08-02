@@ -7,9 +7,35 @@ from markdown.extensions import Extension
 
 class SingleImgBlockProcessor(BlockProcessor):
     RE = re.compile(
-        r"^!img\[\s*(?P<url>[^\|\]]+)\s*(?:\|\s*(?P<pos>left|right|middle)?\s*)?(?:\|\s*(?P<width>\d{1,3}))?\s*\]$",
+        r"^!img\[\s*(?P<url>[^\|\]]+)"
+        r"(?:\|\s*(?P<pos>left|right|middle)?)?"
+        r"(?:\|\s*(?P<size>[^\]]+))?\s*\]$",
         re.IGNORECASE,
     )
+
+    def parse_size(self, size_str):
+        parts = [p.strip().lower() for p in size_str.split(",")]
+        width = parts[0] if len(parts) > 0 else "100%"
+        height = parts[1] if len(parts) > 1 else None
+        mode = parts[2] if len(parts) > 2 else "max"
+
+        def valid(value):
+            return (
+                re.match(r"^\d+%$", value)
+                or re.match(r"^\d+px$", value)
+                or value == "auto"
+            )
+
+        if not valid(width):
+            width = "100%"
+
+        if height and not valid(height):
+            height = None
+
+        if mode not in {"max", "hard"}:
+            mode = "max"
+
+        return width, height, mode
 
     def test(self, parent, block):
         return bool(self.RE.match(block.strip()))
@@ -22,8 +48,12 @@ class SingleImgBlockProcessor(BlockProcessor):
 
         url = match.group("url").strip()
         pos = (match.group("pos") or "middle").lower()
-        width = int(match.group("width") or 100)
-        width = max(10, min(width, 100))
+        size_raw = match.group("size")
+
+        if size_raw:
+            width, height, mode = self.parse_size(size_raw)
+        else:
+            width, height, mode = "100%", None, "max"
 
         wrapper = etree.SubElement(parent, "div")
         wrapper.set("class", f"img-side {pos}")
@@ -31,7 +61,17 @@ class SingleImgBlockProcessor(BlockProcessor):
         img = etree.SubElement(wrapper, "img")
         img.set("src", url)
         img.set("alt", "")
-        img.set("style", f"max-width: {width}%;")
+
+        if mode == "hard":
+            style = f"width: {width};"
+            if height:
+                style += f" height: {height};"
+        else:
+            style = f"max-width: {width};"
+            if height:
+                style += f" max-height: {height};"
+
+        img.set("style", style)
 
 
 class SingleImgExtension(Extension):
