@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.encoders import jsonable_encoder
 
 from data_bases import PlayerDB, UserAccess, UserDB
 from data_control import req_authorization
@@ -13,7 +14,6 @@ def get(
     request: Request,
     discord_id: Optional[str] = Query(None),
     steam_id: Optional[str] = Query(None),
-    name: Optional[str] = Query(None),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.READ_PLAYER):
@@ -22,17 +22,14 @@ def get(
     results = []
 
     if discord_id:
-        data = PlayerDB.get_pdata_discord(discord_id)
-        if data:
-            results.append(data)
+        result = PlayerDB.get_pdata_discord(discord_id)
+        if result:
+            results.append(result)
 
     elif steam_id:
-        data = PlayerDB.get_pdata_steam(steam_id)
-        if data:
-            results.append(data)
-
-    elif name:
-        results.extend(PlayerDB.get_pdata_name(name))
+        result = PlayerDB.get_pdata_steam(steam_id)
+        if result:
+            results.append(result)
 
     else:
         results = PlayerDB.get_pdata_all()
@@ -40,9 +37,9 @@ def get(
     return [
         {
             "id": u_id,
-            "discord_id": pdata.discord_id,
-            "steam_id": pdata.steam_id,
-            "payments_uuid": pdata.payments_uuid,
+            "discord_id": discord_id,
+            "steam_id": steam_id,
+            "data": jsonable_encoder(pdata),
         }
-        for u_id, pdata in results
+        for u_id, discord_id, steam_id, pdata in results
     ]

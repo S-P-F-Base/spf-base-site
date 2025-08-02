@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 # region discord
-def get_discord_id_by_name(username: str) -> tuple[str, str]:
+def get_discord_id_by_name(username: str) -> tuple[str, str, str]:
     response = requests.get(
         f"https://discord.com/api/v10/guilds/{Config.discord_guild_id()}/members/search",
         headers={"Authorization": f"Bot {Config.discord_bot()}"},
@@ -23,7 +23,11 @@ def get_discord_id_by_name(username: str) -> tuple[str, str]:
     if not members:
         raise ValueError("Unable to get discord user information")
 
-    return members[0]["user"]["id"], members[0]["user"]["global_name"]
+    return (
+        members[0]["user"]["id"],
+        members[0]["user"]["global_name"],
+        members[0]["user"]["avatar"],
+    )
 
 
 # endregion
@@ -79,7 +83,9 @@ def create(request: Request, data: PlayerAPIData):
 
     # region resolve discord_id
     try:
-        discord_data, discord_name = get_discord_id_by_name(data.discord_name)
+        discord_id, discord_name, discord_avatar = get_discord_id_by_name(
+            data.discord_name
+        )
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -88,13 +94,11 @@ def create(request: Request, data: PlayerAPIData):
         raise HTTPException(status_code=502, detail="Error contacting Discord API")
     # endregion
 
-    player = PlayerData(
-        discord_id=discord_data, discord_name=discord_name, steam_id=steamid64
-    )
-    PlayerDB.add_player(player)
+    player = PlayerData(discord_name=discord_name, discord_avatar=discord_avatar)
+    PlayerDB.add_player(discord_id=discord_id, steam_id=steamid64, data=player)
     LogDB.add_log(
         LogType.PLAYER_CREATED,
-        f"Player {discord_data=}, {steamid64=} created",
+        f"Player {discord_id=}, {steamid64=} created",
         username,
     )
 

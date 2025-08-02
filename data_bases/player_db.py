@@ -6,9 +6,8 @@ from .base_db import BaseDB
 
 @dataclass
 class PlayerData:
-    discord_id: str
-    discord_name: str
-    steam_id: str
+    discord_name: str | None = None
+    discord_avatar: str | None = None
     payments_uuid: list[str] = field(default_factory=list)
 
 
@@ -18,41 +17,50 @@ class PlayerDB(BaseDB):
     @classmethod
     def create_db_table(cls) -> None:
         super().create_db_table()
-
         with cls._connect() as con:
             con.execute("""
                 CREATE TABLE IF NOT EXISTS player_unit (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    discord_id TEXT NOT NULL,
-                    discord_name TEXT,
-                    steam_id TEXT NOT NULL,
-                    payments_uuid BLOB
+                    discord_id TEXT,
+                    steam_id TEXT,
+                    data BLOB
                 )
             """)
             con.commit()
 
     @classmethod
-    def add_player(cls, data: PlayerData) -> int | None:
-        blob = pickle.dumps(data.payments_uuid)
+    def add_player(
+        cls,
+        discord_id: str | None,
+        steam_id: str | None,
+        data: PlayerData,
+    ) -> int | None:
+        blob = pickle.dumps(data)
         with cls._connect() as con:
             cur = con.execute(
-                "INSERT INTO player_unit (discord_id, discord_name, steam_id, payments_uuid) VALUES (?, ?, ?, ?)",
-                (data.discord_id, data.discord_name, data.steam_id, blob),
+                "INSERT INTO player_unit (discord_id, steam_id, data) VALUES (?, ?, ?)",
+                (discord_id, steam_id, blob),
             )
             con.commit()
             return cur.lastrowid
 
     @classmethod
-    def update_player(cls, u_id: int, data: PlayerData) -> None:
-        blob = pickle.dumps(data.payments_uuid)
+    def update_player(
+        cls,
+        u_id: int,
+        discord_id: str | None,
+        steam_id: str | None,
+        data: PlayerData,
+    ) -> None:
+        blob = pickle.dumps(data)
         with cls._connect() as con:
             con.execute(
                 """
                 UPDATE player_unit 
-                SET discord_id = ?, discord_name = ?, steam_id = ?, payments_uuid = ?
+                SET discord_id = ?, steam_id = ?, data = ?
                 WHERE id = ?
                 """,
-                (data.discord_id, data.discord_name, data.steam_id, blob, u_id),
+                (discord_id, steam_id, blob, u_id),
             )
             con.commit()
 
@@ -63,82 +71,77 @@ class PlayerDB(BaseDB):
             con.commit()
 
     @classmethod
-    def _row_to_data(cls, row: tuple) -> tuple[int, PlayerData]:
-        u_id, discord_id, discord_name, steam_id, payments_blob = row
-        payments_uuid = pickle.loads(payments_blob) if payments_blob else []
-        return u_id, PlayerData(discord_id, discord_name, steam_id, payments_uuid)
+    def _row_to_data(cls, row: tuple) -> tuple[int, str | None, str | None, PlayerData]:
+        u_id, discord_id, steam_id, data_blob = row
+        data = pickle.loads(data_blob) if data_blob else PlayerData()
+        return u_id, discord_id, steam_id, data
 
     @classmethod
-    def get_pdata_id(cls, u_id: int) -> tuple[int, PlayerData] | None:
+    def get_pdata_id(
+        cls, u_id: int
+    ) -> tuple[int, str | None, str | None, PlayerData] | None:
         with cls._connect() as con:
             row = con.execute(
-                "SELECT id, discord_id, discord_name, steam_id, payments_uuid FROM player_unit WHERE id = ?",
+                "SELECT id, discord_id, steam_id, data FROM player_unit WHERE id = ?",
                 (u_id,),
             ).fetchone()
             return cls._row_to_data(row) if row else None
 
     @classmethod
-    def get_pdata_discord(cls, discord_id: str) -> tuple[int, PlayerData] | None:
+    def get_pdata_discord(
+        cls, discord_id: str
+    ) -> tuple[int, str | None, str | None, PlayerData] | None:
         with cls._connect() as con:
             row = con.execute(
-                "SELECT id, discord_id, discord_name, steam_id, payments_uuid FROM player_unit WHERE discord_id = ?",
+                "SELECT id, discord_id, steam_id, data FROM player_unit WHERE discord_id = ?",
                 (discord_id,),
             ).fetchone()
             return cls._row_to_data(row) if row else None
 
     @classmethod
-    def get_pdata_steam(cls, steam_id: str) -> tuple[int, PlayerData] | None:
+    def get_pdata_steam(
+        cls, steam_id: str
+    ) -> tuple[int, str | None, str | None, PlayerData] | None:
         with cls._connect() as con:
             row = con.execute(
-                "SELECT id, discord_id, discord_name, steam_id, payments_uuid FROM player_unit WHERE steam_id = ?",
+                "SELECT id, discord_id, steam_id, data FROM player_unit WHERE steam_id = ?",
                 (steam_id,),
             ).fetchone()
             return cls._row_to_data(row) if row else None
 
     @classmethod
-    def get_pdata_name(cls, name: str) -> list[tuple[int, PlayerData]]:
+    def get_pdata_all(cls) -> list[tuple[int, str | None, str | None, PlayerData]]:
         with cls._connect() as con:
             rows = con.execute(
-                "SELECT id, discord_id, discord_name, steam_id, payments_uuid FROM player_unit WHERE LOWER(discord_name) LIKE LOWER(?)",
-                (f"%{name}%",),
-            ).fetchall()
-            return [cls._row_to_data(row) for row in rows]
-
-    @classmethod
-    def get_pdata_all(cls) -> list[tuple[int, PlayerData]]:
-        with cls._connect() as con:
-            rows = con.execute(
-                "SELECT id, discord_id, discord_name, steam_id, payments_uuid FROM player_unit"
+                "SELECT id, discord_id, steam_id, data FROM player_unit"
             ).fetchall()
             return [cls._row_to_data(row) for row in rows]
 
     @classmethod
     def add_payment(cls, u_id: int, payment_uuid: str) -> None:
-        pdata = cls.get_pdata_id(u_id)
-        if not pdata:
+        entry = cls.get_pdata_id(u_id)
+        if not entry:
             raise ValueError("Player not found")
 
-        _, data = pdata
+        u_id, _, _, data = entry
         if payment_uuid not in data.payments_uuid:
             data.payments_uuid.append(payment_uuid)
-            cls._update_payments_blob(u_id, data.payments_uuid)
+            cls._update_blob(u_id, data)
 
     @classmethod
     def remove_payment(cls, u_id: int, payment_uuid: str) -> None:
-        pdata = cls.get_pdata_id(u_id)
-        if not pdata:
+        entry = cls.get_pdata_id(u_id)
+        if not entry:
             raise ValueError("Player not found")
 
-        _, data = pdata
+        u_id, _, _, data = entry
         if payment_uuid in data.payments_uuid:
             data.payments_uuid.remove(payment_uuid)
-            cls._update_payments_blob(u_id, data.payments_uuid)
+            cls._update_blob(u_id, data)
 
     @classmethod
-    def _update_payments_blob(cls, u_id: int, uuid_list: list[str]) -> None:
-        blob = pickle.dumps(uuid_list)
+    def _update_blob(cls, u_id: int, data: PlayerData) -> None:
+        blob = pickle.dumps(data)
         with cls._connect() as con:
-            con.execute(
-                "UPDATE player_unit SET payments_uuid = ? WHERE id = ?", (blob, u_id)
-            )
+            con.execute("UPDATE player_unit SET data = ? WHERE id = ?", (blob, u_id))
             con.commit()

@@ -41,43 +41,52 @@ class PlayerSession:
         if not player and discord_id:
             player = PlayerDB.get_pdata_discord(discord_id)
 
-        return player[1] if player else None
+        return player[3] if player else None
 
-    def create_token(self, player: PlayerData) -> str:
+    def create_token(self, discord_id: str | None, steam_id: str | None) -> str:
         payload = {
-            "discord_id": player.discord_id,
-            "steam_id": player.steam_id,
+            "discord_id": discord_id or "",
+            "steam_id": steam_id or "",
             "exp": datetime.now(UTC) + timedelta(days=7),
         }
         return jwt.encode(payload, Config.jwt_key(), algorithm="HS256")
 
-    def sync_with_discord(self, discord_id: str, discord_name: str) -> PlayerData:
+    def sync_with_discord(
+        self,
+        discord_id: str,
+        discord_name: str,
+        discord_avatar: str,
+    ) -> PlayerData:
         existing_steam = self.get_steam_id()
         player = PlayerDB.get_pdata_discord(discord_id)
 
         if not player and existing_steam:
             player = PlayerDB.get_pdata_steam(existing_steam)
             if player:
-                u_id, data = player
-                data.discord_id = discord_id
+                u_id, _, _, data = player
                 data.discord_name = discord_name
-                PlayerDB.update_player(u_id, data)
+                PlayerDB.update_player(
+                    u_id, discord_id=discord_id, steam_id=existing_steam, data=data
+                )
                 LogDB.add_log(
-                    LogType.PLAYER_UPDATE, f"Player {u_id=} linked with Discord", "Self"
+                    LogType.PLAYER_UPDATE,
+                    f"Player {u_id=} linked with Discord",
+                    "Self",
                 )
                 return data
+
         elif player:
-            return player[1]
+            return player[3]
 
         data = PlayerData(
-            discord_id=discord_id,
             discord_name=discord_name,
-            steam_id="",
-            payments_uuid=[],
+            discord_avatar=discord_avatar,
         )
-        PlayerDB.add_player(data)
+        PlayerDB.add_player(discord_id=discord_id, steam_id=None, data=data)
         LogDB.add_log(
-            LogType.PLAYER_CREATED, f"Player {discord_id=} created via Discord", "Self"
+            LogType.PLAYER_CREATED,
+            f"Player {discord_id=} created via Discord",
+            "Self",
         )
         return data
 
@@ -88,24 +97,28 @@ class PlayerSession:
         if not player and existing_discord:
             player = PlayerDB.get_pdata_discord(existing_discord)
             if player:
-                u_id, data = player
-                data.steam_id = steam_id
-                PlayerDB.update_player(u_id, data)
+                u_id, _, _, data = player
+                PlayerDB.update_player(
+                    u_id,
+                    discord_id=existing_discord,
+                    steam_id=steam_id,
+                    data=data,
+                )
                 LogDB.add_log(
-                    LogType.PLAYER_UPDATE, f"Player {u_id=} linked with Steam", "Self"
+                    LogType.PLAYER_UPDATE,
+                    f"Player {u_id=} linked with Steam",
+                    "Self",
                 )
                 return data
-        elif player:
-            return player[1]
 
-        data = PlayerData(
-            discord_id="",
-            discord_name="",
-            steam_id=steam_id,
-            payments_uuid=[],
-        )
-        PlayerDB.add_player(data)
+        elif player:
+            return player[3]
+
+        data = PlayerData()
+        PlayerDB.add_player(discord_id=None, steam_id=steam_id, data=data)
         LogDB.add_log(
-            LogType.PLAYER_CREATED, f"Player {steam_id=} created via Steam", "Self"
+            LogType.PLAYER_CREATED,
+            f"Player {steam_id=} created via Steam",
+            "Self",
         )
         return data

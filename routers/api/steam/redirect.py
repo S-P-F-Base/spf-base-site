@@ -2,6 +2,7 @@ import requests
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
+from data_bases import PlayerDB
 from data_control import PlayerSession
 from templates import templates
 
@@ -40,8 +41,12 @@ def redirect(request: Request):
         )
 
     session = PlayerSession(request)
-    player = session.sync_with_steam(steam_id)
-    jwt_token = session.create_token(player)
+    session.sync_with_steam(steam_id)
+
+    player_entry = PlayerDB.get_pdata_steam(steam_id)
+    discord_id = player_entry[1] if player_entry else None
+
+    jwt_token = session.create_token(discord_id=discord_id, steam_id=steam_id)
 
     response = RedirectResponse(url="/dashboard", status_code=302)
     response.set_cookie(
