@@ -25,9 +25,14 @@
             <div class="small">
                 Последнее изменение: {{ data }}
             </div>
+            
             <main class="markdown-body">
                 {{ content|safe }}
             </main>
+
+            <hr>
+            
+            <a href="#" class="back-button" onclick="goBack()">← Назад</a>
         </div>
     </div>
 
@@ -59,6 +64,14 @@
                 setTimeout(() => highlightById(decoded), 0);
             });
         });
+
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        }
     </script>
 
 </body>
