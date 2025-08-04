@@ -23,13 +23,17 @@ class AutoTax:
 
     @classmethod
     def setup(cls) -> None:
+        return
+
+        # TODO: Сделать нормальную работу с этой хуетой
+
         cls._tax_session.headers.update(
             {
                 "Accept": "application/json, text/plain, */*",
                 "Accept-Language": "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3",
                 "Accept-Encoding": "gzip, deflate, br, zstd",
                 "Authorization": Config.tax_authorization(),
-                "User-Agent": Config.tax_agent(),
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.122 Safari/537.36",
             }
         )
 

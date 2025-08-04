@@ -21,8 +21,7 @@ class Config:
             "YOOMONEY_ACCOUNT",
             "YOOMONEY_NOTIFICATION",
             "JWT_KEY",
-            "TAX_AGENT",
-            "TAX_AUTHORIZATION",
+            "TAX_PASSWORD",
             "TAX_INN",
             "OVERHOSTING_COOKIES",
             "RESEND_API",
@@ -67,12 +66,8 @@ class Config:
         return cls._base_get_env("JWT_KEY")
 
     @classmethod
-    def tax_agent(cls) -> str:
-        return cls._base_get_env("TAX_AGENT")
-
-    @classmethod
-    def tax_authorization(cls) -> str:
-        return cls._base_get_env("TAX_AUTHORIZATION")
+    def tax_password(cls) -> str:
+        return cls._base_get_env("TAX_PASSWORD")
 
     @classmethod
     def tax_inn(cls) -> str:
