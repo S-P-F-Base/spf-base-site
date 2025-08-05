@@ -140,7 +140,6 @@ class AutoTax:
 
     @classmethod
     def setup(cls) -> None:
-        return
         cls._login()
 
     @classmethod
