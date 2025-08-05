@@ -1,5 +1,8 @@
+import base64
+import logging
+import os
 from datetime import datetime, timedelta, timezone
-from typing import Literal
+from typing import Final, Literal
 
 from requests import Session
 
@@ -8,10 +11,53 @@ from .config import Config
 
 class AutoTax:
     _tax_session: Session = Session()
+    _device_id = ""
+    _token_expire = ""
+    _refresh_token = ""
+    _user_agent: Final[str] = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.122 Safari/537.36"
+    )
 
     @classmethod
     def _base_url(cls, parms: str = "") -> str:
         return f"https://lknpd.nalog.ru/api/v1/{parms}"
+
+    @classmethod
+    def req_get(cls, path: str, **kwargs):
+        if cls._is_token_expired():
+            logging.info("Token expired, refreshing...")
+            cls._refresh()
+
+        resp = cls._tax_session.get(cls._base_url(path), **kwargs)
+        if not resp.ok:
+            raise RuntimeError(f"GET {path} failed: {resp.status_code} {resp.text}")
+
+        return resp
+
+    @classmethod
+    def req_post(cls, path: str, json=None, **kwargs):
+        if cls._is_token_expired():
+            logging.info("Token expired, refreshing...")
+            cls._refresh()
+
+        resp = cls._tax_session.post(cls._base_url(path), json=json, **kwargs)
+        if not resp.ok:
+            raise RuntimeError(f"POST {path} failed: {resp.status_code} {resp.text}")
+
+        return resp
+
+    @classmethod
+    def _is_token_expired(cls) -> bool:
+        if not cls._token_expire:
+            return True
+
+        try:
+            dt = datetime.fromisoformat(cls._token_expire.replace("Z", "+00:00"))
+            return datetime.now(timezone.utc) >= dt
+
+        except Exception as e:
+            logging.warning(f"Invalid tokenExpireIn format: {cls._token_expire} ({e})")
+            return True
 
     @classmethod
     def _get_cur_time(cls) -> str:
@@ -22,20 +68,80 @@ class AutoTax:
         )
 
     @classmethod
-    def setup(cls) -> None:
-        return
+    def _generate_source_device_id(cls, length: int = 21) -> str:
+        raw_bytes = os.urandom(16)
+        b64 = base64.b64encode(raw_bytes).decode("utf-8")
+        cleaned = b64.replace("+", "").replace("/", "").replace("=", "")
+        return cleaned[:length]
 
-        # TODO: Сделать нормальную работу с этой хуетой
+    @classmethod
+    def _update_data(cls, data_json: dict) -> None:
+        cls._token_expire = data_json.get("tokenExpireIn")
+        cls._refresh_token = data_json.get("refreshToken")
 
         cls._tax_session.headers.update(
             {
                 "Accept": "application/json, text/plain, */*",
                 "Accept-Language": "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3",
                 "Accept-Encoding": "gzip, deflate, br, zstd",
-                "Authorization": Config.tax_authorization(),
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.122 Safari/537.36",
+                "Authorization": data_json.get("token", ""),
+                "User-Agent": cls._user_agent,
             }
         )
+
+    @classmethod
+    def _login(cls) -> None:
+        cls._device_id = cls._generate_source_device_id()
+
+        resp = cls._tax_session.post(
+            cls._base_url("auth/lkfl"),
+            json={
+                "username": Config.tax_inn(),
+                "password": Config.tax_password(),
+                "deviceInfo": {
+                    "sourceType": "WEB",
+                    "appVersion": "1.0.0",
+                    "sourceDeviceId": cls._device_id,
+                    "metaDetails": {"userAgent": cls._user_agent},
+                },
+            },
+        )
+
+        if not resp.ok:
+            logging.error(
+                f"Error while login to lknpd.nalog.ru. Code: {resp.status_code}. Anser: {resp.text}"
+            )
+            return
+
+        cls._update_data(resp.json())
+
+    @classmethod
+    def _refresh(cls) -> None:
+        resp = cls._tax_session.post(
+            cls._base_url("auth/token"),
+            json={
+                "refreshToken": cls._refresh_token,
+                "deviceInfo": {
+                    "sourceType": "WEB",
+                    "appVersion": "1.0.0",
+                    "sourceDeviceId": cls._device_id,
+                    "metaDetails": {"userAgent": cls._user_agent},
+                },
+            },
+        )
+
+        if not resp.ok:
+            logging.error(
+                f"Error while refresh token from lknpd.nalog.ru. Code: {resp.status_code}. Anser: {resp.text}"
+            )
+            return
+
+        cls._update_data(resp.json())
+
+    @classmethod
+    def setup(cls) -> None:
+        return
+        cls._login()
 
     @classmethod
     def post_income(cls, services: list[tuple[str, float]]) -> str:
@@ -67,7 +173,7 @@ class AutoTax:
             "ignoreMaxTotalIncomeRestriction": False,
         }
 
-        response = cls._tax_session.post(cls._base_url("income"), json=payload)
+        response = cls.req_post("income", json=payload)
 
         if not response.ok:
             raise RuntimeError(
@@ -96,7 +202,7 @@ class AutoTax:
             "partnerCode": None,
         }
 
-        response = cls._tax_session.post(cls._base_url("cancel"), json=payload)
+        response = cls.req_post("cancel", json=payload)
 
         if not response.ok:
             raise RuntimeError(
@@ -107,9 +213,7 @@ class AutoTax:
 
     @classmethod
     def get_check_png(cls, uuid: str) -> bytes:
-        response = cls._tax_session.get(
-            cls._base_url(f"receipt/{Config.tax_inn()}/{uuid}/print")
-        )
+        response = cls.req_get(f"receipt/{Config.tax_inn()}/{uuid}/print")
 
         if not response.ok:
             raise RuntimeError(
