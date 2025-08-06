@@ -2,6 +2,7 @@ import base64
 import logging
 import os
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Final, Literal
 
 from requests import Session
@@ -143,19 +144,21 @@ class AutoTax:
         cls._login()
 
     @classmethod
-    def post_income(cls, services: list[tuple[str, float]]) -> str:
+    def post_income(cls, services: list[tuple[str, Decimal]]) -> str:
         time = cls._get_cur_time()
 
         rounded_services = [
             {
                 "name": name,
-                "amount": round(amount, 2),
+                "amount": float(amount.quantize(Decimal("0.01"))),
                 "quantity": 1,  # Брух ФНС
             }
             for name, amount in services
         ]
 
-        total = round(sum(item["amount"] for item in rounded_services), 2)
+        total = Decimal(sum(item["amount"] for item in rounded_services)).quantize(
+            Decimal("0.01")
+        )
 
         payload = {
             "operationTime": time,

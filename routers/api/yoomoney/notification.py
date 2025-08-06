@@ -4,8 +4,8 @@ from decimal import Decimal
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 
-from data_bases import LogDB, LogType, PaymentDB
-from data_control import Config
+from data_bases import LogDB, LogType, PaymentDB, PaymentStatus, ServiceMeta
+from data_control import AutoTax, Config
 
 router = APIRouter()
 
@@ -46,19 +46,35 @@ def yoomoney_notification(
             detail="Invalid hash",
         )
 
-    try:
-        payment_id = label
-
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid label format")
-
+    payment_id = label
     payment = PaymentDB.payments.get_by_u_id(payment_id)
     if payment is None:
         raise HTTPException(status_code=404, detail="Payment not found")
 
+    service = PaymentDB.services.get_by_u_id(payment.what_buy)
     payment.received = Decimal(amount)
     payment.user_pay = Decimal(withdraw_amount)
-    payment.update_status()
+    payment_status = payment.update_status()
+
+    if service:
+        services_meta = service.get("meta")
+        if (
+            isinstance(services_meta, ServiceMeta)
+            and payment_status == PaymentStatus.done
+            and not payment.tax_check_id
+        ):
+            try:
+                tax_id = AutoTax.post_income(
+                    [(services_meta.name, services_meta.price)]
+                )
+                payment.tax_check_id = tax_id
+            
+            except Exception as e:
+                LogDB.add_log(
+                    LogType.PAY_RESIVE,
+                    f"Failed to send tax receipt: {e}",
+                    "Yoomoney notification",
+                )
 
     PaymentDB.payments.edit(payment_id, payment)
 

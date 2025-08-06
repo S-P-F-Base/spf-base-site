@@ -115,11 +115,9 @@ class PaymentData:
         self._tax_check_id: str | None = tax_check_id
 
         # Считаем денюшки
-        self._amount: Decimal = amount.quantize(Decimal("0.01"))  # Сколько нужно
-        self._received: Decimal = received.quantize(Decimal("0.01"))  # Сколько получили
-        self._user_pay: Decimal = user_pay.quantize(
-            Decimal("0.01")
-        )  # Сколько юзер заплатил
+        self._amount = amount.quantize(Decimal("0.01"))  # Сколько нужно
+        self._received = received.quantize(Decimal("0.01"))  # Сколько получили
+        self._user_pay = user_pay.quantize(Decimal("0.01"))  # Сколько юзер заплатил
 
         # Статусы
         self._status: PaymentStatus = status
@@ -215,9 +213,9 @@ class PaymentData:
     def is_cancel(self) -> bool:
         return self._status == PaymentStatus.cancel
 
-    def update_status(self) -> None:
+    def update_status(self) -> PaymentStatus:
         if self._status == PaymentStatus.cancel:
-            return
+            return self._status
 
         if Config.user_pays_commission():
             if self._amount >= self._received:
@@ -226,6 +224,8 @@ class PaymentData:
         else:
             if self._amount >= self._user_pay:
                 self._status = PaymentStatus.done
+
+        return self._status
 
     # endregion
 
