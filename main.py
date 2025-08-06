@@ -16,6 +16,7 @@ from routers.api.donate_control import router as api_donate_control
 from routers.api.logs import router as api_logs
 from routers.api.player_control import router as api_player_control
 from routers.api.server_control import router as api_server_control
+from routers.api.service_control import router as api_service_control
 from routers.api.site_control import router as api_site_control
 from routers.api.steam import router as api_steam
 from routers.api.user_control import router as api_user_control
@@ -132,6 +133,7 @@ app.include_router(api_donate_control, prefix="/api/donate_control")
 app.include_router(api_logs, prefix="/api/logs")
 app.include_router(api_player_control, prefix="/api/player_control")
 app.include_router(api_server_control, prefix="/api/server_control")
+app.include_router(api_service_control, prefix="/api/service_control")
 app.include_router(api_site_control, prefix="/api/site_control")
 app.include_router(api_steam, prefix="/api/steam")
 app.include_router(api_user_control, prefix="/api/user_control")

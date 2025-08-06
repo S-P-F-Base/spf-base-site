@@ -423,8 +423,8 @@ class PaymentDB(BaseDB):
             return (
                 {
                     "uuid": row[0],
-                    "meta": ServiceMeta.deserialize(row[1]),
-                    "status": ServiceStatus(row[2]),
+                    "status": ServiceStatus(row[1]),
+                    "meta": ServiceMeta.deserialize(row[2]),
                 }
                 if row
                 else None
@@ -434,15 +434,16 @@ class PaymentDB(BaseDB):
         def get_by_status(cls, status: ServiceStatus) -> list[dict]:
             with PaymentDB._connect() as con:
                 cur = con.execute(
-                    "SELECT * FROM services WHERE (status & ?) != 0", (status,)
+                    "SELECT uuid, status, meta FROM services WHERE (status & ?) != 0",
+                    (status,),
                 )
                 rows = cur.fetchall()
 
             return [
                 {
                     "uuid": row[0],
-                    "meta": ServiceMeta.deserialize(row[1]),
-                    "status": ServiceStatus(row[2]),
+                    "status": ServiceStatus(row[1]),
+                    "meta": ServiceMeta.deserialize(row[2]),
                 }
                 for row in rows
             ]
