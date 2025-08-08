@@ -4,7 +4,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 
-from data_bases import LogDB, LogType, PaymentDB, PaymentStatus, ServiceMeta
+from data_bases import LogDB, LogType
 from data_control import AutoTax, Config
 
 router = APIRouter()
@@ -68,7 +68,7 @@ def yoomoney_notification(
                     [(services_meta.name, services_meta.price)]
                 )
                 payment.tax_check_id = tax_id
-            
+
             except Exception as e:
                 LogDB.add_log(
                     LogType.PAY_RESIVE,

@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
-from data_bases import PaymentDB, ServiceStatus
 from templates import templates
 
 router = APIRouter()
@@ -8,6 +7,8 @@ router = APIRouter()
 
 @router.get("/donate")
 def donate(request: Request):
+    raise HTTPException(404)
+
     donate_variants = PaymentDB.services.get_by_status(
         ServiceStatus.NO_STOCK | ServiceStatus.ACTIVE
     )

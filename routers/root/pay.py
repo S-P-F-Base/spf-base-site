@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from data_bases import PaymentDB, ServiceStatus
 from templates import templates
 
 router = APIRouter()
@@ -9,6 +8,7 @@ router = APIRouter()
 
 @router.get("/pay", response_class=HTMLResponse)
 def pay_page(request: Request, uuid: str | None = None):
+    raise HTTPException(404)
     if uuid is None:
         raise HTTPException(status_code=400, detail="UUID is required")
 
