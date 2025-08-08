@@ -15,7 +15,7 @@ LORE_CHAR_DATA = Path("data/lore_char.json")
 def lore_char(request: Request):
     lore_dict = {}
     if LORE_CHAR_DATA.exists():
-        lore_dict = json.loads(LORE_CHAR_DATA.read_text())
+        lore_dict = json.loads(LORE_CHAR_DATA.read_text(encoding="utf-8"))
 
     return templates.TemplateResponse(
         "lore_char.html", {"request": request, "lore_dict": lore_dict}
