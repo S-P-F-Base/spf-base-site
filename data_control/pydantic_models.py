@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -46,6 +47,22 @@ class ServiceEditAPIData(BaseUUIDAPIData):
 
     discount: int | None = None
     discount_time_end: datetime | None = None
+
+
+class LoreCharKeyAPIData(BaseModel):
+    key: str
+
+
+class LoreCharCreateAPIData(LoreCharKeyAPIData):
+    name: str
+    status: Literal["free", "taken", "blocked"]
+    wiki: str | None = None
+
+
+class LoreCharEditAPIData(LoreCharKeyAPIData):
+    name: str | None = None
+    status: Literal["free", "taken", "blocked"] | None = None
+    wiki: str | None = None
 
 
 # region LOGS DATA
