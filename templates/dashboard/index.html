@@ -24,6 +24,32 @@
 
             <h2 class="welcome-title">Добро пожаловать!</h2>
 
+            {% if data.blacklist.admin or data.blacklist.lore %}
+            <div class="alert-flag">
+                <div class="icon">!</div>
+                <div class="tooltip">
+                    {% if data.blacklist.admin %}
+                    <div class="warn-entry">
+                        <strong>Чёрный список администрации</strong><br>
+                        Вы были занесены в чёрный список на подачу заявки на админсостав.<br>
+                        Это ограничивает вашу возможность подавать на роли администрации. Ваши заявки будут мгновенно
+                        отклонены без объяснения причины.
+                    </div>
+                    {% endif %}
+
+                    {% if data.blacklist.lore %}
+                    <div class="warn-entry">
+                        <strong>Чёрный список лорных персонажей</strong><br>
+                        Вы ограничены в возможности подавать заявки на лорных персонажей.<br>
+                        Это ограничивает вашу возможность подавать на роли лорных персонажей. Ваши заявки будут
+                        мгновенно
+                        отклонены без объяснения причины.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             {% if discord_id and data.discord_avatar %}
             <div class="player-profile">
                 <h3>Профиль игрока</h3>
@@ -73,7 +99,6 @@
                     {% endif %}
                 </div>
             </div>
-
         </div>
     </div>
 </body>
