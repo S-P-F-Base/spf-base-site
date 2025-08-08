@@ -30,6 +30,8 @@ class UserAccess(IntFlag):
 
     SERVICE_CONTROL = 1 << 12
 
+    LORE_CHAR_CONTROL = 1 << 13
+
 
 class UserDB(BaseDB):
     _db_name = "user"

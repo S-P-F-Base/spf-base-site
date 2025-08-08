@@ -14,6 +14,7 @@ from routers.api.auth import router as api_auth
 from routers.api.discord import router as api_discord
 from routers.api.donate_control import router as api_donate_control
 from routers.api.logs import router as api_logs
+from routers.api.lore_char_control import router as api_lore_char_control
 from routers.api.player_control import router as api_player_control
 from routers.api.server_control import router as api_server_control
 from routers.api.service_control import router as api_service_control
@@ -131,6 +132,7 @@ app.include_router(api_auth, prefix="/api/auth")
 app.include_router(api_discord, prefix="/api/discord")
 app.include_router(api_donate_control, prefix="/api/donate_control")
 app.include_router(api_logs, prefix="/api/logs")
+app.include_router(api_lore_char_control, prefix="api/lore_char_control")
 app.include_router(api_player_control, prefix="/api/player_control")
 app.include_router(api_server_control, prefix="/api/server_control")
 app.include_router(api_service_control, prefix="/api/service_control")

@@ -28,6 +28,10 @@ class LogType(Enum):
     SERVICE_UPDATE = 16
     SERVICE_DELETE = 17
 
+    LORE_CHAR_CREATE = 18
+    LORE_CHAR_EDIT = 19
+    LORE_CHAR_DELETE = 20
+
 
 class LogDB(BaseDB):
     _db_name = "log"
