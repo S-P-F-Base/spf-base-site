@@ -62,6 +62,12 @@
             </div>
             {% endif %}
 
+            <div class="player-id-card">
+                <h3>ID аккаунта</h3>
+                <p>Ваш внутренний идентификатор: <code id="account-id">#{{ player_id }}</code></p>
+                <button onclick="copyID()">Скопировать</button>
+            </div>
+
             <div class="linked-services">
                 <div class="info-row">
                     <div class="row-header">
@@ -101,6 +107,24 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function copyID() {
+            const id = document.getElementById("account-id").innerText;
+            const button = event.currentTarget;
+
+            navigator.clipboard.writeText(id).then(() => {
+                const original = button.innerText;
+                button.innerText = "Скопировано!";
+                button.disabled = true;
+
+                setTimeout(() => {
+                    button.innerText = original;
+                    button.disabled = false;
+                }, 2000);
+            });
+        }
+    </script>
 </body>
 
 </html>

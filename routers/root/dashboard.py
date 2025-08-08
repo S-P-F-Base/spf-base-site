@@ -25,6 +25,7 @@ def dashboard(request: Request):
             "request": request,
             "discord_id": discord_id,
             "steam_id": steam_id,
+            "player_id": u_id,
             "data": asdict(data),
         },
     )

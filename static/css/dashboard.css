@@ -50,7 +50,7 @@
     background-color: #111;
     border: 2px solid orange;
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1.5rem 1.5rem 0rem 1.5rem;
     box-shadow: 0 0 12px rgba(255, 140, 0, 0.4);
 }
 
@@ -160,4 +160,37 @@
 
 .tooltip .warn-entry:last-child {
     margin-bottom: 0;
+}
+
+.player-id-card {
+    background-color: #111;
+    border: 2px solid orange;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    box-shadow: 0 0 12px rgba(255, 140, 0, 0.4);
+    text-align: center;
+    color: #ddd;
+}
+
+.player-id-card button {
+    margin-top: 0.5rem;
+    padding: 6px 12px;
+    font-size: 12px;
+    background: #111;
+    border: 2px solid orange;
+    color: orange;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.player-id-card button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.player-id-card button:hover {
+    background-color: orange;
+    color: black;
 }
