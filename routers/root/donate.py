@@ -1,30 +1,65 @@
-from fastapi import APIRouter, HTTPException, Request
+from datetime import UTC, datetime
+from decimal import Decimal
 
+from fastapi import APIRouter, Request
+
+from data_bases import PaymentServiceDB, Service
 from templates import templates
 
 router = APIRouter()
 
 
+def _is_discount_active(svc: Service) -> bool:
+    if svc.discount_value <= 0:
+        return False
+
+    if not svc.discount_date:
+        return False
+
+    return svc.discount_date > datetime.now(UTC)
+
+
+def _is_sold_out(svc: Service) -> bool:
+    if svc.status != "on":
+        return True
+
+    if svc.left is not None and svc.left <= 0:
+        return True
+
+    return False
+
+
 @router.get("/donate")
 def donate(request: Request):
-    raise HTTPException(404)
-
-    donate_variants = PaymentDB.services.get_by_status(
-        ServiceStatus.NO_STOCK | ServiceStatus.ACTIVE
-    )
+    rows = PaymentServiceDB.list_services()
+    if rows is None:
+        rows = []
 
     active_list = []
     no_stock_list = []
 
-    for entry in donate_variants:
-        entry["meta"].recalculate_discount()
+    for u_id, svc in rows:
+        final_price: Decimal = svc.price()
+        discount_active = _is_discount_active(svc)
 
-        if entry["status"] & ServiceStatus.NO_STOCK:
-            no_stock_list.append(entry)
-            continue
+        item = {
+            "u_id": u_id,
+            "name": svc.name,
+            "description": svc.description,
+            "price_main": f"{svc.price_main:.2f}",
+            "final_price": f"{final_price:.2f}",
+            "discount_value": svc.discount_value if discount_active else 0,
+            "discount_time_end": svc.discount_date.isoformat()  # type: ignore
+            if discount_active
+            else "",
+            "left": svc.left,
+            "status": svc.status,
+        }
 
-        if entry["status"] & ServiceStatus.ACTIVE:
-            active_list.append(entry)
+        if _is_sold_out(svc):
+            no_stock_list.append(item)
+        else:
+            active_list.append(item)
 
     return templates.TemplateResponse(
         "donate.html",

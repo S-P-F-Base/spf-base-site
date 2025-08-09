@@ -34,40 +34,39 @@
                 <section id="available-list">
                     <h2 class="category-title" id="available-title">Доступные услуги</h2>
                     {% for donate in active_list %}
-                    <article class="donate-item" data-id="{{ donate.uuid }}"
-                        data-timeend="{{ donate.meta._discount_time_end.isoformat() if donate.meta._discount_time_end else '' }}">
+                    <article class="donate-item" data-id="{{ donate.u_id }}"
+                        data-timeend="{{ donate.discount_time_end }}">
                         <header class="donate-header">
-                            <h3 class="donate-title">{{ donate.meta.name }}</h3>
-                            {% if donate.meta._discount > 0 %}
-                            <span class="discount">-{{ donate.meta._discount }}%</span>
+                            <h3 class="donate-title">{{ donate.name }}</h3>
+                            {% if donate.discount_value > 0 %}
+                            <span class="discount">-{{ donate.discount_value }}%</span>
                             {% endif %}
                         </header>
+
                         <div class="donate-meta">
                             <div class="meta-label">Описание:</div>
-                            <div class="meta-value">{{ donate.meta.description }}</div>
+                            <div class="meta-value">{{ donate.description }}</div>
 
                             <div class="meta-inline-group">
                                 <span class="meta-label">Цена:</span>
                                 <span class="meta-value">
-                                    {% if donate.meta._discount > 0 %}
-                                    <span class="original-price">{{ donate.meta.price }}₽</span>
-                                    <span class="discounted-price">
-                                        {{ (donate.meta.price * (100 - donate.meta._discount) // 100) }}₽
-                                    </span>
+                                    {% if donate.discount_value > 0 %}
+                                    <span class="original-price">{{ donate.price_main }}₽</span>
+                                    <span class="discounted-price">{{ donate.final_price }}₽</span>
                                     {% else %}
-                                    {{ donate.meta.price }}₽
+                                    {{ donate.price_main }}₽
                                     {% endif %}
                                 </span>
                             </div>
 
-                            {% if donate.meta.limit is not none %}
+                            {% if donate.left is not none %}
                             <div class="meta-inline-group">
                                 <span class="meta-label">Осталось:</span>
-                                <span class="meta-value">{{ donate.meta.limit }}</span>
+                                <span class="meta-value">{{ donate.left }}</span>
                             </div>
                             {% endif %}
 
-                            {% if donate.meta._discount > 0 %}
+                            {% if donate.discount_value > 0 %}
                             <div class="meta-inline-group">
                                 <span class="meta-label">Скидка действует ещё:</span>
                                 <span class="meta-value time-left">—</span>
@@ -85,40 +84,39 @@
                 <section id="soldout-list">
                     <h2 class="category-title" id="soldout-title">Распроданные</h2>
                     {% for donate in no_stock_list %}
-                    <article class="donate-item" data-id="{{ donate.uuid }}"
-                        data-timeend="{{ donate.meta._discount_time_end.isoformat() if donate.meta._discount_time_end else '' }}">
+                    <article class="donate-item" data-id="{{ donate.u_id }}"
+                        data-timeend="{{ donate.discount_time_end }}">
                         <header class="donate-header">
-                            <h3 class="donate-title">{{ donate.meta.name }}</h3>
-                            {% if donate.meta._discount > 0 %}
-                            <span class="discount">-{{ donate.meta._discount }}%</span>
+                            <h3 class="donate-title">{{ donate.name }}</h3>
+                            {% if donate.discount_value > 0 %}
+                            <span class="discount">-{{ donate.discount_value }}%</span>
                             {% endif %}
                         </header>
+
                         <div class="donate-meta">
                             <div class="meta-label">Описание:</div>
-                            <div class="meta-value">{{ donate.meta.description }}</div>
+                            <div class="meta-value">{{ donate.description }}</div>
 
                             <div class="meta-inline-group">
                                 <span class="meta-label">Цена:</span>
                                 <span class="meta-value">
-                                    {% if donate.meta._discount > 0 %}
-                                    <span class="original-price">{{ donate.meta.price }}₽</span>
-                                    <span class="discounted-price">
-                                        {{ (donate.meta.price * (100 - donate.meta._discount) // 100) }}₽
-                                    </span>
+                                    {% if donate.discount_value > 0 %}
+                                    <span class="original-price">{{ donate.price_main }}₽</span>
+                                    <span class="discounted-price">{{ donate.final_price }}₽</span>
                                     {% else %}
-                                    {{ donate.meta.price }}₽
+                                    {{ donate.price_main }}₽
                                     {% endif %}
                                 </span>
                             </div>
 
-                            {% if donate.meta.limit is not none %}
+                            {% if donate.left is not none %}
                             <div class="meta-inline-group">
                                 <span class="meta-label">Осталось:</span>
-                                <span class="meta-value">{{ donate.meta.limit }}</span>
+                                <span class="meta-value">{{ donate.left }}</span>
                             </div>
                             {% endif %}
 
-                            {% if donate.meta._discount > 0 %}
+                            {% if donate.discount_value > 0 %}
                             <div class="meta-inline-group">
                                 <span class="meta-label">Скидка действует ещё:</span>
                                 <span class="meta-value time-left">—</span>

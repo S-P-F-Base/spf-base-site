@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 
 class Config:
     _loaded = False
-
     _cache = {}
+    CommissionKey = Literal["PC", "AC"]
 
     @classmethod
     def load(cls):

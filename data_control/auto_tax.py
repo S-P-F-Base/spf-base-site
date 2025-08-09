@@ -2,12 +2,14 @@ import base64
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final, Literal
 
 from requests import Session
 
 from .config import Config
+
+TWOPLACES = Decimal("0.01")
 
 
 class AutoTax:
@@ -145,26 +147,41 @@ class AutoTax:
 
     @classmethod
     def post_income(cls, services: list[tuple[str, Decimal]]) -> str:
+        if not services:
+            raise ValueError("Services list is empty")
+
         time = cls._get_cur_time()
 
-        rounded_services = [
+        items_dec = [
             {
                 "name": name,
-                "amount": float(amount.quantize(Decimal("0.01"))),
-                "quantity": 1,  # Брух ФНС
+                "amount_dec": Decimal(amount).quantize(TWOPLACES, ROUND_HALF_UP),
+                "quantity": 1,
             }
             for name, amount in services
         ]
 
-        total = Decimal(sum(item["amount"] for item in rounded_services)).quantize(
-            Decimal("0.01")
+        if any(i["amount_dec"] <= 0 for i in items_dec):
+            raise ValueError("All service amounts must be > 0")
+
+        total_dec = sum((i["amount_dec"] for i in items_dec), Decimal("0.00")).quantize(
+            TWOPLACES, ROUND_HALF_UP
         )
+
+        rounded_services = [
+            {
+                "name": i["name"],
+                "amount": f"{i['amount_dec']:.2f}",
+                "quantity": i["quantity"],
+            }
+            for i in items_dec
+        ]
 
         payload = {
             "operationTime": time,
             "requestTime": time,
             "services": rounded_services,
-            "totalAmount": f"{total:.2f}",
+            "totalAmount": f"{total_dec:.2f}",
             "client": {
                 "contactPhone": None,
                 "displayName": None,
@@ -176,13 +193,12 @@ class AutoTax:
         }
 
         response = cls.req_post("income", json=payload)
-
         if not response.ok:
             raise RuntimeError(
                 f"Invalid response from post_income: {response.status_code} {response.text}"
             )
 
-        uuid = response.json().get("approvedReceiptUuid", None)
+        uuid = response.json().get("approvedReceiptUuid")
         if not uuid:
             raise RuntimeError("approvedReceiptUuid missing in response")
 
