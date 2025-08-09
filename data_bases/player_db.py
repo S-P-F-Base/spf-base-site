@@ -1,14 +1,65 @@
-import pickle
-from dataclasses import dataclass, field
+import json
+from dataclasses import asdict, dataclass, field, fields
+from enum import Enum
 
 from .base_db import BaseDB
+
+
+class NoteStatus(str, Enum):
+    ACTIVE = "active"
+    DELETED = "deleted"
+
+
+@dataclass
+class NoteData:
+    author: str
+    value: str
+
+    status: NoteStatus
+    last_status_envoke_author: str
+
+    @classmethod
+    def from_dict(cls, raw: dict) -> "NoteData":
+        valid_keys = {f.name for f in fields(cls)}
+        clean = {k: v for k, v in raw.items() if k in valid_keys}
+
+        if isinstance(clean.get("status"), str):
+            try:
+                clean["status"] = NoteStatus(clean["status"])
+            except ValueError:
+                clean["status"] = NoteStatus.ACTIVE
+
+        return cls(**clean)
 
 
 @dataclass
 class PlayerData:
     discord_name: str | None = None
     discord_avatar: str | None = None
+
     payments_uuid: list[str] = field(default_factory=list)
+
+    blacklist: dict[str, bool] = field(
+        default_factory=lambda: {
+            "admin": False,
+            "lore": False,
+        }
+    )
+
+    note: list[NoteData] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, raw: dict) -> "PlayerData":
+        valid_keys = {f.name for f in fields(cls)}
+        clean = {k: v for k, v in raw.items() if k in valid_keys}
+
+        if "note" in clean and isinstance(clean["note"], list):
+            clean["note"] = [
+                NoteData.from_dict(n) if isinstance(n, dict) else n
+                for n in clean["note"]
+            ]
+
+        return cls(**clean)
 
 
 class PlayerDB(BaseDB):
@@ -23,7 +74,7 @@ class PlayerDB(BaseDB):
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     discord_id TEXT,
                     steam_id TEXT,
-                    data BLOB
+                    data TEXT
                 )
             """)
             con.commit()
@@ -35,7 +86,7 @@ class PlayerDB(BaseDB):
         steam_id: str | None,
         data: PlayerData,
     ) -> int | None:
-        blob = pickle.dumps(data)
+        blob = json.dumps(asdict(data))
         with cls._connect() as con:
             cur = con.execute(
                 "INSERT INTO player_unit (discord_id, steam_id, data) VALUES (?, ?, ?)",
@@ -52,7 +103,7 @@ class PlayerDB(BaseDB):
         steam_id: str | None,
         data: PlayerData,
     ) -> None:
-        blob = pickle.dumps(data)
+        blob = json.dumps(asdict(data))
         with cls._connect() as con:
             con.execute(
                 """
@@ -73,7 +124,13 @@ class PlayerDB(BaseDB):
     @classmethod
     def _row_to_data(cls, row: tuple) -> tuple[int, str | None, str | None, PlayerData]:
         u_id, discord_id, steam_id, data_blob = row
-        data = pickle.loads(data_blob) if data_blob else PlayerData()
+        try:
+            raw = json.loads(data_blob) if data_blob else {}
+
+        except json.JSONDecodeError:
+            raw = {}
+
+        data = PlayerData.from_dict(raw)
         return u_id, discord_id, steam_id, data
 
     @classmethod
@@ -126,7 +183,7 @@ class PlayerDB(BaseDB):
         u_id, _, _, data = entry
         if payment_uuid not in data.payments_uuid:
             data.payments_uuid.append(payment_uuid)
-            cls._update_blob(u_id, data)
+            cls._update_data(u_id, data)
 
     @classmethod
     def remove_payment(cls, u_id: int, payment_uuid: str) -> None:
@@ -137,11 +194,11 @@ class PlayerDB(BaseDB):
         u_id, _, _, data = entry
         if payment_uuid in data.payments_uuid:
             data.payments_uuid.remove(payment_uuid)
-            cls._update_blob(u_id, data)
+            cls._update_data(u_id, data)
 
     @classmethod
-    def _update_blob(cls, u_id: int, data: PlayerData) -> None:
-        blob = pickle.dumps(data)
+    def _update_data(cls, u_id: int, data: PlayerData) -> None:
+        blob = json.dumps(asdict(data))
         with cls._connect() as con:
             con.execute("UPDATE player_unit SET data = ? WHERE id = ?", (blob, u_id))
             con.commit()

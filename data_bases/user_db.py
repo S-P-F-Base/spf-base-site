@@ -28,6 +28,10 @@ class UserAccess(IntFlag):
     READ_LOGS = 1 << 10
     CONTROL_LOGS = 1 << 11
 
+    SERVICE_CONTROL = 1 << 12
+
+    LORE_CHAR_CONTROL = 1 << 13
+
 
 class UserDB(BaseDB):
     _db_name = "user"

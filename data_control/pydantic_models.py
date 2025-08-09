@@ -1,6 +1,11 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
+
+
+class BaseUUIDAPIData(BaseModel):
+    uuid: str
 
 
 class TargetUserAPIData(BaseModel):
@@ -19,6 +24,45 @@ class LoginAPIData(BaseModel):
 class PlayerAPIData(BaseModel):
     discord_name: str
     steam_url: str
+
+
+class ServiceCreateAPIData(BaseModel):
+    name: str
+    description: str
+    price_main: str
+    limit: int | None = None
+    sell_time_end: datetime | None = None
+
+    discount: int = 0
+    discount_time_end: datetime | None = None
+
+
+class ServiceEditAPIData(BaseUUIDAPIData):
+    name: str | None = None
+    description: str | None = None
+    price_main: str | None = None
+    status: int | None = None
+    limit: int | None = None
+    sell_time_end: datetime | None = None
+
+    discount: int | None = None
+    discount_time_end: datetime | None = None
+
+
+class LoreCharKeyAPIData(BaseModel):
+    key: str
+
+
+class LoreCharCreateAPIData(LoreCharKeyAPIData):
+    name: str
+    status: Literal["free", "taken", "blocked"]
+    wiki: str | None = None
+
+
+class LoreCharEditAPIData(LoreCharKeyAPIData):
+    name: str | None = None
+    status: Literal["free", "taken", "blocked"] | None = None
+    wiki: str | None = None
 
 
 # region LOGS DATA

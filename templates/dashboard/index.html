@@ -24,6 +24,32 @@
 
             <h2 class="welcome-title">Добро пожаловать!</h2>
 
+            {% if data.blacklist.admin or data.blacklist.lore %}
+            <div class="alert-flag">
+                <div class="icon">!</div>
+                <div class="tooltip">
+                    {% if data.blacklist.admin %}
+                    <div class="warn-entry">
+                        <strong>Чёрный список администрации</strong><br>
+                        Вы были занесены в чёрный список на подачу заявки на админсостав.<br>
+                        Это ограничивает вашу возможность подавать на роли администрации. Ваши заявки будут мгновенно
+                        отклонены без объяснения причины.
+                    </div>
+                    {% endif %}
+
+                    {% if data.blacklist.lore %}
+                    <div class="warn-entry">
+                        <strong>Чёрный список лорных персонажей</strong><br>
+                        Вы ограничены в возможности подавать заявки на лорных персонажей.<br>
+                        Это ограничивает вашу возможность подавать на роли лорных персонажей. Ваши заявки будут
+                        мгновенно
+                        отклонены без объяснения причины.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             {% if discord_id and data.discord_avatar %}
             <div class="player-profile">
                 <h3>Профиль игрока</h3>
@@ -35,6 +61,12 @@
                 </div>
             </div>
             {% endif %}
+
+            <div class="player-id-card">
+                <h3>ID аккаунта</h3>
+                <p>Ваш внутренний идентификатор: <code id="account-id">#{{ player_id }}</code></p>
+                <button onclick="copyID()">Скопировать</button>
+            </div>
 
             <div class="linked-services">
                 <div class="info-row">
@@ -73,9 +105,26 @@
                     {% endif %}
                 </div>
             </div>
-
         </div>
     </div>
+
+    <script>
+        function copyID() {
+            const id = document.getElementById("account-id").innerText;
+            const button = event.currentTarget;
+
+            navigator.clipboard.writeText(id).then(() => {
+                const original = button.innerText;
+                button.innerText = "Скопировано!";
+                button.disabled = true;
+
+                setTimeout(() => {
+                    button.innerText = original;
+                    button.disabled = false;
+                }, 2000);
+            });
+        }
+    </script>
 </body>
 
 </html>

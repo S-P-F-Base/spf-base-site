@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
@@ -14,8 +16,8 @@ def dashboard(request: Request):
 
     if not pdata:
         return RedirectResponse("/api/discord/login", status_code=302)
-    else:
-        u_id, discord_id, steam_id, data = pdata
+
+    u_id, discord_id, steam_id, data = pdata
 
     return templates.TemplateResponse(
         "dashboard/index.html",
@@ -23,6 +25,7 @@ def dashboard(request: Request):
             "request": request,
             "discord_id": discord_id,
             "steam_id": steam_id,
-            "data": data,
+            "player_id": u_id,
+            "data": asdict(data),
         },
     )
