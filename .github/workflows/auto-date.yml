@@ -10,14 +10,13 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   update-dates:
     if: ${{ !contains(github.event.head_commit.message, '[auto-date]') }}
     runs-on: ubuntu-latest
-    outputs:
-      changed: ${{ steps.commit.outputs.changed }}
-      branch: ${{ steps.ref.outputs.branch }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +34,6 @@ jobs:
           chmod +x scripts/update_wiki_dates.py
 
       - name: Determine changed files
-        id: diff
         run: |
           set -e
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -51,21 +49,17 @@ jobs:
       - name: Run updater
         run: python scripts/update_wiki_dates.py
 
-      - name: Capture branch
-        id: ref
-        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-
-      - name: Commit and push if changed
-        id: commit
-        run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "[auto-date] Update wiki dates"
-            git push
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "No changes."
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
+      - name: Create PR with changes
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "[auto-date] Update wiki dates"
+          body: |
+            Автоматическое обновление `Date:` в изменённых файлах `wiki/**/*.md`.
+            Сгенерировано GitHub Actions.
+          commit-message: "[auto-date] Update wiki dates"
+          base: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+          branch: chore/auto-date-${{ github.run_id }}
+          labels: automated
+          signoff: false
+          draft: false
+          delete-branch: true
