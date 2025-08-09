@@ -58,7 +58,7 @@ jobs:
             Сгенерировано GitHub Actions.
           commit-message: "[auto-date] Update wiki dates"
           base: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
-          branch: chore/auto-date-${{ github.run_id }}
+          branch: automation/auto-date-${{ github.run_id }}
           labels: automated
           signoff: false
           draft: false
