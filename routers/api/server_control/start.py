@@ -14,4 +14,5 @@ def start(request: Request):
 
     ServerControl.perform_action("start")
     LogDB.add_log(LogType.GAME_SERVER_START, "The server has started", username)
+    
     return 200

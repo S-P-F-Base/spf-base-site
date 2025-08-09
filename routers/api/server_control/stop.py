@@ -14,4 +14,5 @@ def stop(request: Request):
 
     ServerControl.perform_action("stop")
     LogDB.add_log(LogType.GAME_SERVER_STOP, "The server has stopped", username)
+    
     return 200

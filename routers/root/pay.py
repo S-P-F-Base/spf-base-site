@@ -1,106 +1,57 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from data_bases import YoomoneyDB
-from data_control import PaymentData
 from templates import templates
 
 router = APIRouter()
 
 
-def _get_payment_by_uuid(uuid: str) -> PaymentData:
-    payment_id = YoomoneyDB.resolve_payment_id_by_uuid(uuid)
-    if payment_id is None:
+@router.get("/pay", response_class=HTMLResponse)
+def pay_page(request: Request, uuid: str | None = None):
+    raise HTTPException(404)
+    if uuid is None:
+        raise HTTPException(status_code=400, detail="UUID is required")
+
+    payment_link_data = PaymentDB.payments_links.get_by_u_id(uuid)
+    if payment_link_data is None:
         raise HTTPException(status_code=404, detail="Payment link not found")
 
-    payment = YoomoneyDB.get_payment(payment_id)
-    if payment is None:
+    payment_uuid = payment_link_data.get("payment_uuid", None)
+    if payment_uuid is None:
+        raise HTTPException(
+            status_code=500, detail="Link has no associated payment UUID"
+        )
+
+    payment_data = PaymentDB.payments.get_by_u_id(payment_uuid)
+    if payment_data is None:
         raise HTTPException(status_code=404, detail="Payment not found")
 
-    return payment
+    service_data = PaymentDB.services.get_by_u_id(payment_data.what_buy)
+    if service_data is None:
+        raise HTTPException(status_code=404, detail="Service not found")
 
+    service_meta = service_data.get("meta", None)
+    if service_meta is None or isinstance(service_meta, (str, ServiceStatus)):
+        raise HTTPException(status_code=500, detail="Service meta is invalid")
 
-@router.get("/pay/{uuid}", response_class=HTMLResponse)
-def pay_get(
-    request: Request,
-    uuid: str,
-    confirm: bool = False,
-):
-    if uuid == "test":
-        return templates.TemplateResponse(
-            "pay_confirm.html",
-            {
-                "request": request,
-                "uuid": uuid,
-                "amount": 199.99,
-                "test": True,
-                "reason": "Тестовая услуга",
-            },
-        )
-
-    payment = _get_payment_by_uuid(uuid)
-
-    if payment.is_complete():
-        return RedirectResponse(f"/pay/{uuid}/success")
-    elif payment.is_cancel():
-        return RedirectResponse(f"/pay/{uuid}/cancel")
-
-    if payment.db_id is None:
-        raise HTTPException(status_code=500, detail="Empty id of payment")
-
-    if confirm:
-        url = YoomoneyDB.generate_yoomoney_payment_url(
-            amount=payment.price_calculation_by_payment("AC"),
-            successURL=f"https://spf-base.ru/pay/{uuid}/success",
-            label=str(payment.db_id),
-            payment_type="AC",
-        )
-        return RedirectResponse(url)
+    services_name = service_meta.name
+    services_value = service_meta.price
+    services_description = service_meta.description
 
     return templates.TemplateResponse(
-        "pay_confirm.html",
+        "pay.html",
         {
             "request": request,
             "uuid": uuid,
-            "amount": payment.amount,
-            "reason": payment.what_buy,  # TODO: Сделать ресолв из id в строку
+            "services_name": services_name,
+            "services_value": str(services_value),
+            "services_description": services_description,
         },
     )
 
 
-@router.get("/pay/{uuid}/success", response_class=HTMLResponse)
-def pay_success(request: Request, uuid: str):
-    if uuid == "test":
-        return templates.TemplateResponse(
-            "pay_success.html",
-            {"request": request, "uuid": uuid},
-        )
+@router.post("/pay/confirm")
+async def confirm_payment(payment_link: str = Form(...)):
+    print(f"Запрос оплаты от пользователя {payment_link}")
 
-    payment = _get_payment_by_uuid(uuid)
-
-    if not payment.is_complete():
-        return RedirectResponse(f"/pay/{uuid}")
-
-    return templates.TemplateResponse(
-        "pay_success.html",
-        {"request": request, "uuid": uuid},
-    )
-
-
-@router.get("/pay/{uuid}/cancel", response_class=HTMLResponse)
-def pay_cancel(request: Request, uuid: str):
-    if uuid == "test":
-        return templates.TemplateResponse(
-            "pay_cancel.html",
-            {"request": request, "uuid": uuid},
-        )
-
-    payment = _get_payment_by_uuid(uuid)
-
-    if not payment.is_cancel():
-        return RedirectResponse(f"/pay/{uuid}")
-
-    return templates.TemplateResponse(
-        "pay_cancel.html",
-        {"request": request, "uuid": uuid},
-    )
+    return RedirectResponse(url="/", status_code=303)

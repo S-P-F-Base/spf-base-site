@@ -7,9 +7,33 @@ from markdown.extensions import Extension
 
 class ImgBlockProcessor(BlockProcessor):
     RE = re.compile(
-        r"^!imgblock\[(.+?)\|(\s*left\s*|\s*right\s*|\s*middle\s*)(?:\|(\d{1,3}))?\]\s*$",
+        r"^!imgblock\[(.+?)\|\s*(left|right|middle)\s*(?:\|\s*([^\]]+))?\]\s*$",
         re.IGNORECASE,
     )
+
+    def parse_size(self, size_str):
+        parts = [p.strip().lower() for p in size_str.split(",")]
+        width = parts[0] if len(parts) > 0 else "40%"
+        height = parts[1] if len(parts) > 1 else None
+        mode = parts[2] if len(parts) > 2 else "max"
+
+        def valid(value):
+            return (
+                re.match(r"^\d+%$", value)
+                or re.match(r"^\d+px$", value)
+                or value == "auto"
+            )
+
+        if not valid(width):
+            width = "40%"
+
+        if height and not valid(height):
+            height = None
+
+        if mode not in {"max", "hard"}:
+            mode = "max"
+
+        return width, height, mode
 
     def test(self, parent, block):
         return bool(self.RE.match(block.split("\n", 1)[0]))
@@ -24,11 +48,12 @@ class ImgBlockProcessor(BlockProcessor):
 
         url = match.group(1).strip()
         pos = match.group(2).strip().lower()
-        max_width = match.group(3)
-        if max_width is None:
-            w = 40
+        size_raw = match.group(3)
+
+        if size_raw:
+            width, height, mode = self.parse_size(size_raw)
         else:
-            w = max(10, min(int(max_width), 100))
+            width, height, mode = "40%", None, "max"
 
         content_lines = []
         for line in lines[1:]:
@@ -44,7 +69,17 @@ class ImgBlockProcessor(BlockProcessor):
         img = etree.SubElement(wrapper, "img")
         img.set("src", url)
         img.set("alt", "")
-        img.set("style", f"max-width: {w}%;")
+
+        if mode == "hard":
+            style = f"width:{width};"
+            if height:
+                style += f" height:{height};"
+        else:
+            style = f"max-width:{width};"
+            if height:
+                style += f" max-height:{height};"
+
+        img.set("style", style)
 
         content_div = etree.SubElement(wrapper, "div")
         content_div.set("class", "content")

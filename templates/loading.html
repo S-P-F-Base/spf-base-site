@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>S.P.F. Base loading...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="{{ 'loading.css' | ver }}" />
+    <style>
+        body {
+            background: url('{{ bg_url | default("/static/images/bg.jpg") }}') no-repeat center center fixed;
+            background-size: cover;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="top-bar">
+        <div class="top-left">
+            <div class="top-card inline">
+                <span class="top-label">Текущая карта:</span>
+                <span class="top-value" id="mapname">{{ mapname | default("неизвестно") }}</span>
+            </div>
+            <div class="top-card inline">
+                <span class="top-label">Сайт проекта:</span>
+                <a href="/" class="top-value top-link">spf-base.ru</a>
+            </div>
+        </div>
+        <div class="top-right">
+            <div class="top-card inline">
+                <span class="top-label">Добро пожаловать,</span>
+                <span class="top-value">{{ name | default("гость") }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-container">
+        <div id="progress-bar-wrapper">
+            <div id="progress-bar-fill"></div>
+        </div>
+        <div id="history">
+            <div class="history-item">Ожидание подключения...</div>
+        </div>
+    </div>
+
+    <script src="/static/js/loading.js"></script>
+</body>
+
+</html>

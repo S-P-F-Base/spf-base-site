@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException
 
 from data_bases import UserDB
-from data_control import JWTControl, LoginData
+from data_control import JWTControl, LoginAPIData
 
 router = APIRouter()
 
 
 @router.post("/login")
-def login(data: LoginData):
+def login(data: LoginAPIData):
     if not UserDB.check_password(data.username, data.password):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 

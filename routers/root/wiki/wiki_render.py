@@ -58,6 +58,8 @@ def wiki_page(request: Request, page: Path):
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Page not found")
 
+    constants = load_constants()
+
     md = Markdown(
         extensions=[
             "fenced_code",  # Блоки кода через тройные кавычки (```), как на GitHub
@@ -70,7 +72,7 @@ def wiki_page(request: Request, page: Path):
             "smarty",  # Типографические ковычки
             "nl2br",  # Превращает одиночные \n в <br />
             WikiLinkExtension(),  # Поддержка [[url|name]] для вики-стилей
-            ConstExtension(constants=load_constants()),  # Константы для замены
+            ConstExtension(constants=constants),  # Константы для замены
             ImgBlockExtension(),  # Для блоков с картинками и текстом
             SingleImgExtension(),  # Макрос для картинок
             ButtonExtension(),  # Работа с кнопками и их оформлением

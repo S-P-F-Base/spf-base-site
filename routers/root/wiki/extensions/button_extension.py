@@ -47,4 +47,4 @@ class ButtonTreeProcessor(Treeprocessor):
 
 class ButtonExtension(Extension):
     def extendMarkdown(self, md):
-        md.treeprocessors.register(ButtonTreeProcessor(md), "button_processor", 999)
+        md.treeprocessors.register(ButtonTreeProcessor(md), "button_processor", 220)

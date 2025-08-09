@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <title>Донат услуги</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta property="og:title" content="S.P.F. Base donate" />
+    <meta property="og:description" content="Страница донат услуг проекта S.P.F." />
+    <meta property="og:image" content="https://spf-base.ru/static/images/logo/site.jpg" />
+    <meta property="og:url" content="https://spf-base.ru/" />
+    <meta property="og:type" content="website" />
+
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="{{ 'main.css' | ver }}" />
+    <link rel="stylesheet" href="{{ 'donate.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        <div class="content-tile">
+
+            <div class="donate-filters">
+                <div class="donate-search">
+                    <input type="text" id="donate-search" placeholder="Поиск по названию..." />
+                </div>
+            </div>
+
+            <div class="donate-list">
+
+                <section id="available-list">
+                    <h2 class="category-title" id="available-title">Доступные услуги</h2>
+                    {% for donate in active_list %}
+                    <article class="donate-item" data-id="{{ donate.uuid }}"
+                        data-timeend="{{ donate.meta._discount_time_end.isoformat() if donate.meta._discount_time_end else '' }}">
+                        <header class="donate-header">
+                            <h3 class="donate-title">{{ donate.meta.name }}</h3>
+                            {% if donate.meta._discount > 0 %}
+                            <span class="discount">-{{ donate.meta._discount }}%</span>
+                            {% endif %}
+                        </header>
+                        <div class="donate-meta">
+                            <div class="meta-label">Описание:</div>
+                            <div class="meta-value">{{ donate.meta.description }}</div>
+
+                            <div class="meta-inline-group">
+                                <span class="meta-label">Цена:</span>
+                                <span class="meta-value">
+                                    {% if donate.meta._discount > 0 %}
+                                    <span class="original-price">{{ donate.meta.price }}₽</span>
+                                    <span class="discounted-price">
+                                        {{ (donate.meta.price * (100 - donate.meta._discount) // 100) }}₽
+                                    </span>
+                                    {% else %}
+                                    {{ donate.meta.price }}₽
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            {% if donate.meta.limit is not none %}
+                            <div class="meta-inline-group">
+                                <span class="meta-label">Осталось:</span>
+                                <span class="meta-value">{{ donate.meta.limit }}</span>
+                            </div>
+                            {% endif %}
+
+                            {% if donate.meta._discount > 0 %}
+                            <div class="meta-inline-group">
+                                <span class="meta-label">Скидка действует ещё:</span>
+                                <span class="meta-value time-left">—</span>
+                            </div>
+                            {% endif %}
+
+                            <div class="meta-actions">
+                                <button class="copy-button">Скопировать</button>
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </section>
+
+                <section id="soldout-list">
+                    <h2 class="category-title" id="soldout-title">Распроданные</h2>
+                    {% for donate in no_stock_list %}
+                    <article class="donate-item" data-id="{{ donate.uuid }}"
+                        data-timeend="{{ donate.meta._discount_time_end.isoformat() if donate.meta._discount_time_end else '' }}">
+                        <header class="donate-header">
+                            <h3 class="donate-title">{{ donate.meta.name }}</h3>
+                            {% if donate.meta._discount > 0 %}
+                            <span class="discount">-{{ donate.meta._discount }}%</span>
+                            {% endif %}
+                        </header>
+                        <div class="donate-meta">
+                            <div class="meta-label">Описание:</div>
+                            <div class="meta-value">{{ donate.meta.description }}</div>
+
+                            <div class="meta-inline-group">
+                                <span class="meta-label">Цена:</span>
+                                <span class="meta-value">
+                                    {% if donate.meta._discount > 0 %}
+                                    <span class="original-price">{{ donate.meta.price }}₽</span>
+                                    <span class="discounted-price">
+                                        {{ (donate.meta.price * (100 - donate.meta._discount) // 100) }}₽
+                                    </span>
+                                    {% else %}
+                                    {{ donate.meta.price }}₽
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            {% if donate.meta.limit is not none %}
+                            <div class="meta-inline-group">
+                                <span class="meta-label">Осталось:</span>
+                                <span class="meta-value">{{ donate.meta.limit }}</span>
+                            </div>
+                            {% endif %}
+
+                            {% if donate.meta._discount > 0 %}
+                            <div class="meta-inline-group">
+                                <span class="meta-label">Скидка действует ещё:</span>
+                                <span class="meta-value time-left">—</span>
+                            </div>
+                            {% endif %}
+
+                            <div class="meta-actions">
+                                <button class="copy-button">Скопировать</button>
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </section>
+
+                <p id="no-services-message" style="display:none; color:#ffa500; font-weight:600; margin-top:1rem;">
+                    Нет доступных услуг
+                </p>
+            </div>
+
+            <footer style="text-align:left; padding:1rem;">
+                <a href="/wiki/docs/oferta" target="_blank" rel="noopener">Ознакомиться с офертой</a>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const searchInput = document.getElementById("donate-search");
+            const availableList = document.getElementById("available-list");
+            const soldoutList = document.getElementById("soldout-list");
+            const availableTitle = document.getElementById("available-title");
+            const soldoutTitle = document.getElementById("soldout-title");
+            const noServicesMessage = document.getElementById("no-services-message");
+
+            const items = [...document.querySelectorAll(".donate-item")];
+
+            function updateVisibility() {
+                let availableVisible = 0;
+                let soldoutVisible = 0;
+
+                items.forEach(item => {
+                    if (item.style.display !== "none") {
+                        if (availableList.contains(item)) availableVisible++;
+                        else if (soldoutList.contains(item)) soldoutVisible++;
+                    }
+                });
+
+                const noServices = availableVisible === 0 && soldoutVisible === 0;
+
+                availableList.style.display = noServices ? "none" : "block";
+                soldoutList.style.display = noServices ? "none" : "block";
+                noServicesMessage.style.display = noServices ? "block" : "none";
+
+                availableTitle.style.display = availableVisible > 0 ? "block" : "none";
+                soldoutTitle.style.display = soldoutVisible > 0 ? "block" : "none";
+            }
+
+            updateVisibility();
+
+            searchInput.addEventListener("input", () => {
+                const value = searchInput.value.toLowerCase();
+
+                items.forEach(item => {
+                    const name = item.querySelector(".donate-title")?.textContent.toLowerCase() || "";
+                    const visible = name.includes(value);
+                    item.style.display = visible ? "block" : "none";
+                });
+
+                updateVisibility();
+            });
+
+            items.forEach(item => {
+                item.addEventListener("click", () => {
+                    const meta = item.querySelector(".donate-meta");
+                    if (meta) {
+                        meta.classList.toggle("visible");
+                    }
+                });
+            });
+
+            function updateTimers() {
+                const now = new Date();
+
+                items.forEach(item => {
+                    const timeStr = item.getAttribute("data-timeend");
+                    if (!timeStr) return;
+
+                    const end = new Date(timeStr);
+                    const diff = end - now;
+                    const display = item.querySelector(".time-left");
+                    if (!display) return;
+
+                    if (diff <= 0) {
+                        display.textContent = "Скоро закончится";
+                        return;
+                    }
+
+                    const days = Math.floor(diff / 86400000);
+                    const hours = Math.floor((diff % 86400000) / 3600000);
+                    const minutes = Math.floor((diff % 3600000) / 60000);
+                    const seconds = Math.floor((diff % 60000) / 1000);
+
+                    let text = "";
+                    if (days > 0) text += `${days}д `;
+                    if (hours > 0 || days > 0) text += `${hours}ч `;
+                    text += `${minutes}м ${seconds}с`;
+
+                    display.textContent = text;
+                });
+            }
+
+            updateTimers();
+            setInterval(updateTimers, 1000);
+
+            document.querySelectorAll(".copy-button").forEach(button => {
+                button.addEventListener("click", e => {
+                    e.stopPropagation();
+
+                    const item = button.closest(".donate-item");
+                    if (!item) return;
+
+                    const id = item.getAttribute("data-id");
+                    const text = `\`service_${id}\``;
+
+                    navigator.clipboard.writeText(text).then(() => {
+                        button.textContent = "Скопировано!";
+                        setTimeout(() => button.textContent = "Скопировать", 1500);
+                    }).catch(() => {
+                        button.textContent = "Ошибка";
+                        setTimeout(() => button.textContent = "Скопировать", 1500);
+                    });
+                });
+            });
+
+            items.forEach(item => {
+                const leftoverGroup = [...item.querySelectorAll(".meta-inline-group")].find(group => {
+                    const label = group.querySelector(".meta-label");
+                    return label && label.textContent.trim() === "Осталось:";
+                });
+
+                if (leftoverGroup) {
+                    const valueElem = leftoverGroup.querySelector(".meta-value");
+                    if (!valueElem) return;
+
+                    const count = parseInt(valueElem.textContent.trim());
+                    if (isNaN(count)) return;
+
+                    valueElem.classList.remove("limit-low", "limit-medium", "limit-high");
+
+                    if (count <= 4) valueElem.classList.add("limit-low");
+                    else if (count <= 10) valueElem.classList.add("limit-medium");
+                    else valueElem.classList.add("limit-high");
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

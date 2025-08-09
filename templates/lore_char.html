@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>S.P.F. Base лорные персонажи</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta property="og:title" content="S.P.F. Base" />
+    <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
+    <meta property="og:image" content="https://spf-base.ru/static/images/logo/site.jpg" />
+    <meta property="og:url" content="https://spf-base.ru/" />
+    <meta property="og:type" content="website" />
+
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="{{ 'main.css' | ver }}" />
+    <link rel="stylesheet" href="{{ 'lore_char.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        <div class="content-tile">
+            <h1>Доступные лорные персонажи</h1>
+
+            <input type="text" id="charSearch" placeholder="Поиск персонажа..." />
+
+            <select id="charSort">
+                <option value="name_asc">По имени (А-Я)</option>
+                <option value="name_desc">По имени (Я-А)</option>
+                <option value="status">Сначала доступные</option>
+            </select>
+
+            <div class="character-list" id="characterList">
+                {% for char_id, data in lore_dict.items() %}
+                {% set status = data.status %}
+                {% set is_unavailable = status != 'free' %}
+                <div class="character-entry" data-name="{{ data.name | lower }}" data-status="{{ status }}">
+                    {% if status == "free" %}
+                    {% if data.wiki %}
+                    <a href="{{ data.wiki }}" class="character">
+                        {{ data.name }}
+                    </a>
+                    {% else %}
+                    <div class="character no-wiki">
+                        {{ data.name }}
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="character unavailable">
+                        {{ data.name }}
+                        {% if status == "taken" %} занят(a){% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+
+        <script>
+            const searchInput = document.getElementById('charSearch');
+            const sortSelect = document.getElementById('charSort');
+            const list = document.getElementById('characterList');
+
+            function filterAndSort() {
+                const search = searchInput.value.toLowerCase();
+                const sortMode = sortSelect.value;
+
+                const allItems = Array.from(list.children);
+
+                allItems.forEach(item => {
+                    const name = item.dataset.name;
+                    const visible = name.includes(search);
+                    item.style.display = visible ? '' : 'none';
+                });
+
+                const visibleItems = allItems.filter(item => item.style.display !== 'none');
+
+                visibleItems.sort((a, b) => {
+                    const nameA = a.dataset.name;
+                    const nameB = b.dataset.name;
+                    const statusPriority = {
+                        'free': 0,
+                        'taken': 1,
+                        'blocked': 2
+                    };
+                    const statusA = statusPriority[a.dataset.status] ?? 3;
+                    const statusB = statusPriority[b.dataset.status] ?? 3;
+
+                    switch (sortMode) {
+                        case 'name_asc':
+                            return nameA.localeCompare(nameB, 'ru');
+                        case 'name_desc':
+                            return nameB.localeCompare(nameA, 'ru');
+                        case 'status':
+                            if (statusA !== statusB) return statusA - statusB;
+                            return nameA.localeCompare(nameB, 'ru');
+                    }
+                });
+
+                visibleItems.forEach(item => list.appendChild(item));
+            }
+
+            searchInput.addEventListener('input', filterAndSort);
+            sortSelect.addEventListener('change', filterAndSort);
+            window.addEventListener('DOMContentLoaded', filterAndSort);
+        </script>
+
+</body>
+
+</html>

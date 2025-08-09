@@ -1,6 +1,8 @@
 Title: Второй рассказчик
-Author: Grom
-Date: 2025-10-07
+Author: Grom, Cain
+Date: 2 Августа 2025 г.
 
-# Добро пожаловать
-Это пример страницы для **вики**. Ниже — демонстрация подключённых расширений.
+!!! blue "Cain"
+    !imgblock[/static/wiki/images/avatar/cain_e.png|left|128px,128px,hard]
+    Страница в разработке
+    !endimgblock

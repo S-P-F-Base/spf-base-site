@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <title>Ошибка — S.P.F. Base</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta property="og:title" content="S.P.F. Base — Ошибка" />
+    <meta property="og:description" content="Что-то пошло не так при подключении аккаунта." />
+    <meta property="og:image" content="https://spf-base.ru/static/images/logo/site.jpg" />
+    <meta property="og:url" content="https://spf-base.ru/" />
+    <meta property="og:type" content="website" />
+
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="{{ 'main.css' | ver }}" />
+    <link rel="stylesheet" href="{{ 'auth_error.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        <div class="content-tile">
+            <h1>Ошибка авторизации</h1>
+
+            {% if reason %}
+            <div class="error-reason">
+                <p><strong>{{ reason }}</strong></p>
+            </div>
+            {% endif %}
+
+            <p>Попробуйте повторить попытку позже.</p>
+
+            <nav class="links-list">
+                <a href="/">Вернуться на главную</a>
+            </nav>
+        </div>
+    </div>
+</body>
+
+</html>

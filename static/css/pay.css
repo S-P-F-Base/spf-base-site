@@ -1,31 +1,31 @@
-.content-tile strong {
+/* Styled button */
+button[type="submit"] {
+    background: #222;
+    border: 2px solid orange;
+    border-radius: 6px;
     color: orange;
-    background: rgba(255, 165, 0, 0.2);
-    padding: 0 0.3rem;
-    border-radius: 3px;
-    font-weight: 700;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 12px 24px;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.1s ease;
 }
 
-.notice,
-.warning {
-    color: #ffffff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    margin: 1rem 0;
+button[type="submit"]:hover,
+button[type="submit"]:focus {
+    background-color: orange;
+    color: black;
+    outline: none;
 }
 
-.notice {
-    background: rgba(255, 165, 0, 0.25);
-    border-left: 4px solid orange;
+button[type="submit"]:active {
+    transform: scale(0.97);
 }
 
-.warning {
-    background: rgba(255, 0, 0, 0.3);
-    border-left: 4px solid #e60000;
-}
-
-.disabled-link {
-    pointer-events: none;
-    opacity: 0.5;
+/* Disabled state */
+button[type="submit"]:disabled {
+    background: #333;
+    border-color: #444;
+    color: #777;
+    cursor: not-allowed;
 }

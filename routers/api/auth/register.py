@@ -3,7 +3,7 @@ import re
 from fastapi import APIRouter, HTTPException
 
 from data_bases import LogDB, LogType, UserDB
-from data_control import JWTControl, LoginData
+from data_control import JWTControl, LoginAPIData
 
 router = APIRouter()
 
@@ -13,7 +13,7 @@ def clean_username(username: str) -> str:
 
 
 @router.post("/register")
-def register(data: LoginData):
+def register(data: LoginAPIData):
     if not data.username.isascii():
         raise HTTPException(status_code=400, detail="Username contain non-ascii")
 
@@ -25,7 +25,7 @@ def register(data: LoginData):
         raise HTTPException(status_code=400, detail="User already exists")
 
     UserDB.create_user(username, data.password)
-    LogDB.add_log(LogType.CREATE_USER, f"Created user {username}", UserDB.system_user)
+    LogDB.add_log(LogType.USER_CREATE, f"Created user {username}", UserDB.system_user)
 
     access_token = JWTControl.create_access(username)
     refresh_token = JWTControl.create_refresh(username)

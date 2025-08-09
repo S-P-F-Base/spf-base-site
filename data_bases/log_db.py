@@ -8,9 +8,9 @@ class LogType(Enum):
     LOGIN = 1
     LOGOUT = 2
 
-    CREATE_USER = 3
-    DELETE_USER = 4
-    UPDATE_USER = 5
+    USER_CREATE = 3
+    USER_DELETE = 4
+    USER_UPDATE = 5
 
     PAY_CREATE = 6
     PAY_UPDATE = 7
@@ -19,6 +19,18 @@ class LogType(Enum):
 
     GAME_SERVER_START = 10
     GAME_SERVER_STOP = 11
+
+    PLAYER_CREATED = 12
+    PLAYER_UPDATE = 13
+    PLAYER_DELETE = 14
+
+    SERVICE_CREATE = 15
+    SERVICE_UPDATE = 16
+    SERVICE_DELETE = 17
+
+    LORE_CHAR_CREATE = 18
+    LORE_CHAR_EDIT = 19
+    LORE_CHAR_DELETE = 20
 
 
 class LogDB(BaseDB):
@@ -67,6 +79,7 @@ class LogDB(BaseDB):
             row = cur.fetchone()
             if row:
                 return row[0], row[1]
+
             return None, None
 
     @classmethod
@@ -78,18 +91,16 @@ class LogDB(BaseDB):
             )
             rows = cur.fetchall()
 
-        logs = []
-        for row in rows:
-            log = {
+        return [
+            {
                 "id": row[0],
                 "type": LogType(row[1]),
                 "time": datetime.fromtimestamp(row[2], tz=UTC),
                 "value": row[3],
                 "creator": row[4],
             }
-            logs.append(log)
-
-        return logs
+            for row in rows
+        ]
 
     @classmethod
     def get_logs_by_creator(cls, creator: str) -> list[dict]:
@@ -100,18 +111,16 @@ class LogDB(BaseDB):
             )
             rows = cur.fetchall()
 
-        logs = []
-        for row in rows:
-            log = {
+        return [
+            {
                 "id": row[0],
                 "type": LogType(row[1]),
                 "time": datetime.fromtimestamp(row[2], tz=UTC),
                 "value": row[3],
                 "creator": row[4],
             }
-            logs.append(log)
-
-        return logs
+            for row in rows
+        ]
 
     @classmethod
     def get_logs_by_time_range(
@@ -127,18 +136,16 @@ class LogDB(BaseDB):
             )
             rows = cur.fetchall()
 
-        logs = []
-        for row in rows:
-            log = {
+        return [
+            {
                 "id": row[0],
                 "type": LogType(row[1]),
                 "time": datetime.fromtimestamp(row[2], tz=UTC),
                 "value": row[3],
                 "creator": row[4],
             }
-            logs.append(log)
-
-        return logs
+            for row in rows
+        ]
 
     @classmethod
     def get_logs_by_type(cls, log_type: LogType) -> list[dict]:
@@ -149,15 +156,13 @@ class LogDB(BaseDB):
             )
             rows = cur.fetchall()
 
-        logs = []
-        for row in rows:
-            log = {
+        return [
+            {
                 "id": row[0],
                 "type": LogType(row[1]),
                 "time": datetime.fromtimestamp(row[2], tz=UTC),
                 "value": row[3],
                 "creator": row[4],
             }
-            logs.append(log)
-
-        return logs
+            for row in rows
+        ]

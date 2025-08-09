@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from data_bases import UserAccess, UserDB
-from data_control import TargetUserData, req_authorization
+from data_control import TargetUserAPIData, req_authorization
 
 router = APIRouter()
 
 
 @router.post("/get_info")
-def get_info(request: Request, data: TargetUserData):
+def get_info(request: Request, data: TargetUserAPIData):
     username = req_authorization(request)
 
     target = data.target
