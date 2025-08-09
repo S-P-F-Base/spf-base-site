@@ -1,0 +1,71 @@
+name: Auto date for wiki MD
+
+on:
+  push:
+    branches: ["**"]
+    paths: ["wiki/**/*.md"]
+  pull_request:
+    branches: ["**"]
+    paths: ["wiki/**/*.md"]
+
+permissions:
+  contents: write
+
+jobs:
+  update-dates:
+    if: ${{ !contains(github.event.head_commit.message, '[auto-date]') }}
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+      branch: ${{ steps.ref.outputs.branch }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Ensure updater exists
+        run: |
+          test -f scripts/update_wiki_dates.py || { echo "scripts/update_wiki_dates.py not found"; exit 1; }
+          chmod +x scripts/update_wiki_dates.py
+
+      - name: Determine changed files
+        id: diff
+        run: |
+          set -e
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin ${{ github.base_ref }} ${{ github.head_ref }}
+            git diff --name-only "origin/${{ github.base_ref }}...origin/${{ github.head_ref }}" -- 'wiki/**/*.md' > changed_files.txt
+          else
+            before="${{ github.event.before }}"
+            after="${{ github.sha }}"
+            git diff --name-only "$before" "$after" -- 'wiki/**/*.md' > changed_files.txt
+          fi
+          cat changed_files.txt
+
+      - name: Run updater
+        run: python scripts/update_wiki_dates.py
+
+      - name: Capture branch
+        id: ref
+        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+
+      - name: Commit and push if changed
+        id: commit
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "[auto-date] Update wiki dates"
+            git push
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
