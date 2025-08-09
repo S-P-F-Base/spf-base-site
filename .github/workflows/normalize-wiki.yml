@@ -1,4 +1,4 @@
-name: Auto date for wiki MD
+name: Normalize wiki MD
 
 on:
   push:
@@ -29,8 +29,8 @@ jobs:
 
       - name: Ensure updater exists
         run: |
-          test -f scripts/update_wiki_dates.py || { echo "scripts/update_wiki_dates.py not found"; exit 1; }
-          chmod +x scripts/update_wiki_dates.py
+          test -f scripts/normalize_wiki.py || { echo "scripts/normalize_wiki.py not found"; exit 1; }
+          chmod +x scripts/normalize_wiki.py
 
       - name: Determine changed files
         run: |
@@ -46,7 +46,7 @@ jobs:
           cat changed_files.txt
 
       - name: Run updater
-        run: python scripts/update_wiki_dates.py
+        run: python scripts/normalize_wiki.py
 
       - name: Check for changes
         id: changed
@@ -73,9 +73,9 @@ jobs:
         if: steps.changed.outputs.changed == 'true'
         run: |
           set -e
-          git config user.name "auto-date"
-          git config user.email "auto-date@users.noreply.github.com"
+          git config user.name "auto normalize"
+          git config user.email "auto-normalize@users.noreply.github.com"
           git add ./wiki/
-          git commit -m "[no-auto] Update wiki dates"
+          git commit -m "[no-auto] Normalize wiki"
           git remote set-url origin git@github.com:S-P-F-Base/spf-base-site.git
           git push origin HEAD:master
