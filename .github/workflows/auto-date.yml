@@ -48,6 +48,11 @@ jobs:
       - name: Run updater
         run: python scripts/update_wiki_dates.py
 
+      - name: Cleanup temp file
+        run: |
+          git rm --cached -f changed_files.txt 2>/dev/null || true
+          rm -f changed_files.txt
+
       - name: Check for changes
         id: changed
         run: |
