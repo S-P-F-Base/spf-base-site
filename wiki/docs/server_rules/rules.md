@@ -1,6 +1,6 @@
 Title: Правила
 Author: vergrey, Grom, Cain
-Date: 2025--07--25
+Date: 9 августа 2025 г.
 
 [TOC]
 

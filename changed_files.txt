@@ -1,0 +1,2 @@
+wiki/docs/server_rules/rules.md
+wiki/docs/server_rules/termins.md
