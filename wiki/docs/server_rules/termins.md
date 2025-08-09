@@ -1,6 +1,6 @@
 Title: Терминология и расшифровка
 Author: vergrey
-Date: 2025—07—25
+Date: 2025--07--25
 
 [TOC]
 
