@@ -2,7 +2,7 @@ name: Normalize wiki MD
 
 on:
   push:
-    branches: ["**"]
+    branches: [ master ]
     paths: ["wiki/**/*.md"]
 
 permissions:
