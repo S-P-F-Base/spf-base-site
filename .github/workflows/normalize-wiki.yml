@@ -4,9 +4,6 @@ on:
   push:
     branches: ["**"]
     paths: ["wiki/**/*.md"]
-  pull_request:
-    branches: ["**"]
-    paths: ["wiki/**/*.md"]
 
 permissions:
   contents: write
