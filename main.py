@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -8,7 +9,7 @@ from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from data_bases import LogDB, PlayerDB, UserDB
+from data_bases import LogDB, PaymentServiceDB, PlayerDB, UserDB
 from data_control import AutoTax, Config, MailControl, ServerControl
 from routers.api.auth import router as api_auth
 from routers.api.discord import router as api_discord
@@ -41,7 +42,14 @@ async def lifespan(app: FastAPI):
         LogDB.create_db_table()
         UserDB.create_db_table()
         PlayerDB.create_db_table()
-        AutoTax.setup()
+        PaymentServiceDB.create_db_table()
+
+        try:
+            AutoTax.setup()
+
+        except Exception as err:
+            logging.error(f"AutoTax setup fail: {err}")
+
         ServerControl.setup()
         MailControl.setup()
 
