@@ -35,6 +35,7 @@ def yoomoney_notification(
     sha1_hash: str = Form(...),
     label: str = Form(""),
     withdraw_amount: str = Form(""),
+    unaccepted: str = Form("", alias="unaccepted"),
 ):
     check_string = "&".join(
         [
@@ -56,7 +57,7 @@ def yoomoney_notification(
         )
 
     if not label:
-        raise HTTPException(status_code=400, detail="Empty label")
+        return PlainTextResponse("OK", status_code=200)
 
     payment_id = label
     payment = PaymentServiceDB.get_payment(payment_id)
@@ -69,16 +70,35 @@ def yoomoney_notification(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid amount format")
 
-    payment.received_amount = amount_dec
-    payment.payer_amount = withdraw_dec
+    if payment.received_amount:
+        payment.received_amount += amount_dec
+    else:
+        payment.received_amount = amount_dec
+
+    if withdraw_dec:
+        if payment.payer_amount:
+            payment.payer_amount += withdraw_dec
+        else:
+            payment.payer_amount = withdraw_dec
+
+    if payment.status == "done":
+        PaymentServiceDB.upsert_payment(payment_id, payment)
+        return PlainTextResponse("OK", status_code=200)
 
     if payment.status in ("declined", "cancelled"):
         LogDB.add_log(
             LogType.PAYMENT_RESIVE,
-            (
-                f"[IGNORED_{payment.status.upper()}] payment_id={payment_id} "
-                f"op_id={operation_id} amount={amount_dec} withdraw={withdraw_dec} currency={currency}"
-            ),
+            f"[IGNORED_{payment.status.upper()}] payment_id={payment_id} op_id={operation_id} "
+            f"amount={amount_dec} withdraw={withdraw_dec} currency={currency}",
+            "YooMoney notification",
+        )
+        PaymentServiceDB.upsert_payment(payment_id, payment)
+        return PlainTextResponse("OK", status_code=200)
+
+    if (unaccepted or "").lower() == "true" or (codepro or "").lower() == "true":
+        LogDB.add_log(
+            LogType.PAYMENT_RESIVE,
+            f"[UNACCEPTED] payment_id={payment_id} op_id={operation_id} amount={amount_dec}",
             "YooMoney notification",
         )
         PaymentServiceDB.upsert_payment(payment_id, payment)
@@ -86,53 +106,48 @@ def yoomoney_notification(
 
     raw_key = getattr(payment, "commission_key", "AC")
     if raw_key in get_args(Config.CommissionKey):
-        commission_key: Config.CommissionKey = cast(Config.CommissionKey, raw_key)
+        commission_key = cast(Config.CommissionKey, raw_key)
+    
     else:
         commission_key = "AC"
 
     rate = dec_rate_from_float(Config.get_commission_rates(commission_key))
     user_pays = Config.user_pays_commission()
-
     expected_amount, expected_withdraw = payment.expected_amounts(user_pays, rate)
 
     amount_ok = abs(amount_dec - expected_amount) <= EPS
-    withdraw_ok = True
-    if withdraw_dec is not None:
-        withdraw_ok = abs(withdraw_dec - expected_withdraw) <= EPS
+    withdraw_ok = (
+        True if withdraw_dec is None else abs(withdraw_dec - expected_withdraw) <= EPS
+    )
 
     if not (amount_ok and withdraw_ok):
         overpay = amount_dec > expected_amount + EPS
         underpay = amount_dec < expected_amount - EPS
-
         LogDB.add_log(
             LogType.PAYMENT_RESIVE,
-            (
-                f"[AMOUNT_MISMATCH] payment_id={payment_id} op_id={operation_id} "
-                f"total={payment.total()} key={commission_key} rate={rate}; "
-                f"expected_amount={expected_amount}, got={amount_dec}; "
-                f"expected_withdraw={expected_withdraw}, got={withdraw_dec}; "
-                f"overpay={overpay} underpay={underpay} currency={currency}"
-            ),
+            f"[AMOUNT_MISMATCH] payment_id={payment_id} op_id={operation_id} total={payment.total()} "
+            f"key={commission_key} rate={rate}; expected_amount={expected_amount}, got={amount_dec}; "
+            f"expected_withdraw={expected_withdraw}, got={withdraw_dec}; overpay={overpay} underpay={underpay} "
+            f"currency={currency}",
             "YooMoney notification",
         )
         payment.status = "pending"
         PaymentServiceDB.upsert_payment(payment_id, payment)
         return PlainTextResponse("OK", status_code=200)
 
+    payment.status = "done"
+
     try:
-        if not getattr(payment, "tax_check_id", None) and payment.status != "done":
+        if not getattr(payment, "tax_check_id", None):
             tax_uuid = AutoTax.post_income(payment.to_fns_struct())
             payment.tax_check_id = tax_uuid
-
-        payment.status = "done"
 
     except Exception as e:
         LogDB.add_log(
             LogType.PAYMENT_RESIVE,
-            f"Failed to send tax receipt for {payment_id}: {e}",
+            f"[TAX_FAIL_KEEP_DONE] payment_id={payment_id} op_id={operation_id} err={e}",
             "YooMoney notification",
         )
-        payment.status = "pending"
 
     PaymentServiceDB.upsert_payment(payment_id, payment)
 
@@ -141,5 +156,4 @@ def yoomoney_notification(
         f"Confirmation of payment: {payment_id}, status={payment.status}, op_id={operation_id}",
         "YooMoney notification",
     )
-
     return PlainTextResponse("OK", status_code=200)
