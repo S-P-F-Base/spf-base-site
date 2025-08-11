@@ -1,15 +1,19 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Body, HTTPException, Request
 
 from data_bases import LogDB, UserAccess, UserDB
-from data_control import LogRangeAPIData, req_authorization
+from data_control import req_authorization
 
 router = APIRouter()
 
 
 @router.post("/by_range")
-def by_range(request: Request, data: LogRangeAPIData):
+def by_range(
+    request: Request,
+    start_id: int = Body(...),
+    end_id: int = Body(...),
+):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.READ_LOGS):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
-    return LogDB.get_logs_range(data.start_id, data.end_id)
+    return LogDB.get_logs_range(start_id, end_id)

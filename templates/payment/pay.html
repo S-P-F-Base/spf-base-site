@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>S.P.F. Base — Оплата услуги</title>
+    
+    <meta property="og:title" content="S.P.F. Base" />
+    <meta property="og:description" content="Оплата услуги на сайте проекта S.P.F. на базе Garry's Mod" />
+
+    {% include 'partials/base_header.html' %}
+
+    <link rel="stylesheet" href="{{ 'payment.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
+        <div class="content-tile">
+            <div class="payment-card">
+                <div class="payment-header">
+                    <h1 class="payment-title">Оплата услуги</h1>
+                    {% set status_map = {
+                    "pending": ("В ожидании", "status-pending"),
+                    "done": ("Оплачено", "status-done"),
+                    "declined": ("Отклонено", "status-declined"),
+                    "cancelled": ("Отменено", "status-cancelled")
+                    } %}
+                    {% set st = status_map.get(payment.status, (payment.status, "status-pending")) %}
+                    <span class="status-badge {{ st[1] }}">{{ st[0] }}</span>
+                </div>
+
+                <p class="payment-subtitle">Игрок: <strong>{{ payment.player_id }}</strong></p>
+
+                <ul class="order-list">
+                    {% for item in payment.snapshot %}
+                    <li class="order-item">
+                        <div>
+                            <div class="title">{{ item.name }}</div>
+                            <div class="meta">от {{ item.creation_date.strftime('%d.%m.%Y') }}</div>
+                        </div>
+                        <div class="price">
+                            {% if item.discount_value and item.discount_value > 0 %}
+                            <span class="old-price">{{ "%.2f"|format(item.price_main) }} ₽</span>
+                            <span class="discounted-price">{{ "%.2f"|format(item.price()) }} ₽</span>
+                            <span class="discount-badge">-{{ item.discount_value }}%</span>
+                            {% else %}
+                            <span class="discounted-price">{{ "%.2f"|format(item.price()) }} ₽</span>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                {% set method_map = {"PC":"ЮMoney","AC":"Банковская карта"} %}
+                {% set rate_map = {"PC":0.01,"AC":0.03} %}
+                {% set rate = rate_map.get(payment.commission_key, 0) %}
+                {% set payer = "клиент" if user_pays_commission else "проект" %}
+
+                <div class="summary">
+                    <div class="summary-row">
+                        <div class="label">Способ оплаты</div>
+                        <div class="value">{{ method_map.get(payment.commission_key, payment.commission_key) }}</div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="label">Комиссия</div>
+                        <div class="value">{{ (rate*100)|round(0)|int }}% (оплачивает {{ payer }})</div>
+                    </div>
+                    <div class="summary-row total">
+                        <div class="label">Итого к оплате</div>
+                        <div class="value">{{ "%.2f"|format(payment.total()) }} ₽</div>
+                    </div>
+                </div>
+
+                <div class="hr"></div>
+
+                <div class="notice" style="margin: .6rem 0;">
+                    Пожалуйста, проверьте состав заказа. Оплата необратима после проведения.
+                </div>
+
+                <form action="/payment/{{ payment_uuid }}/submit" method="get" id="pay-form">
+                    <label class="terms checkbox-label">
+                        <input type="checkbox" id="offer-check">
+                        <span class="custom-checkbox"></span>
+                        Я согласен с <a href="/docs/offer" target="_blank" rel="noopener">договором-офертой</a>.
+                    </label>
+
+                    <button id="pay-btn" type="submit" class="btn btn-disabled" disabled aria-disabled="true">
+                        Оплатить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const checkbox = document.getElementById('offer-check');
+        const button = document.getElementById('pay-btn');
+
+        function toggle() {
+            const on = checkbox.checked;
+            button.disabled = !on;
+            button.setAttribute('aria-disabled', String(!on));
+            button.classList.toggle('btn-disabled', !on);
+        }
+        checkbox.addEventListener('change', toggle);
+        toggle();
+    </script>
+</body>
+
+</html>

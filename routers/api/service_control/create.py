@@ -1,0 +1,70 @@
+import uuid
+from typing import Literal
+
+from fastapi import APIRouter, Body, HTTPException, Request
+
+from data_bases import (
+    LogDB,
+    LogType,
+    PaymentServiceDB,
+    UserAccess,
+    UserDB,
+)
+from data_bases import (
+    Service as ServiceModel,
+)
+from data_control import req_authorization
+
+router = APIRouter()
+
+
+@router.post("/create")
+def create_service(
+    request: Request,
+    name: str = Body(...),
+    description: str = Body(""),
+    creation_date: str = Body(...),  # ISO8601
+    price_main: str = Body(...),
+    discount_value: int = Body(0),
+    discount_date: str | None = Body(None),
+    status: Literal["on", "off", "archive"] = Body("off"),
+    left: int | None = Body(None),
+    sell_time: str | None = Body(None),
+):
+    username = req_authorization(request)
+    if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
+        raise HTTPException(status_code=403, detail="Insufficient access")
+
+    if discount_value < 0 or discount_value > 100:
+        raise HTTPException(
+            status_code=400, detail="discount_value must be in [0, 100]"
+        )
+
+    if left is not None and left < 0:
+        raise HTTPException(status_code=400, detail="left must be >= 0")
+
+    payload = {
+        "name": name,
+        "description": description,
+        "creation_date": creation_date,
+        "price_main": price_main,
+        "discount_value": discount_value,
+        "discount_date": discount_date,
+        "status": status,
+        "left": left,
+        "sell_time": sell_time,
+    }
+
+    u_id = uuid.uuid4().hex
+
+    try:
+        svc = ServiceModel.from_dict(payload)
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid service data: {e}")
+
+    PaymentServiceDB.upsert_service(u_id, svc)
+    LogDB.add_log(
+        LogType.SERVICE_CREATE, f"Service created {u_id} ({svc.name})", username
+    )
+    return {"u_id": u_id}

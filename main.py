@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -8,14 +9,16 @@ from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from data_bases import LogDB, PlayerDB, UserDB
+from data_bases import LogDB, PaymentServiceDB, PlayerDB, UserDB
 from data_control import AutoTax, Config, MailControl, ServerControl
 from routers.api.auth import router as api_auth
 from routers.api.discord import router as api_discord
 from routers.api.logs import router as api_logs
 from routers.api.lore_char_control import router as api_lore_char_control
+from routers.api.payment_control import router as api_payment_control
 from routers.api.player_control import router as api_player_control
 from routers.api.server_control import router as api_server_control
+from routers.api.service_control import router as api_service_control
 from routers.api.site_control import router as api_site_control
 from routers.api.steam import router as api_steam
 from routers.api.user_control import router as api_user_control
@@ -41,11 +44,19 @@ async def lifespan(app: FastAPI):
         LogDB.create_db_table()
         UserDB.create_db_table()
         PlayerDB.create_db_table()
-        AutoTax.setup()
+        PaymentServiceDB.create_db_table()
+
+        try:
+            AutoTax.setup()
+
+        except Exception as err:
+            logging.error(f"AutoTax setup fail: {err}")
+
         ServerControl.setup()
         MailControl.setup()
 
         asyncio.create_task(ServerControl.server_status_updater())
+        asyncio.create_task(AutoTax.run_queue_worker(interval_sec=60))
 
         yield
 
@@ -131,6 +142,8 @@ app.include_router(api_logs, prefix="/api/logs")
 app.include_router(api_lore_char_control, prefix="/api/lore_char_control")
 app.include_router(api_player_control, prefix="/api/player_control")
 app.include_router(api_server_control, prefix="/api/server_control")
+app.include_router(api_payment_control, prefix="/api/payment_control")
+app.include_router(api_service_control, prefix="/api/service_control")
 app.include_router(api_site_control, prefix="/api/site_control")
 app.include_router(api_steam, prefix="/api/steam")
 app.include_router(api_user_control, prefix="/api/user_control")

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>S.P.F. Base — Статус оплаты</title>
+
+    <meta property="og:title" content="S.P.F. Base" />
+    <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
+
+    {% include 'partials/base_header.html' %}
+
+    <link rel="stylesheet" href="{{ 'payment.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
+        <div class="content-tile">
+            <div class="payment-card">
+                <div class="payment-header">
+                    <h1 class="payment-title">Статус оплаты</h1>
+                    {% set status_map = {
+                    "pending": ("В ожидании", "status-pending"),
+                    "done": ("Оплачено", "status-done"),
+                    "declined": ("Отклонено", "status-declined"),
+                    "cancelled": ("Отменено", "status-cancelled")
+                    } %}
+                    {% set st = status_map.get(payment.status, (payment.status, "status-pending")) %}
+                    <span class="status-badge {{ st[1] }}">{{ st[0] }}</span>
+                </div>
+
+                <p class="payment-subtitle">Игрок: <strong>{{ payment.player_id }}</strong></p>
+
+                <ul class="order-list">
+                    {% for item in payment.snapshot %}
+                    <li class="order-item">
+                        <div>
+                            <div class="title">{{ item.name }}</div>
+                            <div class="meta">от {{ item.creation_date.strftime('%d.%m.%Y') }}</div>
+                        </div>
+                        <div class="price">
+                            {% if item.discount_value and item.discount_value > 0 %}
+                            <span class="old-price">{{ "%.2f"|format(item.price_main) }} ₽</span>
+                            <span class="discounted-price">{{ "%.2f"|format(item.price()) }} ₽</span>
+                            <span class="discount-badge">-{{ item.discount_value }}%</span>
+                            {% else %}
+                            <span class="discounted-price">{{ "%.2f"|format(item.price()) }} ₽</span>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                {% set method_map = {"PC":"ЮMoney","AC":"Банковская карта"} %}
+                {% set rate_map = {"PC":0.01,"AC":0.03} %}
+                {% set rate = rate_map.get(payment.commission_key, 0) %}
+                {% set payer = "клиент" if user_pays_commission else "проект" %}
+
+                <div class="summary">
+                    <div class="summary-row">
+                        <div class="label">Способ оплаты</div>
+                        <div class="value">{{ method_map.get(payment.commission_key, payment.commission_key) }}</div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="label">Комиссия</div>
+                        <div class="value">{{ (rate*100)|round(0)|int }}% (оплачивает {{ payer }})</div>
+                    </div>
+                    <div class="summary-row total">
+                        <div class="label">Итого</div>
+                        <div class="value">{{ "%.2f"|format(payment.total()) }} ₽</div>
+                    </div>
+                </div>
+
+                <div class="hr"></div>
+
+                {% if payment.status == "done" %}
+                {% if payment.tax_check_id %}
+                <div class="notice">Оплата прошла успешно. Чек сформирован ФНС.</div>
+
+                <div class="receipt-wrap" id="receipt-wrap" hidden>
+                    <img id="receipt-img" class="receipt-img" alt="Чек ФНС" />
+                    <div class="receipt-actions">
+                        <button id="btn-download" class="btn btn-inline" type="button">Скачать чек (PNG)</button>
+                        <button id="btn-reload" class="btn btn-inline" type="button">Обновить чек</button>
+                    </div>
+                    <div id="receipt-error" class="error" hidden>
+                        ФНС сейчас не отвечает. Попробуйте позже — страница остаётся доступной.
+                    </div>
+                </div>
+                {% else %}
+                <div class="notice">Оплата прошла, чек ещё не сформирован. Обновите страницу позже.</div>
+                <form method="get"><button class="btn" type="submit">Обновить статус</button></form>
+                {% endif %}
+                {% elif payment.status == "pending" %}
+                <div class="notice">Платёж в обработке. Если вы только что оплатили — дождитесь подтверждения и обновите
+                    страницу.</div>
+                <form method="get"><button class="btn" type="submit">Обновить статус</button></form>
+                {% elif payment.status == "declined" %}
+                <div class="notice">Платёж отклонён. Проверьте данные и попробуйте снова.</div>
+                {% elif payment.status == "cancelled" %}
+                <div class="notice">Платёж отменён.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if payment.status == "done" and payment.tax_check_id %}
+    <script>
+        (function () {
+            const receiptUrl = "/payment/{{ payment_uuid }}/receipt.png";
+            const img = document.getElementById('receipt-img');
+            const wrap = document.getElementById('receipt-wrap');
+            const err = document.getElementById('receipt-error');
+            const btnDl = document.getElementById('btn-download');
+            const btnReload = document.getElementById('btn-reload');
+
+            let lastBlob = null;
+
+            async function loadReceipt(showError = true) {
+                try {
+                    const res = await fetch(receiptUrl, { method: 'GET' });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const blob = await res.blob();
+                    lastBlob = blob;
+                    const url = URL.createObjectURL(blob);
+                    img.src = url;
+                    wrap.hidden = false;
+                    err.hidden = true;
+                    btnDl.disabled = false;
+                } catch (e) {
+                    wrap.hidden = false;
+                    img.removeAttribute('src');
+                    btnDl.disabled = true;
+                    if (showError) err.hidden = false;
+                }
+            }
+
+            btnReload.addEventListener('click', () => loadReceipt(true));
+
+            btnDl.addEventListener('click', async () => {
+                try {
+                    if (!lastBlob) await loadReceipt(false);
+                    if (!lastBlob) return;
+                    const a = document.createElement('a');
+                    const url = URL.createObjectURL(lastBlob);
+                    a.href = url;
+                    a.download = "чек {{ payment.tax_check_id }}.png";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(url), 2000);
+                } catch (e) {
+                    err.hidden = false;
+                }
+            });
+
+            loadReceipt(false);
+        })();
+    </script>
+    {% endif %}
+</body>
+
+</html>

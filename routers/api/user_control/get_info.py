@@ -1,16 +1,17 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Body, HTTPException, Request
 
 from data_bases import UserAccess, UserDB
-from data_control import TargetUserAPIData, req_authorization
+from data_control import req_authorization
 
 router = APIRouter()
 
 
 @router.post("/get_info")
-def get_info(request: Request, data: TargetUserAPIData):
+def get_info(
+    request: Request,
+    target: str = Body(...),
+):
     username = req_authorization(request)
-
-    target = data.target
 
     if not (username == target or UserDB.has_access(username, UserAccess.READ_USER)):
         raise HTTPException(status_code=403, detail="Insufficient access")

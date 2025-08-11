@@ -2,36 +2,31 @@
 <html lang="ru">
 
 <head>
-    <meta charset="UTF-8">
-
     <title>{{ title }}</title>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <meta property="og:title" content="S.P.F. Base wiki" />
     <meta property="og:description" content="WIKI страница {{ title }}" />
-    <meta property="og:image" content="https://spf-base.ru/static/images/logo/site.jpg" />
-    <meta property="og:url" content="https://spf-base.ru/" />
-    <meta property="og:type" content="website" />
 
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-    <link rel="stylesheet" href="{{ 'main.css' | ver }}" />
+    {% include 'partials/base_header.html' %}
+
     <link rel="stylesheet" href="{{ 'wiki.css' | ver }}" />
 </head>
 
 <body>
     <div class="page-background" style="background-image: url('{{ background_url }}');">
+        {% include 'partials/header.html' %}
+
         <div class="content-tile">
             <div class="small">
                 Последнее изменение: {{ data }}
             </div>
-            
+
             <main class="markdown-body">
                 {{ content|safe }}
             </main>
 
             <hr>
-            
+
             <a href="#" class="back-button" onclick="goBack()">← Назад</a>
         </div>
     </div>

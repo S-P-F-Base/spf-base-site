@@ -8,6 +8,7 @@ LORE_CHAR_DATA = Path("data/lore_char.json")
 def load_data() -> dict[str, Any]:
     if not LORE_CHAR_DATA.exists():
         return {}
+
     return json.loads(LORE_CHAR_DATA.read_text(encoding="utf-8"))
 
 
