@@ -20,14 +20,14 @@ def _dt_to_iso(dt: datetime | None) -> str | None:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=UTC)
 
-    return dt.isoformat()
+    return dt.replace(microsecond=0).isoformat()
 
 
 def _dt_from_iso(s: str | None) -> datetime:
     if s is None:
         return datetime.now(UTC)
 
-    return datetime.fromisoformat(s)
+    return datetime.fromisoformat(s).replace(microsecond=0)
 
 
 def _dec_to_str(d: Decimal) -> str:
