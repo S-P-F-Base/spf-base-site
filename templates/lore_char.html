@@ -34,18 +34,19 @@
                 <div class="character-entry" data-name="{{ data.name | lower }}" data-status="{{ status }}">
                     {% if status == "free" %}
                     {% if data.wiki %}
-                    <a href="{{ data.wiki }}" class="character">
-                        {{ data.name }}
-                    </a>
+                    <a href="{{ data.wiki }}" class="character">{{ data.name }}</a>
                     {% else %}
-                    <div class="character no-wiki">
-                        {{ data.name }}
-                    </div>
+                    <div class="character no-wiki">{{ data.name }}</div>
                     {% endif %}
-                    {% else %}
-                    <div class="character unavailable">
-                        {{ data.name }}
-                        {% if status == "taken" %} занят(a){% endif %}
+                    {% elif status == "taken" %}
+                    <div class="character taken">
+                        <span class="character__name">{{ data.name }}</span>
+                        <span class="badge badge--taken" title="Персонаж занят">занят(a)</span>
+                    </div>
+                    {% elif status == "blocked" %}
+                    <div class="character blocked" title="Персонаж заблокирован">
+                        <span class="character__name">{{ data.name }}</span>
+                        <span class="status-icon status-icon--lock" aria-hidden="true"></span>
                     </div>
                     {% endif %}
                 </div>
