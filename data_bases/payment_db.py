@@ -23,9 +23,9 @@ def _dt_to_iso(dt: datetime | None) -> str | None:
     return dt.replace(microsecond=0).isoformat()
 
 
-def _dt_from_iso(s: str | None) -> datetime:
+def _dt_from_iso(s: str | None) -> datetime | None:
     if s is None:
-        return datetime.now(UTC)
+        return None
 
     return datetime.fromisoformat(s).replace(microsecond=0)
 
@@ -101,7 +101,7 @@ class Service:
         return cls(
             name=d["name"],
             description=d.get("description", ""),
-            creation_date=_dt_from_iso(d["creation_date"]),
+            creation_date=_dt_from_iso(d["creation_date"]),  # type: ignore
             price_main=_dec_from_str(d["price_main"]),
             discount_value=int(_clamp_discount(d.get("discount_value", 0))),
             discount_date=_dt_from_iso(d.get("discount_date")),
@@ -142,7 +142,7 @@ class ServiceSnapshot:
     def from_dict(cls, d: dict) -> "ServiceSnapshot":
         return cls(
             name=d["name"],
-            creation_date=_dt_from_iso(d["creation_date"]),
+            creation_date=_dt_from_iso(d["creation_date"]),  # type: ignore
             price_main=_dec_from_str(d["price_main"]),
             discount_value=int(_clamp_discount(d.get("discount_value", 0))),
             service_u_id=d.get("service_u_id"),
