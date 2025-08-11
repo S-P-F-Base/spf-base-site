@@ -1,19 +1,13 @@
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Body, HTTPException, Request
+from pydantic import BaseModel, Field
 
-from data_bases import (
-    LogDB,
-    LogType,
-    PaymentServiceDB,
-    UserAccess,
-    UserDB,
-)
+from data_bases import LogDB, LogType, PaymentServiceDB, UserAccess, UserDB
 from data_bases import Service as ServiceModel
 from data_control import req_authorization
 
 router = APIRouter()
-UNSET = object()
 
 
 def _as_int_or_none(v):
@@ -28,7 +22,7 @@ def _as_int_or_none(v):
 
     if isinstance(v, str):
         s = v.strip()
-        if s == "":
+        if s == "" or s.lower() == "none":
             return None
 
         return int(s)
@@ -36,47 +30,34 @@ def _as_int_or_none(v):
     return int(v)
 
 
+class EditServiceReq(BaseModel):
+    u_id: str
+
+    name: str | None = None
+    description: str | None = None
+    price_main: str | None = None
+    discount_value: int | None = None
+    discount_date: str | None = None
+    status: Literal["on", "off", "archive"] | None = None
+    left: int | None = Field(default=None)
+    sell_time: str | None = None
+    oferta_limit: bool | None = None
+
+
 @router.post("/edit")
-def edit_service(
-    request: Request,
-    u_id: str = Body(...),
-    name: Any = Body(UNSET),
-    description: Any = Body(UNSET),
-    price_main: Any = Body(UNSET),
-    discount_value: Any = Body(UNSET),
-    discount_date: Any = Body(UNSET),
-    status: Any = Body(UNSET),
-    left: Any = Body(UNSET),
-    sell_time: Any = Body(UNSET),
-    oferta_limit: Any = Body(UNSET),
-):
+def edit_service(request: Request, payload: EditServiceReq = Body(...)):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
-    current = PaymentServiceDB.get_service(u_id)
+    current = PaymentServiceDB.get_service(payload.u_id)
     if not current:
         raise HTTPException(status_code=404, detail="Service not found")
 
-    patch: dict = {}
-    if name is not UNSET:
-        patch["name"] = name
-    if description is not UNSET:
-        patch["description"] = description
-    if price_main is not UNSET:
-        patch["price_main"] = price_main
-    if discount_value is not UNSET:
-        patch["discount_value"] = discount_value
-    if discount_date is not UNSET:
-        patch["discount_date"] = discount_date
-    if status is not UNSET:
-        patch["status"] = status
-    if left is not UNSET:
-        patch["left"] = left
-    if sell_time is not UNSET:
-        patch["sell_time"] = sell_time
-    if oferta_limit is not UNSET:
-        patch["oferta_limit"] = bool(oferta_limit)
+    patch: dict[str, Any] = payload.model_dump(
+        exclude_unset=True,
+        exclude={"u_id"},
+    )
 
     if not patch:
         raise HTTPException(status_code=400, detail="No fields provided to update")
@@ -108,7 +89,6 @@ def edit_service(
 
     try:
         updated = ServiceModel.from_dict(merged)
-
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid service data: {e}")
 
@@ -119,6 +99,7 @@ def edit_service(
             changes.append(f"{field}: {old} → {new}")
 
     add_change("name", current.name, updated.name)
+
     if current.description != updated.description:
         changes.append("description: (updated)")
 
@@ -130,11 +111,11 @@ def edit_service(
     add_change("sell_time", current.sell_time, updated.sell_time)
     add_change("oferta_limit", current.oferta_limit, updated.oferta_limit)
 
-    PaymentServiceDB.upsert_service(u_id, updated)
+    PaymentServiceDB.upsert_service(payload.u_id, updated)
 
     LogDB.add_log(
         LogType.SERVICE_UPDATE,
-        f"Service {u_id} "
+        f"Service {payload.u_id} "
         + (
             "edited:\n" + "\n".join(changes)
             if changes
