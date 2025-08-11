@@ -25,6 +25,21 @@ def delete_payment(
     if not pay:
         raise HTTPException(status_code=404, detail="Payment not found")
 
+    if pay.status == "pending":
+        restored = 0
+        for snap in pay.snapshot:
+            svc_id = getattr(snap, "service_u_id", None)
+            if svc_id:
+                PaymentServiceDB.increment_service_left(svc_id, 1)
+                restored += 1
+
+        if restored:
+            LogDB.add_log(
+                LogType.PAYMENT_UPDATE,
+                f"Payment {u_id}: restored {restored} item(s) stock on delete",
+                username,
+            )
+
     ok = PaymentServiceDB.delete_payment(u_id)
     if not ok:
         raise HTTPException(status_code=500, detail="Failed to delete payment")

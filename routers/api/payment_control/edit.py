@@ -9,7 +9,7 @@ from data_bases import (
 )
 from data_control import req_authorization
 
-from .base_func import CommissionKey, PaymentStatus, build_snapshots
+from .base_func import CommissionKey, PaymentStatus
 
 router = APIRouter()
 
@@ -21,7 +21,6 @@ def edit_payment(
     status: PaymentStatus | None = Body(None),
     player_id: str | None = Body(None),
     commission_key: CommissionKey | None = Body(None),
-    items: list[dict] | None = Body(None),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.CONTROL_PAYMENT):
@@ -33,8 +32,26 @@ def edit_payment(
 
     changes: list[str] = []
 
+    if status is not None and pay.status == "done" and status != "cancelled":
+        raise HTTPException(
+            status_code=400, detail="Cannot change status of a completed payment"
+        )
+
+    old_status = pay.status
+
     if status is not None and status != pay.status:
         changes.append(f"status: {pay.status} → {status}")
+
+        if old_status == "pending" and status in ("cancelled", "declined"):
+            restored = 0
+            for snap in pay.snapshot:
+                svc_id = getattr(snap, "service_u_id", None)
+                if svc_id:
+                    PaymentServiceDB.increment_service_left(svc_id, 1)
+                    restored += 1
+            if restored:
+                changes.append(f"restored {restored} item(s) stock")
+
         pay.status = status
 
     if player_id is not None and player_id != pay.player_id:
@@ -44,16 +61,6 @@ def edit_payment(
     if commission_key is not None and commission_key != pay.commission_key:
         changes.append(f"commission_key: {pay.commission_key} → {commission_key}")
         pay.commission_key = commission_key
-
-    if items is not None:
-        try:
-            snapshots = build_snapshots(items)
-
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
-        changes.append(f"snapshot: {len(pay.snapshot)} → {len(snapshots)} items")
-        pay.snapshot = snapshots
 
     PaymentServiceDB.upsert_payment(u_id, pay)
 

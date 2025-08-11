@@ -54,6 +54,7 @@ def donate(request: Request):
             else "",
             "left": svc.left,
             "status": svc.status,
+            "oferta_limit": bool(svc.oferta_limit),
         }
 
         if _is_sold_out(svc):

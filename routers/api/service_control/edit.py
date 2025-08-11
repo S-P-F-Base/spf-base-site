@@ -22,13 +22,14 @@ def edit_service(
     u_id: str = Body(...),
     name: Any = Body(UNSET),
     description: Any = Body(UNSET),
-    creation_date: Any = Body(UNSET),  # ISO8601 string
-    price_main: Any = Body(UNSET),  # Decimal string
-    discount_value: Any = Body(UNSET),  # int 0..100
-    discount_date: Any = Body(UNSET),  # ISO8601 or None
-    status: Any = Body(UNSET),  # "on" | "off" | "archive"
-    left: Any = Body(UNSET),  # int or None
-    sell_time: Any = Body(UNSET),  # ISO8601 or None
+    creation_date: Any = Body(UNSET),
+    price_main: Any = Body(UNSET),
+    discount_value: Any = Body(UNSET),
+    discount_date: Any = Body(UNSET),
+    status: Any = Body(UNSET),
+    left: Any = Body(UNSET),
+    sell_time: Any = Body(UNSET),
+    oferta_limit: Any = Body(UNSET),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
@@ -57,6 +58,8 @@ def edit_service(
         patch["left"] = left
     if sell_time is not UNSET:
         patch["sell_time"] = sell_time
+    if oferta_limit is not UNSET:
+        patch["oferta_limit"] = bool(oferta_limit)
 
     if not patch:
         raise HTTPException(status_code=400, detail="No fields provided to update")
@@ -64,10 +67,8 @@ def edit_service(
     if "discount_value" in patch:
         try:
             dv = int(patch["discount_value"])
-
         except Exception:
             raise HTTPException(status_code=400, detail="discount_value must be int")
-
         if dv < 0 or dv > 100:
             raise HTTPException(
                 status_code=400, detail="discount_value must be in [0, 100]"
@@ -99,6 +100,7 @@ def edit_service(
     add_change("name", current.name, updated.name)
     if current.description != updated.description:
         changes.append("description: (updated)")
+
     add_change("status", current.status, updated.status)
     add_change("left", current.left, updated.left)
     add_change("price_main", current.price_main, updated.price_main)
@@ -106,6 +108,7 @@ def edit_service(
     add_change("discount_date", current.discount_date, updated.discount_date)
     add_change("sell_time", current.sell_time, updated.sell_time)
     add_change("creation_date", current.creation_date, updated.creation_date)
+    add_change("oferta_limit", current.oferta_limit, updated.oferta_limit)
 
     PaymentServiceDB.upsert_service(u_id, updated)
 

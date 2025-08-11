@@ -30,6 +30,7 @@ def create_service(
     status: Literal["on", "off", "archive"] = Body("off"),
     left: int | None = Body(None),
     sell_time: str | None = Body(None),
+    oferta_limit: bool = Body(False),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
@@ -53,13 +54,13 @@ def create_service(
         "status": status,
         "left": left,
         "sell_time": sell_time,
+        "oferta_limit": bool(oferta_limit),
     }
 
     u_id = uuid.uuid4().hex
 
     try:
         svc = ServiceModel.from_dict(payload)
-
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid service data: {e}")
 
