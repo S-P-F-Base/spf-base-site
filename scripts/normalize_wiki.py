@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
+import json
+import os
 import re
+import subprocess
 from datetime import datetime
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import List, Tuple
 from zoneinfo import ZoneInfo
@@ -118,7 +122,6 @@ def update_date_in_items(
     for k, v in items:
         if k.strip().lower() == "date":
             updated.append((normalize_keys_capitalization(k), new_date))
-
         else:
             updated.append((k, v))
 
@@ -161,9 +164,7 @@ def collapse_blank_lines(text: str) -> str:
             blank += 1
             if blank > 1:
                 continue
-
             out.append("")
-
         else:
             blank = 0
             out.append(ln.rstrip())
@@ -198,6 +199,102 @@ def replace_symbols_in_body(text: str) -> str:
 
 # endregion
 
+# region changed-files discovery (force-push safe)
+
+
+def _matches_wiki_md(path: str) -> bool:
+    return fnmatch(path, "wiki/**/*.md") or fnmatch(path, "wiki/*.md")
+
+
+def from_changed_files_txt() -> List[Path]:
+    f = Path("changed_files.txt")
+    if not f.exists():
+        return []
+    items = [
+        Path(p.strip()) for p in f.read_text(encoding="utf-8").splitlines() if p.strip()
+    ]
+    return [p for p in items if _matches_wiki_md(str(p))]
+
+
+def from_github_payload() -> List[Path]:
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    if not event_path or not Path(event_path).is_file():
+        return []
+
+    try:
+        payload = json.loads(Path(event_path).read_text(encoding="utf-8"))
+
+    except Exception:
+        return []
+
+    paths: set[str] = set()
+    for c in payload.get("commits", []) or []:
+        for key in ("added", "modified"):
+            for p in c.get(key, []) or []:
+                if _matches_wiki_md(p):
+                    paths.add(p)
+
+    return [Path(p) for p in sorted(paths)]
+
+
+def from_git_diff_fallback() -> List[Path]:
+    before = os.environ.get("GITHUB_EVENT_BEFORE", "")
+    after = os.environ.get("GITHUB_SHA", "HEAD")
+
+    candidates: List[str] = []
+    cmds: List[List[str]] = []
+    if before:
+        cmds.append(
+            [
+                "git",
+                "diff",
+                "--name-only",
+                before,
+                after,
+                "--",
+                "wiki/**/*.md",
+                "wiki/*.md",
+            ]
+        )
+    cmds.append(
+        [
+            "git",
+            "diff",
+            "--name-only",
+            "HEAD^",
+            "HEAD",
+            "--",
+            "wiki/**/*.md",
+            "wiki/*.md",
+        ]
+    )
+
+    for cmd in cmds:
+        try:
+            out = subprocess.check_output(cmd, text=True)
+            candidates = [x.strip() for x in out.splitlines() if x.strip()]
+            if candidates:
+                break
+        except Exception:
+            continue
+
+    return [Path(p) for p in candidates if _matches_wiki_md(p)]
+
+
+def discover_changed_files() -> List[Path]:
+    explicit = from_changed_files_txt()
+    if explicit:
+        return explicit
+
+    payload = from_github_payload()
+    if payload:
+        return payload
+
+    return from_git_diff_fallback()
+
+
+# endregion
+
 # region orchestrator per-file
 
 
@@ -219,6 +316,7 @@ def process_markdown(text: str, new_date: str) -> str:
         body_text = collapse_blank_lines(fix_headings(body_text))
 
         result = new_meta + body_text
+
     else:
         body_text = replace_symbols_in_body(text)
         result = collapse_blank_lines(fix_headings(body_text))
@@ -230,14 +328,13 @@ def process_markdown(text: str, new_date: str) -> str:
 
 
 def main():
-    changed_list = Path("changed_files.txt")
-    if not changed_list.exists():
-        print("No changed_files.txt; nothing to do.")
-        return
-
+    files = discover_changed_files()
     files = [
-        Path(p.strip()) for p in changed_list.read_text().splitlines() if p.strip()
+        p
+        for p in files
+        if p.is_file() and p.suffix.lower() == ".md" and _matches_wiki_md(str(p))
     ]
+
     if not files:
         print("No markdown files to update.")
         return
@@ -245,16 +342,18 @@ def main():
     new_date = today_ru()
     touched = 0
     for p in files:
-        if not p.is_file() or p.suffix.lower() != ".md":
+        try:
+            orig = p.read_text(encoding="utf-8")
+
+        except Exception:
             continue
-        
-        orig = p.read_text(encoding="utf-8")
+
         updated = process_markdown(orig, new_date)
         if updated != orig:
             p.write_text(updated, encoding="utf-8")
             print(f"Updated: {p}")
             touched += 1
-    
+
     print(f"Done. Files changed: {touched}")
 
 

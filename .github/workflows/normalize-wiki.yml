@@ -27,20 +27,6 @@ jobs:
       - name: Ensure updater exists
         run: |
           test -f scripts/normalize_wiki.py || { echo "scripts/normalize_wiki.py not found"; exit 1; }
-          chmod +x scripts/normalize_wiki.py
-
-      - name: Determine changed files
-        run: |
-          set -e
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            git fetch origin ${{ github.base_ref }} ${{ github.head_ref }}
-            git diff --name-only "origin/${{ github.base_ref }}...origin/${{ github.head_ref }}" -- 'wiki/**/*.md' > changed_files.txt
-          else
-            before="${{ github.event.before }}"
-            after="${{ github.sha }}"
-            git diff --name-only "$before" "$after" -- 'wiki/**/*.md' > changed_files.txt
-          fi
-          cat changed_files.txt
 
       - name: Run updater
         run: python scripts/normalize_wiki.py
