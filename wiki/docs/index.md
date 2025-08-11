@@ -1,6 +1,6 @@
 Title: Документы
 Author: Cain, Grom
-Date: 2025-07-18
+Date: 11 Августа 2025 г.
 
 # Общая информация
 !btn[/wiki/docs/about|О проекте]
