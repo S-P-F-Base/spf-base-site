@@ -68,6 +68,18 @@
                 <button onclick="copyID()">Скопировать</button>
             </div>
 
+            <div class="player-limit">
+                <h3>Лимит места</h3>
+                {% set percent = (data.mb_taken / data.mb_limit * 100) if data.mb_limit else 0 %}
+                <div class="limit-bar">
+                    <div class="limit-fill" style="width: {{ percent }}%;"></div>
+                </div>
+                <p>
+                    Использовано: <strong>{{ "%.2f"|format(data.mb_taken) }} МБ</strong> из
+                    <strong>{{ "%.2f"|format(data.mb_limit) }} МБ</strong>
+                </p>
+            </div>
+
             <div class="linked-services">
                 <div class="info-row">
                     <div class="row-header">

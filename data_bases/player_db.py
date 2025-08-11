@@ -26,6 +26,7 @@ class NoteData:
         if isinstance(clean.get("status"), str):
             try:
                 clean["status"] = NoteStatus(clean["status"])
+
             except ValueError:
                 clean["status"] = NoteStatus.ACTIVE
 
@@ -48,6 +49,10 @@ class PlayerData:
 
     note: list[NoteData] = field(default_factory=list)
 
+    mb_limit: float = 0
+    mb_taken: float = 0
+    initialized: bool = False
+
     @classmethod
     def from_dict(cls, raw: dict) -> "PlayerData":
         valid_keys = {f.name for f in fields(cls)}
@@ -58,6 +63,10 @@ class PlayerData:
                 NoteData.from_dict(n) if isinstance(n, dict) else n
                 for n in clean["note"]
             ]
+
+        clean.setdefault("initialized", False)
+        clean.setdefault("mb_limit", 0.0)
+        clean.setdefault("mb_taken", 0.0)
 
         return cls(**clean)
 

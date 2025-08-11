@@ -194,3 +194,24 @@
     background-color: orange;
     color: black;
 }
+
+.player-limit {
+    margin-top: 20px;
+    background: #222;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.limit-bar {
+    background: #444;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 16px;
+    margin-bottom: 6px;
+}
+
+.limit-fill {
+    height: 100%;
+    background: linear-gradient(to right, #4caf50, #ff9800, #f44336);
+    transition: width 0.3s ease;
+}
