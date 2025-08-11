@@ -68,15 +68,20 @@
                 <button onclick="copyID()">Скопировать</button>
             </div>
 
+            {% set percent = (data.mb_limit and data.mb_limit > 0) and (data.mb_taken / data.mb_limit * 100) or 0 %}
+            {% set over = percent > 100 %}
+
             <div class="player-limit">
                 <h3>Лимит места</h3>
-                {% set percent = (data.mb_taken / data.mb_limit * 100) if data.mb_limit else 0 %}
-                <div class="limit-bar">
-                    <div class="limit-fill" style="width: {{ percent }}%;"></div>
+                <div class="limit-bar {{ 'over' if over }}">
+                    <div class="limit-fill {{ 'over' if over }}" style="width: {{ 100 if over else percent }}%;"></div>
                 </div>
-                <p>
-                    Использовано: <strong>{{ "%.2f"|format(data.mb_taken) }} МБ</strong> из
+                
+                <p class="{{ 'over-text' if over }}">
+                    Использовано:
+                    <strong>{{ "%.2f"|format(data.mb_taken) }} МБ</strong> из
                     <strong>{{ "%.2f"|format(data.mb_limit) }} МБ</strong>
+                    {% if over %} — превышение на {{ "%.2f"|format(data.mb_taken - data.mb_limit) }} МБ{% endif %}
                 </p>
             </div>
 

@@ -226,7 +226,20 @@
 .limit-fill {
     height: 100%;
     background: linear-gradient(90deg, #4caf50 0%, #ff9800 50%, #f44336 100%);
-    transition: width 0.35s ease;
+    transition: width 0.35s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.limit-fill.over {
+    background: repeating-linear-gradient(45deg, #f44336, #f44336 10px, #b71c1c 10px, #b71c1c 20px);
+    box-shadow: 0 0 12px rgba(244, 67, 54, .6), inset 0 0 8px rgba(0, 0, 0, .5);
+}
+
+.limit-bar.over {
+    border-color: rgba(244, 67, 54, .5);
+}
+
+.player-limit p.over-text strong {
+    color: #ffb3b3;
 }
 
 .player-limit p {

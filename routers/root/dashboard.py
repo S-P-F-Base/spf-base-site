@@ -53,7 +53,6 @@ def dashboard(request: Request):
         data.initialized = True
         PlayerDB.update_player(u_id, discord_id, steam_id, data)
 
-    percent = (data.mb_taken / data.mb_limit * 100) if data.mb_limit else 0
     return templates.TemplateResponse(
         "dashboard/index.html",
         {
@@ -61,7 +60,6 @@ def dashboard(request: Request):
             "discord_id": discord_id,
             "steam_id": steam_id,
             "player_id": u_id,
-            "percent": percent,
             "data": asdict(data),
         },
     )
