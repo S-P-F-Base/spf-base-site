@@ -9,7 +9,7 @@ router = APIRouter()
 @router.post("/by_creator")
 def by_creator(
     request: Request,
-    target: str = Body(...),
+    target: str = Body(..., embed=True),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.READ_LOGS):

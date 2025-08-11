@@ -15,7 +15,7 @@ router = APIRouter()
 @router.post("/delete")
 def delete_service(
     request: Request,
-    u_id: str = Body(...),
+    u_id: str = Body(..., embed=True),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
