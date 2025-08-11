@@ -2,59 +2,20 @@
 <html lang="ru">
 
 <head>
-    <meta charset="UTF-8" />
     <title>S.P.F. Base — Статус оплаты</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <meta property="og:title" content="S.P.F. Base" />
     <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
-    <meta property="og:image" content="https://spf-base.ru/static/images/logo/site.jpg" />
-    <meta property="og:url" content="https://spf-base.ru/" />
-    <meta property="og:type" content="website" />
 
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-    <link rel="stylesheet" href="{{ 'main.css' | ver }}" />
+    {% include 'partials/base_header.html' %}
+
     <link rel="stylesheet" href="{{ 'payment.css' | ver }}" />
-    <style>
-        .receipt-wrap {
-            background: #111;
-            border: 1px solid #2a2a2a;
-            border-radius: 12px;
-            padding: .8rem;
-            margin: .8rem 0 1rem;
-        }
-
-        .receipt-img {
-            display: block;
-            max-width: 100%;
-            height: auto;
-            border-radius: 6px;
-        }
-
-        .receipt-actions {
-            display: flex;
-            gap: .6rem;
-            margin-top: .6rem;
-        }
-
-        .btn-inline {
-            width: auto;
-            padding: .65rem .9rem;
-        }
-
-        .error {
-            background: #2a0a0a;
-            border: 1px solid #8a1a1a;
-            color: #ff9b9b;
-            border-radius: 10px;
-            padding: .6rem .8rem;
-            margin-top: .6rem;
-        }
-    </style>
 </head>
 
 <body>
     <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
         <div class="content-tile">
             <div class="payment-card">
                 <div class="payment-header">

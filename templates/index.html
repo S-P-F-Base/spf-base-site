@@ -2,41 +2,59 @@
 <html lang="ru">
 
 <head>
-    <meta charset="UTF-8" />
-
     <title>S.P.F. Base</title>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <meta property="og:title" content="S.P.F. Base" />
     <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
-    <meta property="og:image" content="https://spf-base.ru/static/images/logo/site.jpg" />
-    <meta property="og:url" content="https://spf-base.ru/" />
-    <meta property="og:type" content="website" />
 
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-    <link rel="stylesheet" href="{{ 'main.css' | ver }}" />
+    {% include 'partials/base_header.html' %}
 </head>
 
 <body>
     <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
-        <div class="content-tile">
-            <h1>S.P.F. Base</h1>
-            <p class="subtitle">Официальный сайт RP-сервера S.P.F. по вселенной Girls' Frontline (на базе игры Garry's
-                Mod)</p>
+        {% include 'partials/header.html' %}
 
-            <h2>Полезные ссылки</h2>
-            <nav>
-                <ul class="links-list">
-                    <li><a href="/wiki">Wiki</a></li>
-                    <li><a href="/wiki/docs">Основная информация</a></li>
-                    <li><a href="/discord">Discord</a></li>
-                    <li><a href="/donate">Донат услуги</a></li>
-                    <li><a href="/lore_char">Доступные лорные персонажи</a></li>
-                    <li><a href="https://github.com/S-P-F-Base">GitHub проекта</a></li>
-                </ul>
-            </nav>
-        </div>
+        <main class="hero-wrap">
+            <section class="hero content-tile">
+                <h1>RP Garry's Mod сервер по вселенной Girls’ Frontline</h1>
+                <!-- <p class="subtitle"></p> -->
+
+                {% if server_status %}
+                <div class="status-strip">
+                    <span class="badge">Статус игрового сервера: {{ server_status }}</span>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="quick-cards">
+                <article class="card">
+                    <h3>Новичкам</h3>
+                    <ul>
+                        <li><a href="/wiki/docs/server_rules/termins">Термины и расшифровки</a></li>
+                        <li><a href="/wiki/docs/limits">Лимиты для игроков</a></li>
+                        <li><a href="/discord">Зайти в Discord</a></li>
+                    </ul>
+                </article>
+
+                <article class="card">
+                    <h3>Игрокам</h3>
+                    <ul>
+                        <li><a href="/lore_char">Доступные лор-персонажи</a></li>
+                        <li><a href="/wiki/docs/server_rules/rules">Правила проекта</a></li>
+                        <li><a href="/donate">Донат-услуги</a></li>
+                    </ul>
+                </article>
+
+                <article class="card">
+                    <h3>О проекте</h3>
+                    <ul>
+                        <li><a href="/wiki/docs/about">О проекте</a></li>
+                        <li><a href="/wiki/docs/cooperation">Сотрудничество</a></li>
+                        <li><a href="https://github.com/S-P-F-Base" rel="noopener">GitHub</a></li>
+                    </ul>
+                </article>
+            </section>
+        </main>
     </div>
 </body>
 

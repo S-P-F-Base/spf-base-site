@@ -2,22 +2,20 @@
 <html lang="ru">
 
 <head>
-    <meta charset="UTF-8" />
     <title>S.P.F. Base лорные персонажи</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <meta property="og:title" content="S.P.F. Base" />
     <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
-    <meta property="og:image" content="https://spf-base.ru/static/images/logo/site.jpg" />
-    <meta property="og:url" content="https://spf-base.ru/" />
-    <meta property="og:type" content="website" />
 
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-    <link rel="stylesheet" href="{{ 'main.css' | ver }}" />
+    {% include 'partials/base_header.html' %}
+
     <link rel="stylesheet" href="{{ 'lore_char.css' | ver }}" />
 </head>
 
 <body>
     <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
         <div class="content-tile">
             <h1>Доступные лорные персонажи</h1>
 
