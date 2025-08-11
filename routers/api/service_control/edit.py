@@ -16,6 +16,26 @@ router = APIRouter()
 UNSET = object()
 
 
+def _as_int_or_none(v):
+    if v is None:
+        return None
+
+    if isinstance(v, bool):
+        raise ValueError("bool not allowed")
+
+    if isinstance(v, int):
+        return v
+
+    if isinstance(v, str):
+        s = v.strip()
+        if s == "":
+            return None
+
+        return int(s)
+
+    return int(v)
+
+
 @router.post("/edit")
 def edit_service(
     request: Request,
@@ -63,20 +83,24 @@ def edit_service(
 
     if "discount_value" in patch:
         try:
-            dv = int(patch["discount_value"])
+            patch["discount_value"] = int(patch["discount_value"])
+
         except Exception:
             raise HTTPException(status_code=400, detail="discount_value must be int")
-        if dv < 0 or dv > 100:
+
+        if patch["discount_value"] < 0 or patch["discount_value"] > 100:
             raise HTTPException(
                 status_code=400, detail="discount_value must be in [0, 100]"
             )
 
-    if "left" in patch and patch["left"] is not None:
+    if "left" in patch:
         try:
-            lf = int(patch["left"])
+            patch["left"] = _as_int_or_none(patch["left"])
+
         except Exception:
             raise HTTPException(status_code=400, detail="left must be int or null")
-        if lf < 0:
+
+        if patch["left"] is not None and patch["left"] < 0:
             raise HTTPException(status_code=400, detail="left must be >= 0")
 
     merged = current.to_dict()
