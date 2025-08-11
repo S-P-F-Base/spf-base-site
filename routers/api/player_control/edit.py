@@ -70,7 +70,6 @@ def edit_player(
     request: Request,
     u_id: int = Body(...),
     discord_name: str | None = Body(None),
-    discord_avatar: str | None = Body(None),
     blacklist: dict[str, bool] | None = Body(None),
     mb_limit: float | str | None = Body(None),
     mb_taken: float | str | None = Body(None),
@@ -89,10 +88,6 @@ def edit_player(
     if discord_name is not None and pdata.discord_name != discord_name:
         changes.append(f"discord_name: '{pdata.discord_name}' → '{discord_name}'")
         pdata.discord_name = discord_name
-
-    if discord_avatar is not None and pdata.discord_avatar != discord_avatar:
-        changes.append(f"discord_avatar: '{pdata.discord_avatar}' → '{discord_avatar}'")
-        pdata.discord_avatar = discord_avatar
 
     if blacklist is not None:
         for key in ("admin", "lore"):
