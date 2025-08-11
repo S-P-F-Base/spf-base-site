@@ -224,3 +224,38 @@
         justify-self: start;
     }
 }
+
+.receipt-wrap {
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: .8rem;
+    margin: .8rem 0 1rem;
+}
+
+.receipt-img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+
+.receipt-actions {
+    display: flex;
+    gap: .6rem;
+    margin-top: .6rem;
+}
+
+.btn-inline {
+    width: auto;
+    padding: .65rem .9rem;
+}
+
+.error {
+    background: #2a0a0a;
+    border: 1px solid #8a1a1a;
+    color: #ff9b9b;
+    border-radius: 10px;
+    padding: .6rem .8rem;
+    margin-top: .6rem;
+}
