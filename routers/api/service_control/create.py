@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Body, HTTPException, Request
@@ -23,7 +24,6 @@ def create_service(
     request: Request,
     name: str = Body(...),
     description: str = Body(""),
-    creation_date: str = Body(...),  # ISO8601
     price_main: str = Body(...),
     discount_value: int = Body(0),
     discount_date: str | None = Body(None),
@@ -47,7 +47,7 @@ def create_service(
     payload = {
         "name": name,
         "description": description,
-        "creation_date": creation_date,
+        "creation_date": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "price_main": price_main,
         "discount_value": discount_value,
         "discount_date": discount_date,

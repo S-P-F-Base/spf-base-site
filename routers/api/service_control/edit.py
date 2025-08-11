@@ -22,7 +22,6 @@ def edit_service(
     u_id: str = Body(...),
     name: Any = Body(UNSET),
     description: Any = Body(UNSET),
-    creation_date: Any = Body(UNSET),
     price_main: Any = Body(UNSET),
     discount_value: Any = Body(UNSET),
     discount_date: Any = Body(UNSET),
@@ -44,8 +43,6 @@ def edit_service(
         patch["name"] = name
     if description is not UNSET:
         patch["description"] = description
-    if creation_date is not UNSET:
-        patch["creation_date"] = creation_date
     if price_main is not UNSET:
         patch["price_main"] = price_main
     if discount_value is not UNSET:
@@ -107,7 +104,6 @@ def edit_service(
     add_change("discount_value", current.discount_value, updated.discount_value)
     add_change("discount_date", current.discount_date, updated.discount_date)
     add_change("sell_time", current.sell_time, updated.sell_time)
-    add_change("creation_date", current.creation_date, updated.creation_date)
     add_change("oferta_limit", current.oferta_limit, updated.oferta_limit)
 
     PaymentServiceDB.upsert_service(u_id, updated)
