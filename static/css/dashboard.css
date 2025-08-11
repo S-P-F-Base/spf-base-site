@@ -6,12 +6,12 @@
 }
 
 .player-profile {
-    background-color: #111;
-    border: 2px solid orange;
-    border-radius: 12px;
+    background: rgba(17, 17, 17, .9);
+    border: 1px solid rgba(255, 165, 0, .35);
+    border-radius: 14px;
     padding: 1.5rem;
     margin-bottom: 2rem;
-    box-shadow: 0 0 12px rgba(255, 140, 0, 0.4);
+    box-shadow: 0 0 14px rgba(255, 140, 0, .2);
 }
 
 .player-profile h3 {
@@ -42,16 +42,16 @@
 .profile-name {
     font-size: 1.2rem;
     font-weight: bold;
-    color: #fff;
+    color: #e0e0e0;
     text-shadow: 1px 1px 2px #000;
 }
 
 .linked-services {
-    background-color: #111;
-    border: 2px solid orange;
-    border-radius: 12px;
-    padding: 1.5rem 1.5rem 0rem 1.5rem;
-    box-shadow: 0 0 12px rgba(255, 140, 0, 0.4);
+    background: rgba(17, 17, 17, .9);
+    border: 1px solid rgba(255, 165, 0, .35);
+    border-radius: 14px;
+    padding: 1.5rem 1.5rem 0 1.5rem;
+    box-shadow: 0 0 14px rgba(255, 140, 0, .2);
 }
 
 .info-row {
@@ -84,7 +84,7 @@
 }
 
 .links-list a {
-    background: #111;
+    background: #222;
     border: 2px solid orange;
     border-radius: 6px;
     color: orange;
@@ -128,14 +128,15 @@
     position: absolute;
     top: 30px;
     right: 0;
-    background: #222;
+    background: rgba(34, 34, 34, .98);
     color: #fff;
     padding: 10px;
     font-size: 12px;
-    border-radius: 6px;
+    border-radius: 8px;
     width: max-content;
-    max-width: 250px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    max-width: 280px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .5);
+    border: 1px solid rgba(255, 165, 0, .25);
 }
 
 .alert-flag:hover .tooltip {
@@ -163,21 +164,21 @@
 }
 
 .player-id-card {
-    background-color: #111;
-    border: 2px solid orange;
-    border-radius: 12px;
+    background: rgba(17, 17, 17, .9);
+    border: 1px solid rgba(255, 165, 0, .35);
+    border-radius: 14px;
     padding: 1.5rem;
     margin: 2rem 0;
-    box-shadow: 0 0 12px rgba(255, 140, 0, 0.4);
+    box-shadow: 0 0 14px rgba(255, 140, 0, .2);
     text-align: center;
-    color: #ddd;
+    color: #e0e0e0;
 }
 
 .player-id-card button {
     margin-top: 0.5rem;
     padding: 6px 12px;
     font-size: 12px;
-    background: #111;
+    background: #222;
     border: 2px solid orange;
     color: orange;
     border-radius: 6px;
@@ -197,21 +198,61 @@
 
 .player-limit {
     margin-top: 20px;
-    background: #222;
-    padding: 10px;
-    border-radius: 8px;
+    background: rgba(17, 17, 17, .9);
+    border: 1px solid rgba(255, 165, 0, .35);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    color: #e0e0e0;
+    box-shadow: 0 0 14px rgba(255, 140, 0, .2);
+}
+
+.player-limit h3 {
+    color: orange;
+    margin: 0 0 .6rem;
+    font-size: 1.05rem;
+    letter-spacing: .2px;
 }
 
 .limit-bar {
-    background: #444;
-    border-radius: 6px;
+    background: #222;
+    border: 1px solid rgba(255, 165, 0, .2);
+    border-radius: 999px;
     overflow: hidden;
-    height: 16px;
-    margin-bottom: 6px;
+    height: 14px;
+    margin-bottom: 8px;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, .45);
 }
 
 .limit-fill {
     height: 100%;
-    background: linear-gradient(to right, #4caf50, #ff9800, #f44336);
-    transition: width 0.3s ease;
+    background: linear-gradient(90deg, #4caf50 0%, #ff9800 50%, #f44336 100%);
+    transition: width 0.35s ease;
+}
+
+.player-limit p {
+    margin: 0;
+    font-size: .95rem;
+    color: #ccc;
+}
+
+.player-limit p strong {
+    color: #e0e0e0;
+}
+
+.limit-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: .35rem;
+    font-size: .9rem;
+    color: #aaa;
+}
+
+.limit-badge {
+    background: #222;
+    border: 1px solid rgba(255, 165, 0, .35);
+    color: #e0e0e0;
+    padding: .15rem .5rem;
+    border-radius: 999px;
+    font-size: .85rem;
 }
