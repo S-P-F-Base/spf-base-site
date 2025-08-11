@@ -13,7 +13,10 @@ router = APIRouter()
 
 
 @router.post("/delete")
-def delete_service(request: Request, u_id: str = Body(...)):
+def delete_service(
+    request: Request,
+    u_id: str = Body(...),
+):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
         raise HTTPException(status_code=403, detail="Insufficient access")

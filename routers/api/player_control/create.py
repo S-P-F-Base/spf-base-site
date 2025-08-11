@@ -1,10 +1,10 @@
 import re
 
 import requests
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Body, HTTPException, Request
 
 from data_bases import LogDB, LogType, PlayerData, PlayerDB, UserAccess, UserDB
-from data_control import Config, PlayerAPIData, req_authorization
+from data_control import Config, req_authorization
 
 router = APIRouter()
 
@@ -65,14 +65,18 @@ def resolve_vanity_url(vanity: str) -> str:
 
 
 @router.post("/create")
-def create(request: Request, data: PlayerAPIData):
+def create(
+    request: Request,
+    discord_name: str = Body(...),
+    steam_url: str = Body(...),
+):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.CONTROL_PLAYER):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
     # region resolve steam_id
     try:
-        steamid64 = get_steamid64_from_url(data.steam_url)
+        steamid64 = get_steamid64_from_url(steam_url)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -83,9 +87,7 @@ def create(request: Request, data: PlayerAPIData):
 
     # region resolve discord_id
     try:
-        discord_id, discord_name, discord_avatar = get_discord_id_by_name(
-            data.discord_name
-        )
+        discord_id, discord_name, discord_avatar = get_discord_id_by_name(discord_name)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

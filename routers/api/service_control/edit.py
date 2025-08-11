@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Body, HTTPException, Request
 
 from data_bases import (
@@ -7,19 +9,26 @@ from data_bases import (
     UserAccess,
     UserDB,
 )
-from data_bases import (
-    Service as ServiceModel,
-)
+from data_bases import Service as ServiceModel
 from data_control import req_authorization
 
 router = APIRouter()
+UNSET = object()
 
 
 @router.post("/edit")
 def edit_service(
     request: Request,
     u_id: str = Body(...),
-    data: dict = Body(...),
+    name: Any = Body(UNSET),
+    description: Any = Body(UNSET),
+    creation_date: Any = Body(UNSET),  # ISO8601 string
+    price_main: Any = Body(UNSET),  # Decimal string
+    discount_value: Any = Body(UNSET),  # int 0..100
+    discount_date: Any = Body(UNSET),  # ISO8601 or None
+    status: Any = Body(UNSET),  # "on" | "off" | "archive"
+    left: Any = Body(UNSET),  # int or None
+    sell_time: Any = Body(UNSET),  # ISO8601 or None
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
@@ -29,11 +38,55 @@ def edit_service(
     if not current:
         raise HTTPException(status_code=404, detail="Service not found")
 
+    patch: dict = {}
+    if name is not UNSET:
+        patch["name"] = name
+    if description is not UNSET:
+        patch["description"] = description
+    if creation_date is not UNSET:
+        patch["creation_date"] = creation_date
+    if price_main is not UNSET:
+        patch["price_main"] = price_main
+    if discount_value is not UNSET:
+        patch["discount_value"] = discount_value
+    if discount_date is not UNSET:
+        patch["discount_date"] = discount_date
+    if status is not UNSET:
+        patch["status"] = status
+    if left is not UNSET:
+        patch["left"] = left
+    if sell_time is not UNSET:
+        patch["sell_time"] = sell_time
+
+    if not patch:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
+
+    if "discount_value" in patch:
+        try:
+            dv = int(patch["discount_value"])
+
+        except Exception:
+            raise HTTPException(status_code=400, detail="discount_value must be int")
+
+        if dv < 0 or dv > 100:
+            raise HTTPException(
+                status_code=400, detail="discount_value must be in [0, 100]"
+            )
+
+    if "left" in patch and patch["left"] is not None:
+        try:
+            lf = int(patch["left"])
+        except Exception:
+            raise HTTPException(status_code=400, detail="left must be int or null")
+        if lf < 0:
+            raise HTTPException(status_code=400, detail="left must be >= 0")
+
     merged = current.to_dict()
-    merged.update(data)
+    merged.update(patch)
 
     try:
         updated = ServiceModel.from_dict(merged)
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid service data: {e}")
 
@@ -56,17 +109,15 @@ def edit_service(
 
     PaymentServiceDB.upsert_service(u_id, updated)
 
-    if changes:
-        LogDB.add_log(
-            LogType.SERVICE_UPDATE,
-            f"Service {u_id} edited:\n" + "\n".join(changes),
-            username,
-        )
-    else:
-        LogDB.add_log(
-            LogType.SERVICE_UPDATE,
-            f"Service {u_id} edit attempted with no changes",
-            username,
-        )
+    LogDB.add_log(
+        LogType.SERVICE_UPDATE,
+        f"Service {u_id} "
+        + (
+            "edited:\n" + "\n".join(changes)
+            if changes
+            else "edit attempted with no changes"
+        ),
+        username,
+    )
 
     return {"success": True}

@@ -57,9 +57,11 @@ def edit_payment(
 
     PaymentServiceDB.upsert_payment(u_id, pay)
 
-    LogDB.add_log(
-        LogType.PAYMENT_UPDATE,
-        f"Payment {u_id} edited:\n" + ("\n".join(changes) if changes else "no changes"),
-        username,
-    )
+    if changes:
+        LogDB.add_log(
+            LogType.PAYMENT_UPDATE,
+            f"Payment {u_id} edited:\n" + ("\n".join(changes)),
+            username,
+        )
+
     return {"success": True, "total": f"{pay.total():.2f}"}

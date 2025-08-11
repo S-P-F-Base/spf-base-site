@@ -11,7 +11,10 @@ router = APIRouter()
 
 
 @router.post("/get")
-def get_service(request: Request, u_id: str = Body(...)):
+def get_service(
+    request: Request,
+    u_id: str = Body(...),
+):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
         raise HTTPException(status_code=403, detail="Insufficient access")

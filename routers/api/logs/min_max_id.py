@@ -7,7 +7,9 @@ router = APIRouter()
 
 
 @router.get("/min_max_id")
-def min_max_id(request: Request):
+def min_max_id(
+    request: Request,
+):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.READ_LOGS):
         raise HTTPException(status_code=403, detail="Insufficient access")

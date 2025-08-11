@@ -1,15 +1,18 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Body, HTTPException, Request
 
 from data_bases import LogDB, UserAccess, UserDB
-from data_control import TargetUserAPIData, req_authorization
+from data_control import req_authorization
 
 router = APIRouter()
 
 
 @router.post("/by_creator")
-def by_creator(request: Request, data: TargetUserAPIData):
+def by_creator(
+    request: Request,
+    target: str = Body(...),
+):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.READ_LOGS):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
-    return LogDB.get_logs_by_creator(data.target)
+    return LogDB.get_logs_by_creator(target)

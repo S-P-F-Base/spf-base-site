@@ -16,7 +16,7 @@ def list_services(request: Request):
     if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
         raise HTTPException(status_code=403, detail="Insufficient access")
 
-    rows = PaymentServiceDB.list_services() 
+    rows = PaymentServiceDB.list_services()
     return [
         {"u_id": u, "data": svc.to_dict(), "final_price": f"{svc.price():.2f}"}
         for (u, svc) in rows
