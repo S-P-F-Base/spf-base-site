@@ -110,9 +110,9 @@ Background: /static/wiki/images/hehe.jpg
 
 ## Константы
 
-!const[discord_link]
+!const[site_domain]
 
-!btn[!const[discord_link]|Тык]
+!btn[!const[site_domain]|Тык]
 
 ---
 
