@@ -1,6 +1,6 @@
 Title: Пример страницы
 Author: Cain
-Date: 2025-08-02
+Date: 13 Августа 2025 г.
 Background: /static/wiki/images/hehe.jpg
 
 # Добро пожаловать
