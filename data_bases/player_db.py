@@ -34,6 +34,28 @@ class NoteData:
 
 
 @dataclass
+class CharacterData:
+    id: int
+    name: str
+    model: str | None = None
+    workshop_id: int | None = None
+    workshop_url: str | None = None
+    active: bool = True
+
+    @classmethod
+    def from_dict(cls, raw: dict) -> "CharacterData":
+        valid = {f.name for f in fields(cls)}
+        clean = {k: v for k, v in raw.items() if k in valid}
+        clean["id"] = int(clean["id"])
+        if clean.get("workshop_id") is not None:
+            try:
+                clean["workshop_id"] = int(clean["workshop_id"])
+            except (ValueError, TypeError):
+                clean["workshop_id"] = None
+        return cls(**clean)
+
+
+@dataclass
 class PlayerData:
     discord_name: str | None = None
     discord_avatar: str | None = None
@@ -49,14 +71,17 @@ class PlayerData:
 
     note: list[NoteData] = field(default_factory=list)
 
+    characters: list[CharacterData] = field(default_factory=list)
+    next_char_id: int = 1
+
     mb_limit: float = 0
     mb_taken: float = 0
     initialized: bool = False
 
     @classmethod
     def from_dict(cls, raw: dict) -> "PlayerData":
-        valid_keys = {f.name for f in fields(cls)}
-        clean = {k: v for k, v in raw.items() if k in valid_keys}
+        valid = {f.name for f in fields(cls)}
+        clean = {k: v for k, v in raw.items() if k in valid}
 
         if "note" in clean and isinstance(clean["note"], list):
             clean["note"] = [
@@ -64,10 +89,18 @@ class PlayerData:
                 for n in clean["note"]
             ]
 
+        if "characters" in clean and isinstance(clean["characters"], list):
+            clean["characters"] = [
+                CharacterData.from_dict(c) if isinstance(c, dict) else c
+                for c in clean["characters"]
+            ]
+        else:
+            clean["characters"] = []
+
+        clean.setdefault("next_char_id", 1)
         clean.setdefault("initialized", False)
         clean.setdefault("mb_limit", 0.0)
         clean.setdefault("mb_taken", 0.0)
-
         return cls(**clean)
 
 
