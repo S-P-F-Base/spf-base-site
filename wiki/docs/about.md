@@ -47,5 +47,5 @@ Date: 13 Августа 2025 г.
 Подключиться к Discord-серверу можно [по ссылке](/discord).
 
 Подключение к игровому серверу Garry’s Mod:
-- [Автозаход по ссылке](steam://run/4000//+connect !const[server_ip]:!const[server_port])
+- [Автозаход по ссылке](steam://connect/!const[server_ip]:!const[server_port])
 - Или через консоль игры: `connect !const[server_ip]:!const[server_port]`
