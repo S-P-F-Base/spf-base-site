@@ -19,24 +19,37 @@ def _is_discount_active(svc: Service) -> bool:
     return svc.discount_date > datetime.now(UTC)
 
 
-def _is_sold_out(svc: Service) -> bool:
+def _is_active(svc: Service) -> bool:
     if svc.status != "on":
-        return True
+        return False
 
     if svc.left is not None and svc.left <= 0:
+        return False
+
+    return True
+
+
+def _is_inactive(svc: Service) -> bool:
+    if svc.status == "off":
+        return True
+
+    if svc.status == "on" and svc.left is not None and svc.left <= 0:
         return True
 
     return False
 
 
+def _is_archived(svc: Service) -> bool:
+    return svc.status == "archive"
+
+
 @router.get("/donate")
 def donate(request: Request):
-    rows = PaymentServiceDB.list_services()
-    if rows is None:
-        rows = []
+    rows = PaymentServiceDB.list_services() or []
 
-    active_list = []
-    no_stock_list = []
+    active_list: list[dict] = []
+    inactive_list: list[dict] = []
+    archived_list: list[dict] = []
 
     for u_id, svc in rows:
         final_price: Decimal = svc.price()
@@ -49,24 +62,32 @@ def donate(request: Request):
             "price_main": f"{svc.price_main:.2f}",
             "final_price": f"{final_price:.2f}",
             "discount_value": svc.discount_value if discount_active else 0,
-            "discount_time_end": svc.discount_date.isoformat()  # type: ignore
-            if discount_active
+            "discount_time_end": svc.discount_date.replace(microsecond=0).isoformat()
+            if discount_active and svc.discount_date
             else "",
             "left": svc.left,
             "status": svc.status,
             "oferta_limit": bool(svc.oferta_limit),
         }
 
-        if _is_sold_out(svc):
-            no_stock_list.append(item)
-        else:
+        if _is_archived(svc):
+            archived_list.append(item)
+
+        elif _is_active(svc):
             active_list.append(item)
+
+        elif _is_inactive(svc):
+            inactive_list.append(item)
+
+        else:
+            inactive_list.append(item)
 
     return templates.TemplateResponse(
         "donate.html",
         {
             "request": request,
             "active_list": active_list,
-            "no_stock_list": no_stock_list,
+            "inactive_list": inactive_list,
+            "archived_list": archived_list,
         },
     )

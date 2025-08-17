@@ -17,168 +17,96 @@
         {% include 'partials/header.html' %}
 
         <div class="content-tile donate-wrap">
-
             <div class="donate-filters">
                 <div class="donate-search">
                     <input type="text" id="donate-search" placeholder="Поиск по названию..." />
                 </div>
             </div>
 
+            {% macro section(sec_id, title, items) %}
+            <section id="{{ sec_id }}" class="donate-section" aria-labelledby="{{ sec_id }}-title">
+                <h2 class="category-title" id="{{ sec_id }}-title">{{ title }}</h2>
+
+                {% for donate in items %}
+                <article class="donate-item" role="button" tabindex="0" aria-expanded="false"
+                    data-id="{{ donate.u_id }}" data-timeend="{{ donate.discount_time_end }}">
+                    <header class="donate-header">
+                        <div class="donate-title-wrap">
+                            <h3 class="donate-title">{{ donate.name }}</h3>
+                            <div class="donate-badges">
+                                {% if donate.discount_value > 0 %}
+                                <span class="badge badge-discount">-{{ donate.discount_value }}%</span>
+                                {% endif %}
+                                {% if donate.oferta_limit %}
+                                <span class="badge badge-limit">Оферта-лимит</span>
+                                {% endif %}
+                                {% if donate.status == 'off' %}
+                                <span class="badge badge-muted" title="Услуга выключена">Неактивна</span>
+                                {% elif donate.left is not none and donate.left <= 0 %} <span class="badge badge-muted"
+                                    title="Нет остатка">Нет в наличии</span>
+                                    {% elif donate.status == 'archive' %}
+                                    <span class="badge badge-muted" title="Архивная услуга">Архив</span>
+                                    {% endif %}
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="donate-meta" id="meta-{{ donate.u_id }}">
+                        {% if donate.oferta_limit %}
+                        <div class="meta-inline-group oferta-limit-note" role="note" aria-label="Offer limit notice">
+                            <span class="meta-label">Примечание:</span>
+                            <span class="meta-value">
+                                Услуга помечена как оферта-лимит: <a href="/wiki/docs/oferta#3-условия-оказания-услуг"
+                                    target="_blank" rel="noopener">см. оферту п. 3.5</a>.
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <div class="meta-label">Описание:</div>
+                        <div class="meta-value">{{ donate.description }}</div>
+
+                        <div class="meta-inline-group">
+                            <span class="meta-label">Цена:</span>
+                            <span class="meta-value">
+                                {% if donate.discount_value > 0 %}
+                                <span class="original-price">{{ donate.price_main }}₽</span>
+                                <span class="discounted-price">{{ donate.final_price }}₽</span>
+                                {% else %}
+                                {{ donate.price_main }}₽
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        {% if donate.left is not none %}
+                        <div class="meta-inline-group">
+                            <span class="meta-label">Осталось:</span>
+                            <span class="meta-value">{{ donate.left }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if donate.discount_value > 0 %}
+                        <div class="meta-inline-group">
+                            <span class="meta-label">Скидка действует ещё:</span>
+                            <span class="meta-value time-left">—</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="meta-actions">
+                            <button class="copy-button" type="button"
+                                aria-label="Скопировать код услуги">Скопировать</button>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </section>
+            {% endmacro %}
+
             <div class="donate-list">
+                {{ section('active-list', 'Активные', active_list) }}
+                {{ section('inactive-list', 'Неактивные', inactive_list) }}
+                {{ section('archived-list', 'Архивные', archived_list) }}
 
-                <section id="available-list" aria-labelledby="available-title">
-                    <h2 class="category-title" id="available-title">Доступные услуги</h2>
-
-                    {% for donate in active_list %}
-                    <article class="donate-item" role="button" tabindex="0" aria-expanded="false"
-                        data-id="{{ donate.u_id }}" data-timeend="{{ donate.discount_time_end }}">
-                        <header class="donate-header">
-                            <div class="donate-title-wrap">
-                                <h3 class="donate-title">{{ donate.name }}</h3>
-
-                                <div class="donate-badges">
-                                    {% if donate.discount_value > 0 %}
-                                    <span class="badge badge-discount">-{{ donate.discount_value }}%</span>
-                                    {% endif %}
-
-                                    {% if donate.oferta_limit %}
-                                    <span class="badge badge-limit">
-                                        Оферта-лимит
-                                    </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </header>
-
-                        <div class="donate-meta" id="meta-{{ donate.u_id }}">
-                            {% if donate.oferta_limit %}
-                            <div class="meta-inline-group oferta-limit-note" role="note"
-                                aria-label="Offer limit notice">
-                                <span class="meta-label">Примечание:</span>
-                                <span class="meta-value">
-                                    Услуга помечена как оферта-лимит: <a
-                                        href="/wiki/docs/oferta#3-условия-оказания-услуг" target="_blank"
-                                        rel="noopener">см. оферту п. 3.5</a>.
-                                </span>
-                            </div>
-                            {% endif %}
-
-                            <div class="meta-label">Описание:</div>
-                            <div class="meta-value">{{ donate.description }}</div>
-
-                            <div class="meta-inline-group">
-                                <span class="meta-label">Цена:</span>
-                                <span class="meta-value">
-                                    {% if donate.discount_value > 0 %}
-                                    <span class="original-price">{{ donate.price_main }}₽</span>
-                                    <span class="discounted-price">{{ donate.final_price }}₽</span>
-                                    {% else %}
-                                    {{ donate.price_main }}₽
-                                    {% endif %}
-                                </span>
-                            </div>
-
-                            {% if donate.left is not none %}
-                            <div class="meta-inline-group">
-                                <span class="meta-label">Осталось:</span>
-                                <span class="meta-value">{{ donate.left }}</span>
-                            </div>
-                            {% endif %}
-
-                            {% if donate.discount_value > 0 %}
-                            <div class="meta-inline-group">
-                                <span class="meta-label">Скидка действует ещё:</span>
-                                <span class="meta-value time-left">—</span>
-                            </div>
-                            {% endif %}
-
-                            <div class="meta-actions">
-                                <button class="copy-button" type="button"
-                                    aria-label="Скопировать код услуги">Скопировать</button>
-                            </div>
-                        </div>
-                    </article>
-                    {% endfor %}
-                </section>
-
-                <section id="soldout-list" aria-labelledby="soldout-title">
-                    <h2 class="category-title" id="soldout-title">Распроданные</h2>
-
-                    {% for donate in no_stock_list %}
-                    <article class="donate-item" role="button" tabindex="0" aria-expanded="false"
-                        data-id="{{ donate.u_id }}" data-timeend="{{ donate.discount_time_end }}">
-                        <header class="donate-header">
-                            <div class="donate-title-wrap">
-                                <h3 class="donate-title">{{ donate.name }}</h3>
-
-                                <div class="donate-badges">
-                                    {% if donate.discount_value > 0 %}
-                                    <span class="badge badge-discount">-{{ donate.discount_value }}%</span>
-                                    {% endif %}
-
-                                    {% if donate.oferta_limit %}
-                                    <span class="badge badge-limit">
-                                        Оферта-лимит
-                                    </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </header>
-
-                        <div class="donate-meta" id="meta-{{ donate.u_id }}">
-                            {% if donate.oferta_limit %}
-                            <div class="meta-inline-group oferta-limit-note" role="note"
-                                aria-label="Offer limit notice">
-                                <span class="meta-label">Примечание:</span>
-                                <span class="meta-value">
-                                    Услуга помечена как оферта-лимит: <a
-                                        href="/wiki/docs/oferta#3-условия-оказания-услуг" target="_blank"
-                                        rel="noopener">см. оферту п. 3.5</a>.
-                                </span>
-                            </div>
-                            {% endif %}
-
-                            <div class="meta-label">Описание:</div>
-                            <div class="meta-value">{{ donate.description }}</div>
-
-                            <div class="meta-inline-group">
-                                <span class="meta-label">Цена:</span>
-                                <span class="meta-value">
-                                    {% if donate.discount_value > 0 %}
-                                    <span class="original-price">{{ donate.price_main }}₽</span>
-                                    <span class="discounted-price">{{ donate.final_price }}₽</span>
-                                    {% else %}
-                                    {{ donate.price_main }}₽
-                                    {% endif %}
-                                </span>
-                            </div>
-
-                            {% if donate.left is not none %}
-                            <div class="meta-inline-group">
-                                <span class="meta-label">Осталось:</span>
-                                <span class="meta-value">{{ donate.left }}</span>
-                            </div>
-                            {% endif %}
-
-                            {% if donate.discount_value > 0 %}
-                            <div class="meta-inline-group">
-                                <span class="meta-label">Скидка действует ещё:</span>
-                                <span class="meta-value time-left">—</span>
-                            </div>
-                            {% endif %}
-
-                            <div class="meta-actions">
-                                <button class="copy-button" type="button"
-                                    aria-label="Скопировать код услуги">Скопировать</button>
-                            </div>
-                        </div>
-                    </article>
-                    {% endfor %}
-                </section>
-
-                <p id="no-services-message" class="is-hidden">
-                    Нет доступных услуг
-                </p>
+                <p id="no-services-message" class="is-hidden">Нет доступных услуг</p>
             </div>
 
             <footer class="donate-footer">
@@ -190,61 +118,41 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const searchInput = document.getElementById("donate-search");
-            const availableList = document.getElementById("available-list");
-            const soldoutList = document.getElementById("soldout-list");
-            const availableTitle = document.getElementById("available-title");
-            const soldoutTitle = document.getElementById("soldout-title");
+            const sections = [
+                { wrap: document.getElementById("active-list"), title: document.getElementById("active-list-title") },
+                { wrap: document.getElementById("inactive-list"), title: document.getElementById("inactive-list-title") },
+                { wrap: document.getElementById("archived-list"), title: document.getElementById("archived-list-title") },
+            ];
             const noServicesMessage = document.getElementById("no-services-message");
-
-            const items = [...document.querySelectorAll(".donate-item")];
+            const items = Array.from(document.querySelectorAll(".donate-item"));
 
             function setHidden(el, hide) {
                 el.classList.toggle("is-hidden", !!hide);
             }
 
-            function updateVisibility() {
-                let availableVisible = 0, soldoutVisible = 0;
+            function updateSectionVisibility() {
+                let totalVisible = 0;
 
-                items.forEach(item => {
-                    if (item.style.display !== "none") {
-                        if (availableList.contains(item)) availableVisible++;
-                        else if (soldoutList.contains(item)) soldoutVisible++;
-                    }
+                sections.forEach(({ wrap, title }) => {
+                    if (!wrap) return;
+                    const visibleInSection = Array.from(wrap.querySelectorAll(".donate-item"))
+                        .filter(it => it.style.display !== "none").length;
+
+                    totalVisible += visibleInSection;
+                    setHidden(title, visibleInSection === 0);
+                    setHidden(wrap, visibleInSection === 0);
                 });
 
-                const noServices = availableVisible === 0 && soldoutVisible === 0;
-
-                setHidden(availableList, noServices);
-                setHidden(soldoutList, noServices);
-                setHidden(noServicesMessage, !noServices);
-
-                setHidden(availableTitle, availableVisible === 0);
-                setHidden(soldoutTitle, soldoutVisible === 0);
+                setHidden(noServicesMessage, totalVisible > 0);
             }
-
-            updateVisibility();
-
-            searchInput.addEventListener("input", () => {
-                const value = searchInput.value.toLowerCase();
-
-                items.forEach(item => {
-                    const name = item.querySelector(".donate-title")?.textContent.toLowerCase() || "";
-                    const visible = name.includes(value);
-                    item.style.display = visible ? "block" : "none";
-                });
-
-                updateVisibility();
-            });
 
             items.forEach(item => {
                 const toggle = () => {
                     const meta = item.querySelector(".donate-meta");
-                    if (meta) {
-                        meta.classList.toggle("visible");
-                        item.setAttribute("aria-expanded", meta.classList.contains("visible") ? "true" : "false");
-                    }
+                    if (!meta) return;
+                    meta.classList.toggle("visible");
+                    item.setAttribute("aria-expanded", meta.classList.contains("visible") ? "true" : "false");
                 };
-
                 item.addEventListener("click", toggle);
                 item.addEventListener("keydown", e => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -254,13 +162,21 @@
                 });
             });
 
+            searchInput.addEventListener("input", () => {
+                const value = (searchInput.value || "").toLowerCase();
+                items.forEach(item => {
+                    const name = item.querySelector(".donate-title")?.textContent.toLowerCase() || "";
+                    const visible = name.includes(value);
+                    item.style.display = visible ? "block" : "none";
+                });
+                updateSectionVisibility();
+            });
+
             function updateTimers() {
                 const now = Date.now();
-
                 items.forEach(item => {
                     const timeStr = item.getAttribute("data-timeend");
                     if (!timeStr) return;
-
                     const end = new Date(timeStr);
                     if (isNaN(end)) return;
 
@@ -282,24 +198,19 @@
                     if (days > 0) text += `${days}д `;
                     if (hours > 0 || days > 0) text += `${hours}ч `;
                     text += `${minutes}м ${seconds}с`;
-
                     display.textContent = text;
                 });
             }
-
             updateTimers();
             setInterval(updateTimers, 1000);
 
             document.querySelectorAll(".copy-button").forEach(button => {
                 button.addEventListener("click", e => {
                     e.stopPropagation();
-
                     const item = button.closest(".donate-item");
                     if (!item) return;
-
                     const id = item.getAttribute("data-id");
                     const text = `\`service_${id}\``;
-
                     navigator.clipboard.writeText(text).then(() => {
                         button.textContent = "Скопировано!";
                         setTimeout(() => button.textContent = "Скопировать", 1500);
@@ -311,25 +222,25 @@
             });
 
             items.forEach(item => {
-                const leftoverGroup = [...item.querySelectorAll(".meta-inline-group")].find(group => {
+                const leftoverGroup = Array.from(item.querySelectorAll(".meta-inline-group")).find(group => {
                     const label = group.querySelector(".meta-label");
                     return label && label.textContent.trim() === "Осталось:";
                 });
+                if (!leftoverGroup) return;
 
-                if (leftoverGroup) {
-                    const valueElem = leftoverGroup.querySelector(".meta-value");
-                    if (!valueElem) return;
+                const valueElem = leftoverGroup.querySelector(".meta-value");
+                if (!valueElem) return;
 
-                    const count = parseInt(valueElem.textContent.trim());
-                    if (isNaN(count)) return;
+                const count = parseInt((valueElem.textContent || "").trim(), 10);
+                if (isNaN(count)) return;
 
-                    valueElem.classList.remove("limit-low", "limit-medium", "limit-high");
-
-                    if (count <= 4) valueElem.classList.add("limit-low");
-                    else if (count <= 10) valueElem.classList.add("limit-medium");
-                    else valueElem.classList.add("limit-high");
-                }
+                valueElem.classList.remove("limit-low", "limit-medium", "limit-high");
+                if (count <= 4) valueElem.classList.add("limit-low");
+                else if (count <= 10) valueElem.classList.add("limit-medium");
+                else valueElem.classList.add("limit-high");
             });
+
+            updateSectionVisibility();
         });
     </script>
 </body>
