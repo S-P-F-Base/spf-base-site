@@ -82,6 +82,10 @@ def donate(request: Request):
         else:
             inactive_list.append(item)
 
+    active_list.sort(key=lambda x: x["name"])
+    inactive_list.sort(key=lambda x: x["name"])
+    archived_list.sort(key=lambda x: x["name"])
+
     return templates.TemplateResponse(
         "donate.html",
         {
