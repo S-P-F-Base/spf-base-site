@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Поддержать проект</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% include 'partials/base_header.html' %}
+    <link rel="stylesheet" href="{{ 'donate.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
+        <main class="donate-wrap">
+            <section class="donate content-tile">
+                <h1>Поддержать проект</h1>
+
+                {% if error %}
+                <div class="form-error">{{ error }}</div>
+                {% endif %}
+
+                <form method="post" action="/donate/submit" id="donate-form" novalidate>
+                    <div class="form-field">
+                        <label class="form-label" for="amount">Сумма, ₽</label>
+                        <input id="amount" name="amount" class="form-input" type="number" step="0.01"
+                            min="{{ min_amount }}" max="{{ max_amount }}" inputmode="decimal"
+                            placeholder="Например, 200.00" value="{{ amount or '' }}" required />
+                        <p class="muted">Допустимый диапазон: от {{ min_amount }} до {{ max_amount }} ₽.</p>
+                    </div>
+
+                    <div class="form-field">
+                        <span class="form-label">Способ оплаты</span>
+                        <div class="radio-group">
+                            <label class="radio-pill">
+                                <input type="radio" name="method" value="AC" {% if method=='AC' or not method
+                                    %}checked{% endif %} />
+                                Картой
+                            </label>
+                            <label class="radio-pill">
+                                <input type="radio" name="method" value="PC" {% if method=='PC' %}checked{% endif %} />
+                                ЮMoney
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-field checkbox-line">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="cover_commission" {% if cover_commission %}checked{% endif
+                                %} />
+                            <span class="custom-checkbox"></span>
+                            Покрыть комиссию
+                        </label>
+                        <span class="muted">Пересчёт суммы произойдёт на сервере.</span>
+                    </div>
+
+                    <div class="form-field">
+                        <button class="btn-primary" type="submit">Перейти к оплате</button>
+                    </div>
+                </form>
+                <p class="muted">Эта оплата никак не будет зарегистрирована на сервере в отличие от покупки в магазине!
+                </p>
+                <p class="muted">Оплата проходит на стороне YooMoney. Мы не храним данные вашей карты.</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const form = document.getElementById('donate-form');
+        const amount = document.getElementById('amount');
+
+        amount.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+        amount.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
+        });
+
+        form.addEventListener('submit', (e) => {
+            let val = (amount.value || '').replace(',', '.').trim();
+            if (!val) { e.preventDefault(); return; }
+
+            if (val.startsWith('.')) val = '0' + val;
+            const num = Number(val);
+
+            if (!isFinite(num) || num <= 0) { e.preventDefault(); return; }
+            amount.value = num.toFixed(2);
+        });
+    </script>
+</body>
+
+</html>

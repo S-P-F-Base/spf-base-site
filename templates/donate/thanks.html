@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Спасибо за поддержку</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% include 'partials/base_header.html' %}
+    <link rel="stylesheet" href="{{ 'donate.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+        <main class="hero-wrap">
+            <section class="thanks content-tile">
+                <h1>Спасибо!</h1>
+                <p>Если платёж прошёл успешно. Наверное...</p>
+                <p>Ваша поддержка помогает нам развивать проект!</p>
+                <img class="thanks-img" src="/static/images/error_code/500.png" alt="Спасибо" />
+
+                <a class="btn-link" href="/">Вернуться на главную</a>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>
