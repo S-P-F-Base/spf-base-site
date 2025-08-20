@@ -34,19 +34,16 @@ class NoteData:
         return cls(**clean)
 
 
+def _default_blacklist() -> dict[str, bool]:
+    return {"admin": False, "char": False, "lore": False}
+
+
 @dataclass
 class PlayerData:
     discord_name: str | None = None
     discord_avatar: str | None = None
 
-    blacklist: dict[str, bool] = field(
-        default_factory=lambda: {
-            "admin": False,
-            "char": False,
-            "lore": False,
-        }
-    )
-
+    blacklist: dict[str, bool] = field(default_factory=_default_blacklist)
     note: list[NoteData] = field(default_factory=list)
 
     mb_limit: float = 0
@@ -64,9 +61,19 @@ class PlayerData:
                 for n in clean["note"]
             ]
 
+        base_bl = _default_blacklist()
+        raw_bl = clean.get("blacklist", {})
+        if not isinstance(raw_bl, dict):
+            raw_bl = {}
+
+        merged_bl = {**base_bl, **raw_bl}
+        merged_bl = {k: bool(v) for k, v in merged_bl.items()}
+        clean["blacklist"] = merged_bl
+
         clean.setdefault("initialized", False)
         clean.setdefault("mb_limit", 0.0)
         clean.setdefault("mb_taken", 0.0)
+
         return cls(**clean)
 
 
