@@ -134,9 +134,12 @@ def edit_player(
             changes.append(
                 f"over-limit after limit change: mb_taken({old_taken}) > mb_limit({current_limit}) by {over}"
             )
-
-    PlayerDB.update_player(u_id, discord_id, steam_id, pdata)
-
+    try:
+        PlayerDB.update_player(u_id, discord_id, steam_id, pdata)
+    
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err))     
+    
     LogDB.add_log(
         LogType.PLAYER_UPDATE,
         f"Player {u_id} edited:\n" + ("\n".join(changes) if changes else "no changes"),

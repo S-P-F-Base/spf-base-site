@@ -135,7 +135,7 @@ def redirect(request: Request):
 
     jwt_token = session.create_token(discord_id=user_id, steam_id=steam_id)
 
-    response = RedirectResponse(url="/dashboard", status_code=302)
+    response = RedirectResponse(url="/player", status_code=302)
     response.set_cookie(
         key="session",
         value=jwt_token,

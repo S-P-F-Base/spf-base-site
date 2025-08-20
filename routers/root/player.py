@@ -37,8 +37,8 @@ def discord_member_has_role(discord_user_id: str, role_id: str) -> bool:
         return False
 
 
-@router.get("/dashboard")
-def dashboard(request: Request):
+@router.get("/player")
+def player(request: Request):
     session = PlayerSession(request)
     pdata = session.get_player()
 
@@ -54,7 +54,7 @@ def dashboard(request: Request):
         PlayerDB.update_player(u_id, discord_id, steam_id, data)
 
     return templates.TemplateResponse(
-        "dashboard/index.html",
+        "player/index.html",
         {
             "request": request,
             "discord_id": discord_id,

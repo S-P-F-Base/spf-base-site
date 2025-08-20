@@ -140,7 +140,13 @@ def create(
     # endregion
 
     player = PlayerData(discord_name=discord_name, discord_avatar=discord_avatar)
-    PlayerDB.add_player(discord_id=discord_id, steam_id=steamid64, data=player)
+
+    try:
+        PlayerDB.add_player(discord_id=discord_id, steam_id=steamid64, data=player)
+
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
     LogDB.add_log(
         LogType.PLAYER_CREATED,
         f"Player {discord_id=}, {steamid64=} created",
