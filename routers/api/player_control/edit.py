@@ -15,12 +15,12 @@ def _parse_delta(
     op = "set"
     if isinstance(incoming, (int, float)):
         value = float(incoming)
-  
+
     elif isinstance(incoming, str):
         s = incoming.strip().replace(",", ".")
         if not s:
             raise HTTPException(status_code=400, detail=f"{field}: empty string")
-      
+
         sign = s[0]
         if sign in "+-=":
             num = s[1:].strip()
@@ -31,34 +31,34 @@ def _parse_delta(
                 )
             try:
                 val = float(num)
-         
+
             except ValueError:
                 raise HTTPException(
                     status_code=400, detail=f"{field}: invalid number '{num}'"
                 )
-          
+
             if sign == "+":
                 op = "inc"
                 value = current + val
-         
+
             elif sign == "-":
                 op = "dec"
                 value = current - val
-         
+
             else:
                 op = "set"
                 value = val
-      
+
         else:
             try:
                 value = float(s)
-          
+
             except ValueError:
                 raise HTTPException(
                     status_code=400, detail=f"{field}: invalid number '{s}'"
                 )
             op = "set"
-   
+
     else:
         raise HTTPException(status_code=400, detail=f"{field}: unsupported type")
 
@@ -90,7 +90,7 @@ def edit_player(
         pdata.discord_name = discord_name
 
     if blacklist is not None:
-        for key in ("admin", "lore"):
+        for key in ("admin", "char", "lore"):
             old_val = bool(pdata.blacklist.get(key))
             new_val = bool(blacklist.get(key))
             if old_val != new_val:
@@ -104,10 +104,10 @@ def edit_player(
         new_limit, log_line = _parse_delta("mb_limit", old_limit, mb_limit)
         if new_limit < 0:
             raise HTTPException(status_code=400, detail="mb_limit must be >= 0")
-      
+
         if log_line:
             changes.append(log_line)
-      
+
         pdata.mb_limit = new_limit
 
     if mb_taken is not None:
@@ -115,10 +115,10 @@ def edit_player(
         new_taken, log_line = _parse_delta("mb_taken", old_taken, mb_taken)
         if new_taken < 0:
             raise HTTPException(status_code=400, detail="mb_taken must be >= 0")
-        
+
         if log_line:
             changes.append(log_line)
-       
+
         pdata.mb_taken = new_taken
 
         if new_taken > current_limit:
@@ -136,10 +136,10 @@ def edit_player(
             )
     try:
         PlayerDB.update_player(u_id, discord_id, steam_id, pdata)
-    
+
     except ValueError as err:
-        raise HTTPException(status_code=400, detail=str(err))     
-    
+        raise HTTPException(status_code=400, detail=str(err))
+
     LogDB.add_log(
         LogType.PLAYER_UPDATE,
         f"Player {u_id} edited:\n" + ("\n".join(changes) if changes else "no changes"),
