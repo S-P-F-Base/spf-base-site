@@ -67,8 +67,8 @@ def _is_archived(svc: Service) -> bool:
     return svc.status == "archive"
 
 
-@router.get("/donate")
-def donate(request: Request):
+@router.get("/store")
+def store(request: Request):
     rows = PaymentServiceDB.list_services() or []
 
     active_list: list[dict] = []
@@ -111,7 +111,7 @@ def donate(request: Request):
     archived_list.sort(key=_category_key)
 
     return templates.TemplateResponse(
-        "donate.html",
+        "store.html",
         {
             "request": request,
             "active_list": active_list,

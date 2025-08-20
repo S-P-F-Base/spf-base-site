@@ -4,55 +4,55 @@
 <head>
     <title>Донат услуги</title>
 
-    <meta property="og:title" content="S.P.F. Base donate" />
+    <meta property="og:title" content="S.P.F. Base store" />
     <meta property="og:description" content="Страница донат услуг проекта S.P.F." />
 
     {% include 'partials/base_header.html' %}
 
-    <link rel="stylesheet" href="{{ 'donate.css' | ver }}" />
+    <link rel="stylesheet" href="{{ 'store.css' | ver }}" />
 </head>
 
 <body>
     <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
         {% include 'partials/header.html' %}
 
-        <div class="content-tile donate-wrap">
-            <div class="donate-filters">
-                <div class="donate-search">
-                    <input type="text" id="donate-search" placeholder="Поиск по названию..." />
+        <div class="content-tile store-wrap">
+            <div class="store-filters">
+                <div class="store-search">
+                    <input type="text" id="store-search" placeholder="Поиск по названию..." />
                 </div>
             </div>
 
             {% macro section(sec_id, title, items) %}
-            <section id="{{ sec_id }}" class="donate-section" aria-labelledby="{{ sec_id }}-title">
+            <section id="{{ sec_id }}" class="store-section" aria-labelledby="{{ sec_id }}-title">
                 <h2 class="category-title" id="{{ sec_id }}-title">{{ title }}</h2>
 
-                {% for donate in items %}
-                <article class="donate-item" role="button" tabindex="0" aria-expanded="false"
-                    data-id="{{ donate.u_id }}" data-timeend="{{ donate.discount_time_end }}">
-                    <header class="donate-header">
-                        <div class="donate-title-wrap">
-                            <h3 class="donate-title">{{ donate.name }}</h3>
-                            <div class="donate-badges">
-                                {% if donate.discount_value > 0 %}
-                                <span class="badge badge-discount">-{{ donate.discount_value }}%</span>
+                {% for store in items %}
+                <article class="store-item" role="button" tabindex="0" aria-expanded="false"
+                    data-id="{{ store.u_id }}" data-timeend="{{ store.discount_time_end }}">
+                    <header class="store-header">
+                        <div class="store-title-wrap">
+                            <h3 class="store-title">{{ store.name }}</h3>
+                            <div class="store-badges">
+                                {% if store.discount_value > 0 %}
+                                <span class="badge badge-discount">-{{ store.discount_value }}%</span>
                                 {% endif %}
-                                {% if donate.oferta_limit %}
+                                {% if store.oferta_limit %}
                                 <span class="badge badge-limit">Оферта-лимит</span>
                                 {% endif %}
-                                {% if donate.status == 'off' %}
+                                {% if store.status == 'off' %}
                                 <span class="badge badge-muted" title="Услуга выключена">Неактивна</span>
-                                {% elif donate.left is not none and donate.left <= 0 %} <span class="badge badge-muted"
+                                {% elif store.left is not none and store.left <= 0 %} <span class="badge badge-muted"
                                     title="Нет остатка">Нет в наличии</span>
-                                    {% elif donate.status == 'archive' %}
+                                    {% elif store.status == 'archive' %}
                                     <span class="badge badge-muted" title="Архивная услуга">Архив</span>
                                     {% endif %}
                             </div>
                         </div>
                     </header>
 
-                    <div class="donate-meta" id="meta-{{ donate.u_id }}">
-                        {% if donate.oferta_limit %}
+                    <div class="store-meta" id="meta-{{ store.u_id }}">
+                        {% if store.oferta_limit %}
                         <div class="meta-inline-group oferta-limit-note" role="note" aria-label="Offer limit notice">
                             <span class="meta-label">Примечание:</span>
                             <span class="meta-value">
@@ -63,28 +63,28 @@
                         {% endif %}
 
                         <div class="meta-label">Описание:</div>
-                        <div class="meta-value">{{ donate.description }}</div>
+                        <div class="meta-value">{{ store.description }}</div>
 
                         <div class="meta-inline-group">
                             <span class="meta-label">Цена:</span>
                             <span class="meta-value">
-                                {% if donate.discount_value > 0 %}
-                                <span class="original-price">{{ donate.price_main }}₽</span>
-                                <span class="discounted-price">{{ donate.final_price }}₽</span>
+                                {% if store.discount_value > 0 %}
+                                <span class="original-price">{{ store.price_main }}₽</span>
+                                <span class="discounted-price">{{ store.final_price }}₽</span>
                                 {% else %}
-                                {{ donate.price_main }}₽
+                                {{ store.price_main }}₽
                                 {% endif %}
                             </span>
                         </div>
 
-                        {% if donate.left is not none %}
+                        {% if store.left is not none %}
                         <div class="meta-inline-group">
                             <span class="meta-label">Осталось:</span>
-                            <span class="meta-value">{{ donate.left }}</span>
+                            <span class="meta-value">{{ store.left }}</span>
                         </div>
                         {% endif %}
 
-                        {% if donate.discount_value > 0 %}
+                        {% if store.discount_value > 0 %}
                         <div class="meta-inline-group">
                             <span class="meta-label">Скидка действует ещё:</span>
                             <span class="meta-value time-left">—</span>
@@ -101,7 +101,7 @@
             </section>
             {% endmacro %}
 
-            <div class="donate-list">
+            <div class="store-list">
                 {{ section('active-list', 'Активные', active_list) }}
                 {{ section('inactive-list', 'Неактивные', inactive_list) }}
                 {{ section('archived-list', 'Архивные', archived_list) }}
@@ -109,7 +109,7 @@
                 <p id="no-services-message" class="is-hidden">Нет доступных услуг</p>
             </div>
 
-            <footer class="donate-footer">
+            <footer class="store-footer">
                 <a href="/wiki/docs/oferta" target="_blank" rel="noopener">Ознакомиться с офертой</a>
             </footer>
         </div>
@@ -117,14 +117,14 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const searchInput = document.getElementById("donate-search");
+            const searchInput = document.getElementById("store-search");
             const sections = [
                 { wrap: document.getElementById("active-list"), title: document.getElementById("active-list-title") },
                 { wrap: document.getElementById("inactive-list"), title: document.getElementById("inactive-list-title") },
                 { wrap: document.getElementById("archived-list"), title: document.getElementById("archived-list-title") },
             ];
             const noServicesMessage = document.getElementById("no-services-message");
-            const items = Array.from(document.querySelectorAll(".donate-item"));
+            const items = Array.from(document.querySelectorAll(".store-item"));
 
             function setHidden(el, hide) {
                 el.classList.toggle("is-hidden", !!hide);
@@ -135,7 +135,7 @@
 
                 sections.forEach(({ wrap, title }) => {
                     if (!wrap) return;
-                    const visibleInSection = Array.from(wrap.querySelectorAll(".donate-item"))
+                    const visibleInSection = Array.from(wrap.querySelectorAll(".store-item"))
                         .filter(it => it.style.display !== "none").length;
 
                     totalVisible += visibleInSection;
@@ -148,7 +148,7 @@
 
             items.forEach(item => {
                 const toggle = () => {
-                    const meta = item.querySelector(".donate-meta");
+                    const meta = item.querySelector(".store-meta");
                     if (!meta) return;
                     meta.classList.toggle("visible");
                     item.setAttribute("aria-expanded", meta.classList.contains("visible") ? "true" : "false");
@@ -165,7 +165,7 @@
             searchInput.addEventListener("input", () => {
                 const value = (searchInput.value || "").toLowerCase();
                 items.forEach(item => {
-                    const name = item.querySelector(".donate-title")?.textContent.toLowerCase() || "";
+                    const name = item.querySelector(".store-title")?.textContent.toLowerCase() || "";
                     const visible = name.includes(value);
                     item.style.display = visible ? "block" : "none";
                 });
@@ -207,7 +207,7 @@
             document.querySelectorAll(".copy-button").forEach(button => {
                 button.addEventListener("click", e => {
                     e.stopPropagation();
-                    const item = button.closest(".donate-item");
+                    const item = button.closest(".store-item");
                     if (!item) return;
                     const id = item.getAttribute("data-id");
                     const text = `\`service_${id}\``;
