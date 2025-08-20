@@ -241,3 +241,15 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Warning */
+.donate-warning {
+    margin-top: 1rem;
+    padding: .75rem 1rem;
+    background: rgba(255, 50, 0, .15);
+    border: 2px solid rgba(255, 50, 0, .6);
+    border-radius: 10px;
+    color: #ff8080;
+    font-weight: 700;
+    text-align: center;
+}
