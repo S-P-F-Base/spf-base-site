@@ -19,10 +19,11 @@ _ONE = Decimal("1")
 def _price_calculation(
     amount: Decimal,
     payment_type: Literal["PC", "AC"] = "AC",
+    cover_commission: bool = False,
 ) -> Decimal:
     sum_to_pay = amount
 
-    if Config.user_pays_commission():
+    if cover_commission:
         commission = Decimal(str(Config.get_commission_rates(payment_type)))
         if commission < 0 or commission >= 1:
             raise HTTPException(
@@ -116,7 +117,7 @@ def donate_submit(
             status_code=400,
         )
 
-    amount_to_pay = _price_calculation(amt, method) if cover_commission else amt
+    amount_to_pay = _price_calculation(amt, method, cover_commission)
 
     redirect_url = _generate_yoomoney_payment_url(
         amount=amount_to_pay,
