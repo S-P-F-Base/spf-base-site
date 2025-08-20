@@ -1,3 +1,4 @@
+/* Payment Card */
 .payment-card {
     background: linear-gradient(135deg, #1b1b1b 0%, #151515 100%);
     border: 1px solid #2a2a2a;
@@ -6,6 +7,7 @@
     padding: 1.5rem;
 }
 
+/* Header & Titles */
 .payment-header {
     align-items: baseline;
     display: flex;
@@ -28,6 +30,7 @@
     opacity: .9;
 }
 
+/* Status Badges */
 .status-badge {
     align-items: center;
     border-radius: 999px;
@@ -43,34 +46,35 @@
 
 .status-pending {
     background: #2a2100;
-    color: #ffcc66;
     border: 1px solid #8a6d1a;
+    color: #ffcc66;
 }
 
 .status-done {
     background: #0b2413;
-    color: #5aff9e;
     border: 1px solid #1a8a4c;
+    color: #5aff9e;
 }
 
 .status-declined {
     background: #2a0a0a;
-    color: #ff6b6b;
     border: 1px solid #8a1a1a;
+    color: #ff6b6b;
 }
 
 .status-cancelled {
     background: #1f1f1f;
-    color: #bdbdbd;
     border: 1px solid #444;
+    color: #bdbdbd;
 }
 
+/* Order List */
 .order-list {
     display: grid;
     gap: .8rem;
+    list-style: none;
     margin: 1rem 0 1.2rem;
     padding: 0;
-    list-style: none;
 }
 
 .order-item {
@@ -118,6 +122,7 @@
     padding: .1rem .4rem;
 }
 
+/* Summary */
 .summary {
     border-top: 1px solid #2a2a2a;
     margin-top: 1rem;
@@ -132,9 +137,9 @@
 }
 
 .summary-row.total {
+    color: #fff;
     font-size: 1.2rem;
     font-weight: 900;
-    color: #fff;
 }
 
 .summary-row .label {
@@ -145,6 +150,7 @@
     color: #ffa500;
 }
 
+/* Terms */
 .terms {
     background: #141414;
     border: 1px dashed #444;
@@ -160,6 +166,7 @@
     color: #ffa500;
 }
 
+/* Buttons */
 .btn {
     background: #222;
     border: 2px solid #ffa500;
@@ -176,8 +183,8 @@
 .btn:hover:not(.btn-disabled),
 .btn:focus-visible:not(.btn-disabled) {
     background: #ffa500;
-    color: #111;
     box-shadow: 0 0 14px rgba(255, 165, 0, .6);
+    color: #111;
 }
 
 .btn:active:not(.btn-disabled) {
@@ -185,11 +192,17 @@
 }
 
 .btn-disabled {
-    opacity: .6;
     cursor: not-allowed;
     filter: grayscale(.2);
+    opacity: .6;
 }
 
+.btn-inline {
+    padding: .65rem .9rem;
+    width: auto;
+}
+
+/* Notice & HR */
 .notice {
     background: #1a1406;
     border: 1px solid #6b4a00;
@@ -206,10 +219,43 @@
     margin: 1rem 0;
 }
 
+/* Receipt */
+.receipt-wrap {
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    margin: .8rem 0 1rem;
+    padding: .8rem;
+}
+
+.receipt-img {
+    border-radius: 6px;
+    display: block;
+    height: auto;
+    max-width: 100%;
+}
+
+.receipt-actions {
+    display: flex;
+    gap: .6rem;
+    margin-top: .6rem;
+}
+
+/* Error Box */
+.error {
+    background: #2a0a0a;
+    border: 1px solid #8a1a1a;
+    border-radius: 10px;
+    color: #ff9b9b;
+    margin-top: .6rem;
+    padding: .6rem .8rem;
+}
+
+/* Responsive */
 @media (max-width: 540px) {
     .content-tile {
-        padding: 1.2rem 1.2rem;
         margin: 3vh auto 1.2rem;
+        padding: 1.2rem;
     }
 
     .payment-title {
@@ -223,39 +269,4 @@
     .order-item .price {
         justify-self: start;
     }
-}
-
-.receipt-wrap {
-    background: #111;
-    border: 1px solid #2a2a2a;
-    border-radius: 12px;
-    padding: .8rem;
-    margin: .8rem 0 1rem;
-}
-
-.receipt-img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    border-radius: 6px;
-}
-
-.receipt-actions {
-    display: flex;
-    gap: .6rem;
-    margin-top: .6rem;
-}
-
-.btn-inline {
-    width: auto;
-    padding: .65rem .9rem;
-}
-
-.error {
-    background: #2a0a0a;
-    border: 1px solid #8a1a1a;
-    color: #ff9b9b;
-    border-radius: 10px;
-    padding: .6rem .8rem;
-    margin-top: .6rem;
 }

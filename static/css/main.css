@@ -1,3 +1,4 @@
+/* Base / Reset */
 html,
 body {
     height: 100%;
@@ -5,6 +6,26 @@ body {
     padding: 0;
 }
 
+html {
+    box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+a {
+    color: orange;
+    text-decoration: underline;
+}
+
+a:hover {
+    color: #ffa500;
+}
+
+/* Scrollbars */
 body {
     scrollbar-color: orange #111;
     scrollbar-width: thin;
@@ -24,13 +45,13 @@ body::-webkit-scrollbar-thumb {
     border-radius: 10px;
 }
 
+/* Layout: Background & Tiles */
 .page-background {
     background-attachment: fixed;
     background-color: black;
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
-    box-sizing: border-box;
     min-height: 100vh;
     overflow: hidden;
     position: relative;
@@ -55,6 +76,8 @@ body::-webkit-scrollbar-thumb {
     padding: 2rem 3rem;
     position: relative;
     z-index: 1;
+
+    animation: fadeInUp .6s ease;
 }
 
 .content-tile h1,
@@ -69,6 +92,13 @@ body::-webkit-scrollbar-thumb {
     margin-bottom: 1.5rem;
 }
 
+/* Utility text */
+.muted {
+    color: #bbb;
+    font-size: .95rem;
+}
+
+/* Links-list */
 .links-list {
     display: flex;
     flex-direction: column;
@@ -97,6 +127,7 @@ body::-webkit-scrollbar-thumb {
     outline: none;
 }
 
+/* Checkbox (custom) */
 .checkbox-label {
     align-items: center;
     color: #ccc;
@@ -145,79 +176,70 @@ body::-webkit-scrollbar-thumb {
     opacity: 1;
 }
 
-a {
-    color: orange;
-    text-decoration: underline;
-}
-
-a:hover {
-    color: #ffa500;
-}
-
+/* Header / Nav */
 .site-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin: 0 auto;
+    max-width: 1100px;
+    padding: 1rem 1.25rem;
     position: relative;
     z-index: 2;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 1rem 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
 }
 
 .nav-check {
-    position: absolute;
     opacity: 0;
     pointer-events: none;
+    position: absolute;
 }
 
 .nav-toggle {
-    display: none;
-    width: 40px;
-    height: 34px;
+    align-items: center;
     border: 2px solid orange;
     border-radius: 8px;
-    align-items: center;
-    justify-content: center;
     cursor: pointer;
+    display: none;
+    height: 34px;
+    justify-content: center;
     margin-left: .5rem;
+    width: 40px;
 }
 
 .nav-toggle-bar,
 .nav-toggle-bar::before,
 .nav-toggle-bar::after {
+    background: orange;
     content: "";
     display: block;
-    width: 20px;
     height: 2px;
-    background: orange;
     position: relative;
     transition: transform .2s ease, opacity .2s ease;
+    width: 20px;
 }
 
 .nav-toggle-bar::before {
-    top: -6px;
     position: relative;
+    top: -6px;
 }
 
 .nav-toggle-bar::after {
-    top: 6px;
     position: relative;
+    top: 6px;
 }
 
-
 .brand {
-    display: flex;
     align-items: center;
+    display: flex;
     gap: .6rem;
     text-decoration: none;
 }
 
 .brand-logo {
-    width: 32px;
-    height: 32px;
     border-radius: 6px;
+    height: 32px;
     object-fit: cover;
+    width: 32px;
 }
 
 .brand-title {
@@ -227,29 +249,29 @@ a:hover {
 }
 
 .site-nav {
-    display: flex;
-    gap: .8rem;
     align-items: center;
+    display: flex;
     flex-wrap: nowrap;
+    gap: .8rem;
 }
 
 .site-nav a {
-    text-decoration: none;
+    border-radius: 6px;
     color: #e0e0e0;
     padding: .4rem .6rem;
-    border-radius: 6px;
+    text-decoration: none;
 }
 
 .site-nav a:hover {
-    color: black;
     background: orange;
+    color: black;
 }
 
 .btn-ghost {
     border: 2px solid orange;
     border-radius: 8px;
-    padding: .55rem .9rem;
     color: orange;
+    padding: .55rem .9rem;
     text-decoration: none;
 }
 
@@ -258,15 +280,16 @@ a:hover {
     color: black;
 }
 
+/* Hero */
 .hero-wrap {
-    max-width: 1100px;
     margin: 0 auto;
+    max-width: 1100px;
     padding: 0 1.25rem 4rem;
 }
 
 .hero.content-tile {
-    max-width: 1100px;
     box-shadow: 0 0 24px rgba(255, 140, 0, .45);
+    max-width: 1100px;
 }
 
 .hero h1 {
@@ -279,6 +302,7 @@ a:hover {
     margin: 1rem 0 0.5rem;
 }
 
+/* Status strip / badges */
 .status-strip {
     display: flex;
     flex-wrap: wrap;
@@ -289,10 +313,10 @@ a:hover {
 .badge {
     background: #222;
     border: 1px solid orange;
-    color: orange;
-    padding: .25rem .5rem;
     border-radius: 999px;
+    color: orange;
     font-size: .9rem;
+    padding: .25rem .5rem;
 }
 
 .badge-warn {
@@ -300,68 +324,22 @@ a:hover {
     color: #ffae42;
 }
 
+/* Quick cards grid */
 .quick-cards {
-    margin: 1.25rem 0 1.5rem;
     display: grid;
     gap: 1rem;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    margin: 1.25rem 0 1.5rem;
 }
 
-@media (max-width: 860px) {
-    .site-header {
-        padding: .75rem 1rem;
-    }
-
-    .nav-toggle {
-        display: inline-flex;
-    }
-
-    .site-nav {
-        display: none;
-    }
-
-    .nav-check:checked~.site-nav {
-        display: flex;
-        flex-direction: column;
-        position: absolute;
-        top: 100%;
-        right: 1rem;
-        left: 1rem;
-        background: #111;
-        border: 1px solid rgba(255, 165, 0, .35);
-        border-radius: 12px;
-        padding: .5rem;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
-    }
-
-    .site-nav a {
-        width: 100%;
-        padding: .6rem .75rem;
-        border-radius: 8px;
-        font-size: 1.02rem;
-    }
-
-    .nav-check:checked+.nav-toggle .nav-toggle-bar {
-        transform: rotate(45deg);
-    }
-
-    .nav-check:checked+.nav-toggle .nav-toggle-bar::before {
-        transform: rotate(90deg);
-        top: 0;
-    }
-
-    .nav-check:checked+.nav-toggle .nav-toggle-bar::after {
-        opacity: 0;
-    }
-}
-
+/* Cards (generic) */
 .card {
     background: rgba(17, 17, 17, .9);
     border: 1px solid rgba(255, 165, 0, .35);
     border-radius: 14px;
-    padding: 1.1rem 1.25rem;
-    color: #e0e0e0;
     box-shadow: 0 0 14px rgba(255, 140, 0, .2);
+    color: #e0e0e0;
+    padding: 1.1rem 1.25rem;
     transition: transform .15s ease;
 }
 
@@ -385,19 +363,20 @@ a:hover {
 }
 
 .card a {
-    text-decoration: none;
-    color: #e0e0e0;
     border-bottom: 1px dashed rgba(255, 165, 0, .5);
+    color: #e0e0e0;
+    text-decoration: none;
 }
 
 .card a:hover {
-    color: black;
     background: orange;
     border-bottom-color: transparent;
-    padding: 0 .25rem;
     border-radius: 6px;
+    color: black;
+    padding: 0 .25rem;
 }
 
+/* Updates list */
 .updates.content-tile {
     margin-top: 1rem;
 }
@@ -409,29 +388,29 @@ a:hover {
 }
 
 .updates-list li {
-    display: flex;
     align-items: center;
+    display: flex;
     gap: .6rem;
     padding: .35rem 0;
 }
 
 .updates-list .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
     background: orange;
+    border-radius: 50%;
     display: inline-block;
+    height: 6px;
+    width: 6px;
 }
 
 .updates-list a {
-    text-decoration: none;
     color: #e0e0e0;
+    text-decoration: none;
 }
 
 .updates-list a:hover {
-    color: black;
     background: orange;
     border-radius: 6px;
+    color: black;
     padding: 0 .25rem;
 }
 
@@ -440,10 +419,7 @@ a:hover {
     font-size: .9rem;
 }
 
-.content-tile {
-    animation: fadeInUp .6s ease;
-}
-
+/* Animations */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -453,5 +429,55 @@ a:hover {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+    .site-header {
+        padding: .75rem 1rem;
+    }
+
+    .nav-toggle {
+        display: inline-flex;
+    }
+
+    .site-nav {
+        display: none;
+    }
+
+    .nav-check:checked~.site-nav {
+        align-items: stretch;
+        background: #111;
+        border: 1px solid rgba(255, 165, 0, .35);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+        display: flex;
+        flex-direction: column;
+        left: 1rem;
+        padding: .5rem;
+        position: absolute;
+        right: 1rem;
+        top: 100%;
+    }
+
+    .site-nav a {
+        border-radius: 8px;
+        font-size: 1.02rem;
+        padding: .6rem .75rem;
+        width: 100%;
+    }
+
+    .nav-check:checked+.nav-toggle .nav-toggle-bar {
+        transform: rotate(45deg);
+    }
+
+    .nav-check:checked+.nav-toggle .nav-toggle-bar::before {
+        top: 0;
+        transform: rotate(90deg);
+    }
+
+    .nav-check:checked+.nav-toggle .nav-toggle-bar::after {
+        opacity: 0;
     }
 }
