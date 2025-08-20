@@ -156,7 +156,7 @@ a:hover {
 
 .site-header {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     max-width: 1100px;
     margin: 0 auto;
     padding: 1rem 1.25rem;
@@ -164,6 +164,47 @@ a:hover {
     align-items: center;
     justify-content: space-between;
 }
+
+.nav-check {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.nav-toggle {
+    display: none;
+    width: 40px;
+    height: 34px;
+    border: 2px solid orange;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: .5rem;
+}
+
+.nav-toggle-bar,
+.nav-toggle-bar::before,
+.nav-toggle-bar::after {
+    content: "";
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: orange;
+    position: relative;
+    transition: transform .2s ease, opacity .2s ease;
+}
+
+.nav-toggle-bar::before {
+    top: -6px;
+    position: relative;
+}
+
+.nav-toggle-bar::after {
+    top: 6px;
+    position: relative;
+}
+
 
 .brand {
     display: flex;
@@ -189,6 +230,7 @@ a:hover {
     display: flex;
     gap: .8rem;
     align-items: center;
+    flex-wrap: nowrap;
 }
 
 .site-nav a {
@@ -262,12 +304,54 @@ a:hover {
     margin: 1.25rem 0 1.5rem;
     display: grid;
     gap: 1rem;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
-@media (min-width: 800px) {
-    .quick-cards {
-        grid-template-columns: repeat(3, 1fr);
+@media (max-width: 860px) {
+    .site-header {
+        padding: .75rem 1rem;
+    }
+
+    .nav-toggle {
+        display: inline-flex;
+    }
+
+    .site-nav {
+        display: none;
+    }
+
+    .nav-check:checked~.site-nav {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        right: 1rem;
+        left: 1rem;
+        background: #111;
+        border: 1px solid rgba(255, 165, 0, .35);
+        border-radius: 12px;
+        padding: .5rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+    }
+
+    .site-nav a {
+        width: 100%;
+        padding: .6rem .75rem;
+        border-radius: 8px;
+        font-size: 1.02rem;
+    }
+
+    .nav-check:checked+.nav-toggle .nav-toggle-bar {
+        transform: rotate(45deg);
+    }
+
+    .nav-check:checked+.nav-toggle .nav-toggle-bar::before {
+        transform: rotate(90deg);
+        top: 0;
+    }
+
+    .nav-check:checked+.nav-toggle .nav-toggle-bar::after {
+        opacity: 0;
     }
 }
 
