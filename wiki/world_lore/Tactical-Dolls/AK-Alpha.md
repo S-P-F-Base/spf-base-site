@@ -1,6 +1,6 @@
 Title: AK-Alpha
 Author: Cha1n5aww
-Date: 2025-08-08
+Date: 24 Августа 2025 г.
 Background: /static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/AK-AlphaBackground.jpg
 
 # AK-Alpha.
@@ -11,8 +11,9 @@ Background: /static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/AK-AlphaB
 !img[/static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/Tolik-Ebolik.png]
 
 Ак-Альфа, с выбраным именем Тололо, является тактической куклой из отряда Гризли, что в какой то момент был расформирован из за ухода в отставку остальных членов отряда. Тололо тихая и спокойная кукла, сильно любящая астрономию. У нее есть явные проблемы с выражением эмоций, от чего она может казаться холодной или застенчивой.
+
 ## История создания
-АК-Альфа является элитной тактической куклой, созданной специально для своего вооружения. Приписана к отряду Гризли, и после расформирования, к отряду Frostfall. 
+АК-Альфа является элитной тактической куклой, созданной специально для своего вооружения. Приписана к отряду Гризли, и после расформирования, к отряду Frostfall.
 
 !img[/static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/AK-Alfa.png]
 

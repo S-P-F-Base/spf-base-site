@@ -1,7 +1,8 @@
 Title: ОЦ-14
 Author: Cha1n5aww
-Date: 2025-08-08
+Date: 24 Августа 2025 г.
 Background: /static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/GROZABACK.jpg
+
 # ОЦ-14 "Гроза"
 ```
 "Координаты противника подтверждены, все враги будут стерты."
@@ -10,8 +11,9 @@ Background: /static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/GROZABACK
 !img[/static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/grozochka1.png]
 
 Гроза является командиром отряда Эльмо, потерявшей память после проигранной миссии в 2066 году. Была отсканирована и восстановлена в новом теле, забыв все что было до этого.
+
 ## История создания
-История снова покрыта туманом. Мы знаем опять же мало: Гроза была солдатом на службе у G&K, и после потеряла память из за восстановления в новом теле. 
+История снова покрыта туманом. Мы знаем опять же мало: Гроза была солдатом на службе у G&K, и после потеряла память из за восстановления в новом теле.
 
 !img[/static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/grozochka4.png]
 

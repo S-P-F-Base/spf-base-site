@@ -1,7 +1,8 @@
 Title: Peritya
 Author: Cha1n5aww
-Date: 2025-08-08
+Date: 24 Августа 2025 г.
 Background: /static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/PerturbatorBack.jpg
+
 # Peritya
 ```
 "Четкие приказы гарантируют быстрое завершение битвы."
@@ -11,7 +12,7 @@ Background: /static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/Perturbat
 Перития является тяжелой куклой, использующей пулемет ПКП-СП. Спокойная, загадочная, не идёт первая на контакт. Кажется ненадежной, но в критических ситуациях проявляет себя с лучшей стороны.
 
 ## История создания
-Видимо история Перитии настолько обыденная, что даже интересной информации в архивах G&K про нее нет... 
+Видимо история Перитии настолько обыденная, что даже интересной информации в архивах G&K про нее нет...
 
 !img[/static/wiki/images/world_lore/Pages_wiki_1/T-Doll_index_1/Peritya2.png]
 
