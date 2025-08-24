@@ -231,3 +231,5 @@ OGAS-Integrated Dolls (Продвинутые T-Dolls)
 !img[/static/wiki/images/world_lore/Pages_wiki_1/Dolls_info_1/shield_fairy.jpg]
 
 !img[/static/wiki/images/world_lore/Pages_wiki_1/Dolls_info_1/fury_fairy.jpg]
+
+## 
