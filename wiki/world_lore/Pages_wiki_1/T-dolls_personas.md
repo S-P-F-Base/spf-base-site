@@ -3,6 +3,11 @@ Author: Cha1n5aww
 Date: 24 Августа 2025 г.
 Background: /static/wiki/images/world_lore/Pages_wiki_1/Dolls_info_1/Dolls_info_1.jpg
 
+!!! blue "Cain"
+    !imgblock[/static/wiki/images/avatar/cain_e.png|left|128px,128px,hard]
+    Страница в разработке
+    !endimgblock
+
 # Индексы Кукол
 
 ## Здесь собраны все индексы тактических кукол.
