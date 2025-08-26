@@ -1,4 +1,4 @@
-Title: Инфа о куклах
+Title: Инфа о СПФ
 Author: Grom
 Date: 2025-07-18
 Background: /static/wiki/images/world_lore/Pages_wiki_1/SPF_info_1/wallpaper_PMC.png
