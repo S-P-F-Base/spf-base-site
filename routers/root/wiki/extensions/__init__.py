@@ -1,3 +1,4 @@
+from .auto_link_btn_extension import AutoLinkButtonsExtension
 from .button_extension import ButtonExtension
 from .constant_extension import ConstExtension
 from .folder_tree_extension import FolderTreeExtension

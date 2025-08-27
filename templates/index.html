@@ -62,6 +62,19 @@
                     </ul>
                 </article>
             </section>
+
+            <section class="updates content-tile">
+                <h2><a href="/wiki/docs/news" style="color: orange; text-decoration: none;">Последние новости</a></h2>
+                <ul class="updates-list">
+                    {% for n in news %}
+                    <li>
+                        <span class="dot"></span>
+                        <time>{{ n.date.strftime("%d.%m.%Y") }}</time>
+                        <a href="{{ n.href }}">{{ n.title }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </section>
         </main>
     </div>
 </body>

@@ -9,6 +9,7 @@ from markdown import Markdown
 from templates import templates
 
 from .extensions import (
+    AutoLinkButtonsExtension,
     ButtonExtension,
     ConstExtension,
     FolderTreeExtension,
@@ -62,6 +63,7 @@ def wiki_page(request: Request, page: Path):
 
     md = Markdown(
         extensions=[
+            AutoLinkButtonsExtension(wiki_dir=WIKI_DIR),  # Динамические страницы -.-
             "fenced_code",  # Блоки кода через тройные кавычки (```), как на GitHub
             "tables",  # Markdown-таблицы
             TableImgExtension(),  # Поддержка картинок в таблицах
@@ -82,8 +84,8 @@ def wiki_page(request: Request, page: Path):
         ],
     )
 
+    setattr(md, "current_file", md_path)
     rendered_html = md.convert(content)
-
     meta = getattr(md, "Meta", {})
 
     title = meta.get("title", [None])[0] or "ЗАБЫЛИ НАИМЕНОВАНИЕ УСТАНОВИТЬ"
