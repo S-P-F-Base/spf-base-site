@@ -54,14 +54,29 @@
                         <span class="muted">Пересчёт суммы произойдёт на сервере.</span>
                     </div>
 
-                    <div class="form-field">
-                        <button class="btn-primary" type="submit">Перейти к оплате</button>
+                    <p class="donate-warning" role="alert">
+                        Это добровольное пожертвование, а не покупка.<br><br>
+                        Если хотите что-то приобрести, свяжитесь с администрацией через тикеты в Discord.<br><br>
+                        Пожертвования не возвращаются.<br><br>
+                        Оплата предметов/услуг через этот раздел не засчитывается.
+                    </p>
+
+                    <div class="form-field checkbox-line">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="agree_terms" name="agree_terms" />
+                            <span class="custom-checkbox"></span>
+                            Я понимаю, что это добровольное пожертвование и оно не подлежит возврату
+                        </label>
                     </div>
+
+                    <div class="form-field">
+                        <button class="btn-primary" id="submit-btn" type="submit" disabled aria-disabled="true">
+                            Перейти к оплате
+                        </button>
+                    </div>
+
+                    <p class="muted">Оплата проходит на стороне YooMoney. Мы не храним данные вашей карты.</p>
                 </form>
-                <p class="donate-warning">
-                    Эта оплата никак не будет зарегистрирована на сервере в отличие от покупки в магазине!
-                </p>
-                <p class="muted">Оплата проходит на стороне YooMoney. Мы не храним данные вашей карты.</p>
             </section>
         </main>
     </div>
@@ -69,20 +84,32 @@
     <script>
         const form = document.getElementById('donate-form');
         const amount = document.getElementById('amount');
+        const agree = document.getElementById('agree_terms');
+        const submitBtn = document.getElementById('submit-btn');
 
         amount.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
         amount.addEventListener('keydown', (e) => {
             if (['ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
         });
 
+        function updateSubmitState() {
+            const ok = !!agree.checked;
+            submitBtn.disabled = !ok;
+            submitBtn.setAttribute('aria-disabled', String(!ok));
+        }
+        agree.addEventListener('change', updateSubmitState);
+        updateSubmitState();
+
         form.addEventListener('submit', (e) => {
+            if (!agree.checked) { e.preventDefault(); return; }
+
             let val = (amount.value || '').replace(',', '.').trim();
             if (!val) { e.preventDefault(); return; }
 
             if (val.startsWith('.')) val = '0' + val;
             const num = Number(val);
-
             if (!isFinite(num) || num <= 0) { e.preventDefault(); return; }
+
             amount.value = num.toFixed(2);
         });
     </script>
