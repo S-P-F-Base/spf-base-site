@@ -128,6 +128,10 @@
     outline-offset: 2px;
 }
 
+.store-item+.store-item {
+    margin-top: 0.9rem;
+}
+
 /* Header */
 .store-header {
     display: block;
