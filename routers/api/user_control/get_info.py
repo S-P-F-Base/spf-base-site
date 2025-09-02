@@ -9,7 +9,7 @@ router = APIRouter()
 @router.post("/get_info")
 def get_info(
     request: Request,
-    target: str = Body(...),
+    target: str = Body(..., embed=True),
 ):
     username = req_authorization(request)
 

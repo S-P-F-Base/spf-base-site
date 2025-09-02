@@ -9,7 +9,10 @@ router = APIRouter()
 
 
 @router.post("/delete")
-def delete_character(request: Request, key: str = Body(...)):
+def delete_character(
+    request: Request,
+    key: str = Body(..., embed=True),
+):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.LORE_CHAR_CONTROL):
         raise HTTPException(status_code=403, detail="Insufficient access")

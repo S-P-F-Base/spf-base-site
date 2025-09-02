@@ -1,10 +1,6 @@
 from fastapi import APIRouter, Body, HTTPException, Request
 
-from data_bases import (
-    PaymentServiceDB,
-    UserAccess,
-    UserDB,
-)
+from data_bases import PaymentServiceDB, UserAccess, UserDB
 from data_control import req_authorization
 
 router = APIRouter()
@@ -13,7 +9,7 @@ router = APIRouter()
 @router.post("/get")
 def get_payment(
     request: Request,
-    u_id: str = Body(...),
+    u_id: str = Body(..., embed=True),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.CONTROL_PAYMENT):

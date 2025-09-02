@@ -34,31 +34,74 @@ def get_discord_id_by_name(username: str) -> tuple[str, str, str]:
 
 
 # region steam
-def get_steamid64_from_url(url: str) -> str:
-    match = re.search(r"/profiles/(\d{17})", url)
-    if match:
-        steam_id = match.group(1)
-        return steam_id
-
-    match = re.search(r"/id/([\w\d_-]+)", url)
-    if match:
-        vanity = match.group(1)
-        return resolve_vanity_url(vanity)
-
-    raise ValueError("Unsupported Steam URL format")
+STEAMID64_BASE = 76561197960265728
 
 
 def resolve_vanity_url(vanity: str) -> str:
-    response = requests.get(
-        f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={Config.steam_api()}&vanityurl={vanity}"
+    resp = requests.get(
+        "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/",
+        params={"key": Config.steam_api(), "vanityurl": vanity},
+        proxies=Config.proxy(),
+        timeout=15,
     )
-    response.raise_for_status()
-    data = response.json()
-
+    resp.raise_for_status()
+    data = resp.json()
     if data.get("response", {}).get("success") != 1:
         raise ValueError("Vanity URL not found or API error")
 
     return data["response"]["steamid"]
+
+
+def steam2_to_64(steam2: str) -> str:
+    m = re.fullmatch(r"STEAM_(\d+):([01]):(\d+)", steam2, flags=re.IGNORECASE)
+    if not m:
+        raise ValueError("Invalid Steam2 ID format")
+
+    y = int(m.group(2))
+    z = int(m.group(3))
+    account_id = z * 2 + y
+
+    return str(STEAMID64_BASE + account_id)
+
+
+def steam3_to_64(steam3: str) -> str:
+    m = re.fullmatch(r"\[([A-Za-z]):(\d+):(\d+)\]", steam3)
+    if not m:
+        raise ValueError("Invalid Steam3 ID format")
+
+    account_id = int(m.group(3))
+
+    return str(STEAMID64_BASE + account_id)
+
+
+def get_steamid64(steam_input: str) -> str:
+    s = steam_input.strip()
+
+    if re.fullmatch(r"\d{17}", s):
+        return s
+
+    if s.upper().startswith("STEAM_"):
+        return steam2_to_64(s)
+
+    if s.startswith("[") and s.endswith("]"):
+        return steam3_to_64(s)
+
+    if "steamcommunity.com" in s:
+        m = re.search(r"/profiles/(\d{17})", s)
+        if m:
+            return m.group(1)
+
+        m = re.search(r"/id/([\w\d_-]+)", s)
+        if m:
+            vanity = m.group(1)
+            return resolve_vanity_url(vanity)
+
+        raise ValueError("Unsupported Steam URL format")
+
+    if re.fullmatch(r"[\w\d_-]{2,32}", s):
+        return resolve_vanity_url(s)
+
+    raise ValueError("Unsupported Steam identifier")
 
 
 # endregion
@@ -76,7 +119,7 @@ def create(
 
     # region resolve steam_id
     try:
-        steamid64 = get_steamid64_from_url(steam_url)
+        steamid64 = get_steamid64(steam_url)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -97,7 +140,13 @@ def create(
     # endregion
 
     player = PlayerData(discord_name=discord_name, discord_avatar=discord_avatar)
-    PlayerDB.add_player(discord_id=discord_id, steam_id=steamid64, data=player)
+
+    try:
+        PlayerDB.add_player(discord_id=discord_id, steam_id=steamid64, data=player)
+
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
     LogDB.add_log(
         LogType.PLAYER_CREATED,
         f"Player {discord_id=}, {steamid64=} created",

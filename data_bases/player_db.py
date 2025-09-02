@@ -1,6 +1,7 @@
 import json
 from dataclasses import asdict, dataclass, field, fields
 from enum import Enum
+from sqlite3 import IntegrityError
 
 from .base_db import BaseDB
 
@@ -26,10 +27,15 @@ class NoteData:
         if isinstance(clean.get("status"), str):
             try:
                 clean["status"] = NoteStatus(clean["status"])
+
             except ValueError:
                 clean["status"] = NoteStatus.ACTIVE
 
         return cls(**clean)
+
+
+def _default_blacklist() -> dict[str, bool]:
+    return {"admin": False, "char": False, "lore": False}
 
 
 @dataclass
@@ -37,27 +43,36 @@ class PlayerData:
     discord_name: str | None = None
     discord_avatar: str | None = None
 
-    payments_uuid: list[str] = field(default_factory=list)
-
-    blacklist: dict[str, bool] = field(
-        default_factory=lambda: {
-            "admin": False,
-            "lore": False,
-        }
-    )
-
+    blacklist: dict[str, bool] = field(default_factory=_default_blacklist)
     note: list[NoteData] = field(default_factory=list)
+
+    mb_limit: float = 0
+    mb_taken: float = 0
+    initialized: bool = False
 
     @classmethod
     def from_dict(cls, raw: dict) -> "PlayerData":
-        valid_keys = {f.name for f in fields(cls)}
-        clean = {k: v for k, v in raw.items() if k in valid_keys}
+        valid = {f.name for f in fields(cls)}
+        clean = {k: v for k, v in raw.items() if k in valid}
 
         if "note" in clean and isinstance(clean["note"], list):
             clean["note"] = [
                 NoteData.from_dict(n) if isinstance(n, dict) else n
                 for n in clean["note"]
             ]
+
+        base_bl = _default_blacklist()
+        raw_bl = clean.get("blacklist", {})
+        if not isinstance(raw_bl, dict):
+            raw_bl = {}
+
+        merged_bl = {**base_bl, **raw_bl}
+        merged_bl = {k: bool(v) for k, v in merged_bl.items()}
+        clean["blacklist"] = merged_bl
+
+        clean.setdefault("initialized", False)
+        clean.setdefault("mb_limit", 0.0)
+        clean.setdefault("mb_taken", 0.0)
 
         return cls(**clean)
 
@@ -72,8 +87,8 @@ class PlayerDB(BaseDB):
             con.execute("""
                 CREATE TABLE IF NOT EXISTS player_unit (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    discord_id TEXT,
-                    steam_id TEXT,
+                    discord_id TEXT UNIQUE,
+                    steam_id TEXT UNIQUE,
                     data TEXT
                 )
             """)
@@ -87,13 +102,24 @@ class PlayerDB(BaseDB):
         data: PlayerData,
     ) -> int | None:
         blob = json.dumps(asdict(data))
-        with cls._connect() as con:
-            cur = con.execute(
-                "INSERT INTO player_unit (discord_id, steam_id, data) VALUES (?, ?, ?)",
-                (discord_id, steam_id, blob),
-            )
-            con.commit()
-            return cur.lastrowid
+        try:
+            with cls._connect() as con:
+                cur = con.execute(
+                    "INSERT INTO player_unit (discord_id, steam_id, data) VALUES (?, ?, ?)",
+                    (discord_id, steam_id, blob),
+                )
+                con.commit()
+                return cur.lastrowid
+
+        except IntegrityError as e:
+            msg = str(e)
+            if "player_unit.discord_id" in msg:
+                raise ValueError("Duplicate discord_id") from e
+
+            if "player_unit.steam_id" in msg:
+                raise ValueError("Duplicate steam_id") from e
+
+            raise
 
     @classmethod
     def update_player(
@@ -104,16 +130,27 @@ class PlayerDB(BaseDB):
         data: PlayerData,
     ) -> None:
         blob = json.dumps(asdict(data))
-        with cls._connect() as con:
-            con.execute(
-                """
-                UPDATE player_unit 
-                SET discord_id = ?, steam_id = ?, data = ?
-                WHERE id = ?
-                """,
-                (discord_id, steam_id, blob, u_id),
-            )
-            con.commit()
+        try:
+            with cls._connect() as con:
+                con.execute(
+                    """
+                    UPDATE player_unit 
+                    SET discord_id = ?, steam_id = ?, data = ?
+                    WHERE id = ?
+                    """,
+                    (discord_id, steam_id, blob, u_id),
+                )
+                con.commit()
+
+        except IntegrityError as e:
+            msg = str(e)
+            if "player_unit.discord_id" in msg:
+                raise ValueError("Duplicate discord_id") from e
+
+            if "player_unit.steam_id" in msg:
+                raise ValueError("Duplicate steam_id") from e
+
+            raise
 
     @classmethod
     def remove_player(cls, u_id: int) -> None:
@@ -126,7 +163,6 @@ class PlayerDB(BaseDB):
         u_id, discord_id, steam_id, data_blob = row
         try:
             raw = json.loads(data_blob) if data_blob else {}
-
         except json.JSONDecodeError:
             raw = {}
 
@@ -173,28 +209,6 @@ class PlayerDB(BaseDB):
                 "SELECT id, discord_id, steam_id, data FROM player_unit"
             ).fetchall()
             return [cls._row_to_data(row) for row in rows]
-
-    @classmethod
-    def add_payment(cls, u_id: int, payment_uuid: str) -> None:
-        entry = cls.get_pdata_id(u_id)
-        if not entry:
-            raise ValueError("Player not found")
-
-        u_id, _, _, data = entry
-        if payment_uuid not in data.payments_uuid:
-            data.payments_uuid.append(payment_uuid)
-            cls._update_data(u_id, data)
-
-    @classmethod
-    def remove_payment(cls, u_id: int, payment_uuid: str) -> None:
-        entry = cls.get_pdata_id(u_id)
-        if not entry:
-            raise ValueError("Player not found")
-
-        u_id, _, _, data = entry
-        if payment_uuid in data.payments_uuid:
-            data.payments_uuid.remove(payment_uuid)
-            cls._update_data(u_id, data)
 
     @classmethod
     def _update_data(cls, u_id: int, data: PlayerData) -> None:

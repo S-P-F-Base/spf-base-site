@@ -17,42 +17,64 @@
         <main class="hero-wrap">
             <section class="hero content-tile">
                 <h1>RP Garry's Mod сервер по вселенной Girls’ Frontline</h1>
-                <!-- <p class="subtitle"></p> -->
 
                 {% if server_status %}
                 <div class="status-strip">
                     <span class="badge">Статус игрового сервера: {{ server_status }}</span>
+                    <span class="badge">Запуски: ВТ, ЧТ, ВС</span>
                 </div>
                 {% endif %}
             </section>
 
             <section class="quick-cards">
                 <article class="card">
-                    <h3>Новичкам</h3>
+                    <h3>Общее</h3>
                     <ul>
                         <li><a href="/wiki/docs/server_rules/termins">Термины и расшифровки</a></li>
                         <li><a href="/wiki/docs/limits">Лимиты для игроков</a></li>
-                        <li><a href="/discord">Зайти в Discord</a></li>
-                    </ul>
-                </article>
-
-                <article class="card">
-                    <h3>Игрокам</h3>
-                    <ul>
-                        <li><a href="/lore_char">Доступные лор-персонажи</a></li>
                         <li><a href="/wiki/docs/server_rules/rules">Правила проекта</a></li>
-                        <li><a href="/donate">Донат-услуги</a></li>
+                        <li><a href="/wiki/docs/questionnaire">Правила оформления анкет</a></li>
                     </ul>
                 </article>
 
                 <article class="card">
-                    <h3>О проекте</h3>
+                    <h3>Лор</h3>
+                    <ul>
+                        <li><a href="/wiki">Wiki по серверу</a></li>
+                        <li><a href="/lore_char">Доступные лор-персонажи</a></li>
+                    </ul>
+                </article>
+
+                <article class="card">
+                    <h3>Сообщество</h3>
                     <ul>
                         <li><a href="/wiki/docs/about">О проекте</a></li>
-                        <li><a href="/wiki/docs/cooperation">Сотрудничество</a></li>
+                        <li><a href="/discord">Зайти в Discord</a></li>
+                        <li><a href="/player">Панель игрока</a></li>
+                    </ul>
+                </article>
+
+                <article class="card">
+                    <h3>Поддержка</h3>
+                    <ul>
+                        <li><a href="/store">Магазин</a></li>
+                        <li><a href="/donate">Донат</a></li>
                         <li><a href="https://github.com/S-P-F-Base" rel="noopener">GitHub</a></li>
                     </ul>
                 </article>
+            </section>
+
+            <section class="updates content-tile">
+                <h2><a href="/wiki/docs/news" style="color: orange; text-decoration: none;">Последние новости</a></h2>
+                <ul class="updates-list">
+                    {% for n in news %}
+                    <li>
+                        <span class="dot"></span>
+                        <time>{{ n.date.strftime("%d.%m.%Y") }}</time>
+                        <a href="{{ n.href }}">{{ n.title }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
             </section>
         </main>
     </div>

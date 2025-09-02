@@ -9,7 +9,7 @@ router = APIRouter()
 @router.post("/by_type")
 def by_type(
     request: Request,
-    log_type: int = Body(...),
+    log_type: int = Body(..., embed=True),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.READ_LOGS):

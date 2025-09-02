@@ -128,12 +128,19 @@ def download_receipt_png(request: Request, payment_uuid: str):
 
     try:
         content = AutoTax.get_check_png(tax_uuid)
+        if not isinstance(content, (bytes, bytearray)):
+            raise RuntimeError("receipt content is not bytes")
+
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"failed to fetch receipt: {e}")
 
-    filename = f"чек {tax_uuid}.png"
-    quoted = quote(filename)
+    filename_utf8 = f"чек {tax_uuid}.png"
+    filename_ascii = f"check-{tax_uuid}.png"
+
+    disp = f"attachment; filename={filename_ascii}; filename*=UTF-8''{quote(filename_utf8)}"
+
     headers = {
-        "Content-Disposition": f"attachment; filename*=UTF-8''{quoted}; filename=\"{filename}\""
+        "Content-Disposition": disp,
+        "X-Content-Type-Options": "nosniff",
     }
     return Response(content, media_type="image/png", headers=headers)

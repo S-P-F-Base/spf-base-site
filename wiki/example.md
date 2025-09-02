@@ -1,6 +1,6 @@
 Title: Пример страницы
 Author: Cain
-Date: 2025-08-02
+Date: 24 Августа 2025 г.
 Background: /static/wiki/images/hehe.jpg
 
 # Добро пожаловать
@@ -110,9 +110,9 @@ Background: /static/wiki/images/hehe.jpg
 
 ## Константы
 
-!const[discord_link]
+!const[site_domain]
 
-!btn[!const[discord_link]|Тык]
+!btn[!const[site_domain]|Тык]
 
 ---
 

@@ -1,18 +1,11 @@
 import uuid
+from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Body, HTTPException, Request
 
-from data_bases import (
-    LogDB,
-    LogType,
-    PaymentServiceDB,
-    UserAccess,
-    UserDB,
-)
-from data_bases import (
-    Service as ServiceModel,
-)
+from data_bases import LogDB, LogType, PaymentServiceDB, UserAccess, UserDB
+from data_bases import Service as ServiceModel
 from data_control import req_authorization
 
 router = APIRouter()
@@ -23,13 +16,13 @@ def create_service(
     request: Request,
     name: str = Body(...),
     description: str = Body(""),
-    creation_date: str = Body(...),  # ISO8601
     price_main: str = Body(...),
     discount_value: int = Body(0),
     discount_date: str | None = Body(None),
     status: Literal["on", "off", "archive"] = Body("off"),
     left: int | None = Body(None),
     sell_time: str | None = Body(None),
+    oferta_limit: bool = Body(False),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
@@ -46,20 +39,20 @@ def create_service(
     payload = {
         "name": name,
         "description": description,
-        "creation_date": creation_date,
+        "creation_date": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "price_main": price_main,
         "discount_value": discount_value,
         "discount_date": discount_date,
         "status": status,
         "left": left,
         "sell_time": sell_time,
+        "oferta_limit": bool(oferta_limit),
     }
 
     u_id = uuid.uuid4().hex
 
     try:
         svc = ServiceModel.from_dict(payload)
-
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid service data: {e}")
 

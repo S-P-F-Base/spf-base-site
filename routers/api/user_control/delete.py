@@ -9,7 +9,7 @@ router = APIRouter()
 @router.post("/delete")
 def delete(
     request: Request,
-    target: str = Body(...),
+    target: str = Body(..., embed=True),
 ):
     username = req_authorization(request)
     if not UserDB.has_access(username, UserAccess.CONTROL_USER):

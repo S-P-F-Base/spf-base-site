@@ -2,13 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Body, HTTPException, Request
 
-from data_bases import (
-    LogDB,
-    LogType,
-    PaymentServiceDB,
-    UserAccess,
-    UserDB,
-)
+from data_bases import LogDB, LogType, PaymentServiceDB, UserAccess, UserDB
 from data_bases import Payment as PaymentModel
 from data_control import req_authorization
 

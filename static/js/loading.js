@@ -65,7 +65,7 @@ function DownloadingFile(filename) {
 }
 
 function SetStatusChanged(status) {
-    addToHistory(`Статус: ${status}`);
+    addToHistory(`${status}`);
 
     switch (status) {
         case "Workshop Complete":

@@ -1,10 +1,6 @@
 import asyncio
 
-from fastapi import (
-    APIRouter,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from data_control import WebSocketManager, req_authorization_websocket
 
@@ -21,7 +17,7 @@ async def websocket_auth(websocket: WebSocket):
 
         try:
             token = await asyncio.wait_for(websocket.receive_text(), timeout=10.0)
-        
+
         except asyncio.TimeoutError:
             await websocket.close(code=1008, reason="Timeout")
             return

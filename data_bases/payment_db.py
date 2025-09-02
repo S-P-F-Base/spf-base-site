@@ -20,14 +20,14 @@ def _dt_to_iso(dt: datetime | None) -> str | None:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=UTC)
 
-    return dt.isoformat()
+    return dt.replace(microsecond=0).isoformat()
 
 
-def _dt_from_iso(s: str | None) -> datetime:
+def _dt_from_iso(s: str | None) -> datetime | None:
     if s is None:
-        return datetime.now(UTC)
+        return None
 
-    return datetime.fromisoformat(s)
+    return datetime.fromisoformat(s).replace(microsecond=0)
 
 
 def _dec_to_str(d: Decimal) -> str:
@@ -71,6 +71,8 @@ class Service:
     left: int | None
     sell_time: datetime | None
 
+    oferta_limit: bool
+
     def price(self) -> Decimal:
         now = datetime.now(UTC)
         dv = _clamp_discount(self.discount_value)
@@ -91,6 +93,7 @@ class Service:
             "status": self.status,
             "left": self.left,
             "sell_time": _dt_to_iso(self.sell_time),
+            "oferta_limit": bool(self.oferta_limit),
         }
 
     @classmethod
@@ -98,13 +101,14 @@ class Service:
         return cls(
             name=d["name"],
             description=d.get("description", ""),
-            creation_date=_dt_from_iso(d["creation_date"]),
+            creation_date=_dt_from_iso(d["creation_date"]),  # type: ignore
             price_main=_dec_from_str(d["price_main"]),
             discount_value=int(_clamp_discount(d.get("discount_value", 0))),
             discount_date=_dt_from_iso(d.get("discount_date")),
             status=d.get("status", "off"),
             left=d.get("left"),
             sell_time=_dt_from_iso(d.get("sell_time")),
+            oferta_limit=bool(d.get("oferta_limit", False)),
         )
 
 
@@ -112,9 +116,11 @@ class Service:
 class ServiceSnapshot:
     name: str
     creation_date: datetime
-
     price_main: Decimal
     discount_value: int  # 0-100
+
+    # link to original service to allow stock restore on cancel
+    service_u_id: str | None = None
 
     def price(self) -> Decimal:
         dv = _clamp_discount(self.discount_value)
@@ -129,15 +135,17 @@ class ServiceSnapshot:
             "creation_date": _dt_to_iso(self.creation_date),
             "price_main": _dec_to_str(self.price_main),
             "discount_value": int(_clamp_discount(self.discount_value)),
+            "service_u_id": self.service_u_id,
         }
 
     @classmethod
     def from_dict(cls, d: dict) -> "ServiceSnapshot":
         return cls(
             name=d["name"],
-            creation_date=_dt_from_iso(d["creation_date"]),
+            creation_date=_dt_from_iso(d["creation_date"]),  # type: ignore
             price_main=_dec_from_str(d["price_main"]),
             discount_value=int(_clamp_discount(d.get("discount_value", 0))),
+            service_u_id=d.get("service_u_id"),
         )
 
 
@@ -264,6 +272,34 @@ class PaymentServiceDB(BaseDB):
             cur = con.execute("DELETE FROM service WHERE u_id=?", (u_id,))
             con.commit()
             return cur.rowcount > 0
+
+    @classmethod
+    def decrement_service_left(cls, service_u_id: str, qty: int = 1) -> bool:
+        if qty <= 0:
+            return True
+        svc = cls.get_service(service_u_id)
+        if not svc:
+            return False
+        if svc.left is None:
+            return True
+        if svc.left < qty:
+            return False
+        svc.left -= qty
+        cls.upsert_service(service_u_id, svc)
+        return True
+
+    @classmethod
+    def increment_service_left(cls, service_u_id: str, qty: int = 1) -> bool:
+        if qty <= 0:
+            return True
+        svc = cls.get_service(service_u_id)
+        if not svc:
+            return False
+        if svc.left is None:
+            return True
+        svc.left += qty
+        cls.upsert_service(service_u_id, svc)
+        return True
 
     @classmethod
     def upsert_payment(cls, u_id: str, payment: Payment) -> None:

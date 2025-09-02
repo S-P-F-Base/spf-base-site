@@ -1,6 +1,6 @@
 Title: Первый рассказчик
 Author: Grom
-Date: 2 Августа 2025 г.
+Date: 24 Августа 2025 г.
 
 # Первый рассказчик
 
@@ -12,3 +12,4 @@ Date: 2 Августа 2025 г.
 !btn[/wiki/world_lore/Pages_wiki_1/Dolls_info_1|Информация о куклах]
 !btn[/wiki/world_lore/Pages_wiki_1/ELID_info_1|Информация об ELID]
 !btn[/wiki/world_lore/Organisations/Org_info|О стороних организациях]
+!btn[/wiki/world_lore/Pages_wiki_1/T-dolls_personas|Индексы тактических кукл]

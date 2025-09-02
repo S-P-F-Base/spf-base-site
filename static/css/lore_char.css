@@ -1,4 +1,4 @@
-/* ===== Список персонажей ===== */
+/* Список персонажей */
 .character-list {
     display: flex;
     flex-direction: column;
@@ -6,6 +6,7 @@
     margin-top: 1.5rem;
 }
 
+/* Карточки */
 .character-entry {
     margin-bottom: 0.6rem;
 }
@@ -13,45 +14,79 @@
 .character {
     display: block;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
+    border: 2px solid orange;
+    border-radius: 10px;
     background-color: #222;
     color: orange;
-    border: 2px solid orange;
-    text-decoration: none;
     font-weight: 600;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    text-decoration: none;
+    transition: background-color 0.25s ease, color 0.25s ease, transform 0.15s ease;
 }
 
 .character:hover {
     background-color: orange;
-    color: black;
+    color: #111;
+    transform: translateY(-1px);
 }
 
+/* Без вики */
 .character.no-wiki {
-    background-color: #222;
-    color: orange;
-    border: 2px solid orange;
-    font-weight: 600;
     cursor: default;
     pointer-events: none;
-    text-decoration: none;
 }
 
 .character.no-wiki:hover {
     background-color: #222;
     color: orange;
+    transform: none;
 }
 
+/* Недоступен */
 .character.unavailable {
     background-color: #2a2a2a;
+    border-color: #444;
     color: #888;
-    border: 2px solid #444;
     text-decoration: line-through;
     font-style: italic;
-    pointer-events: none;
     cursor: default;
+    pointer-events: none;
 }
 
+/* Занят/Заблокирован */
+.character-list .character.taken,
+.character-list .character.blocked {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    text-decoration: none;
+    font-style: normal;
+    cursor: default;
+    pointer-events: none;
+}
+
+.character-list .character.taken {
+    background-color: #2a2a2a;
+    border-color: #666;
+    color: #bcbcbc;
+}
+
+.character-list .character.blocked {
+    background-color: #262026;
+    border-color: #c00060;
+    color: #c7a0b6;
+}
+
+.character-list .character.blocked::after {
+    content: "";
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    background: url("/static/images/icons/lock.png") no-repeat center / contain;
+    opacity: 0.9;
+}
+
+/* Текст/бейджи */
 .character-list .character__name {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -74,59 +109,22 @@
     background: rgba(216, 180, 74, 0.08);
 }
 
-.character-list .character.taken {
-    background-color: #2a2a2a;
-    color: #bcbcbc;
-    border: 2px solid #666;
-    text-decoration: none;
-    font-style: normal;
-    pointer-events: none;
-    cursor: default;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem;
-}
-
-.character-list .character.blocked {
-    background-color: #262026;
-    color: #c7a0b6;
-    border: 2px solid #c00060;
-    text-decoration: none;
-    font-style: normal;
-    pointer-events: none;
-    cursor: default;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem;
-
-}
-
-.character-list .character.blocked::after {
-    content: "";
-    width: 24px;
-    height: 24px;
-    flex: 0 0 24px;
-    background: url("/static/images/icons/lock.png") no-repeat center / contain;
-    opacity: 0.9;
-}
-
+/* Поиск/сортировка */
 #charSearch,
 #charSort {
-    padding: 0.5rem;
-    font-size: 1rem;
-    margin: 0.5rem 0;
+    display: block;
     width: 100%;
-    max-width: 400px;
-    border-radius: 6px;
-    border: 2px solid orange;
+    margin: 0.5rem 0;
+    padding: 0.6rem 0.9rem;
+    font-size: 1rem;
+    font-weight: 500;
+
     background-color: #111;
     color: orange;
-    font-weight: 500;
-    transition: border-color 0.2s, background-color 0.2s;
+    border: 2px solid orange;
+    border-radius: 8px;
+
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 #charSearch:focus,
@@ -134,4 +132,5 @@
     outline: none;
     background-color: #1a1a1a;
     border-color: #ffa500;
+    box-shadow: 0 0 0 4px rgba(255, 165, 0, .15);
 }
