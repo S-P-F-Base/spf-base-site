@@ -1,6 +1,6 @@
 Title: Universal Anything Services
 Author: Grom
-Date: 2025-07-18
+Date: 3 Сентября 2025 г.
 
 # Universal Anything Services
 
@@ -8,7 +8,7 @@ Date: 2025-07-18
 
 !img[/static/wiki/images/lore/nrp_wiki/organisations/UAS/UAS_Logo.png]
 
-Butler-36: Модель Universal Anything Services «Butler-36» для ведения домашнего хозяйства. «Butler-36» — одна из высококлассных моделей домашних кукол Universal Anything, ориентированная на состоятельные семьи и семьи среднего класса. «Butler-36» — очень эффективный работник с исключительным чувством времени, способный одновременно выполнять десятки домашних дел с предельной точностью.
+Butler-36: Модель Universal Anything Services "Butler-36" для ведения домашнего хозяйства. "Butler-36" -- одна из высококлассных моделей домашних кукол Universal Anything, ориентированная на состоятельные семьи и семьи среднего класса. "Butler-36" -- очень эффективный работник с исключительным чувством времени, способный одновременно выполнять десятки домашних дел с предельной точностью.
 Примечание: да, это G36 до вступления в G&K
 
 !img[/static/wiki/images/lore/nrp_wiki/organisations/UAS/Butler-36.png]

@@ -1,6 +1,6 @@
 Title: Инфа о куклах
 Author: Grom
-Date: 24 Августа 2025 г.
+Date: 3 Сентября 2025 г.
 Background: /static/wiki/images/lore/nrp_wiki/dolls/background.jpg
 
 # Информация о Т-куклах
@@ -232,4 +232,4 @@ OGAS-Integrated Dolls (Продвинутые T-Dolls)
 
 !img[/static/wiki/images/lore/nrp_wiki/dolls/fury_fairy.jpg]
 
-##
+# #

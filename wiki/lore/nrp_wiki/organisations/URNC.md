@@ -1,6 +1,6 @@
 Title: Union of Rossartrist Nations Coalition
 Author: Grom
-Date: 26 Августа 2025 г.
+Date: 3 Сентября 2025 г.
 
 # Union of Rossartrist Nations Coalition
 

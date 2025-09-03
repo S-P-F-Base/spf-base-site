@@ -1,5 +1,5 @@
 Title: Индекс организаций
 Author: Cain
-Date: 27 Августа 2025 г.
+Date: 3 Сентября 2025 г.
 
 !auto_link_btn(sort="alpha")

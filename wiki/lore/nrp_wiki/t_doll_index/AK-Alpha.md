@@ -1,6 +1,6 @@
 Title: AK-Alpha
 Author: Cha1n5aww
-Date: 24 Августа 2025 г.
+Date: 3 Сентября 2025 г.
 Background: /static/wiki/images/lore/nrp_wiki/t_doll_index/AK-Alpha/backgorund.jpg
 
 # AK-Alpha.

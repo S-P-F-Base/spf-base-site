@@ -1,6 +1,6 @@
 Title: Лор
 Author: Grom
-Date: 26 Августа 2025 г.
+Date: 3 Сентября 2025 г.
 Background: /static/wiki/images/world_lore/Pages_wiki_1/Lore_info_1/wallpaper_lore.jpg
 
 [TOC]
@@ -152,7 +152,6 @@ Background: /static/wiki/images/world_lore/Pages_wiki_1/Lore_info_1/wallpaper_lo
 
 IOP была основана на Украине как часть Международной службы военно-технического сотрудничества между Новосоветским Союзом и Панъевропейским Альянсом.
 2037
-
 
 ---
 

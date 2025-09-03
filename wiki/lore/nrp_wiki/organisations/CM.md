@@ -1,6 +1,6 @@
 Title: Cyber Media
 Author: Grom
-Date: 2025-07-18
+Date: 3 Сентября 2025 г.
 
 # Cyber Media
 

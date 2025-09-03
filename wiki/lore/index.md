@@ -1,6 +1,6 @@
 Title: Выбор рассказчика
 Author: Grom, Cain
-Date: 2 Августа 2025 г.
+Date: 3 Сентября 2025 г.
 Background: /static/wiki/images/lore/background_lore.jpg
 
 # Предупреждение
@@ -8,7 +8,6 @@ Background: /static/wiki/images/lore/background_lore.jpg
     !imgblock[/static/wiki/images/avatar/сain_a.png|left|128px,128px,hard]
     Просьба учитывать, что следующая информация является основной при написании сюжета сервера, нравится ли вам это или нет. Администрация !const[site_name] не считает, что лор и действия `Girls Frontline 2` хоть как-то вписываются в логические рамки. Весь лор и история сервера будет строиться только исходя из оригинального `Girls Frontline` не учитывая приквелы и сиквелы. Спасибо за понимание
     !endimgblock
-
 
 # Выбор wiki
 Тут вы можете выбрать одну из двук Wiki:
