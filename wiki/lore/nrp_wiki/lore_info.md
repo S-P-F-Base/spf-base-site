@@ -1,7 +1,7 @@
 Title: Лор
 Author: Grom
 Date: 3 Сентября 2025 г.
-Background: /static/wiki/images/world_lore/Pages_wiki_1/Lore_info_1/wallpaper_lore.jpg
+Background: /static/wiki/images/lore/background_lore.jpg
 
 [TOC]
 
