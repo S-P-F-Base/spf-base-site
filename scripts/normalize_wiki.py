@@ -77,8 +77,14 @@ def normalize_keys_capitalization(key: str) -> str:
 
 
 def replace_symbols_simple(s: str) -> str:
-    # «» -> ", — -> --
-    return s.replace("«", '"').replace("»", '"').replace("—", "--")
+    # «» -> ", — -> --, “” -> "
+    return (
+        s.replace("«", '"')
+        .replace("»", '"')
+        .replace("—", "--")
+        .replace("“", '"')
+        .replace("”", '"')
+    )
 
 
 def normalize_meta_values(items: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
