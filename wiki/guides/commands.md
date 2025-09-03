@@ -1,6 +1,6 @@
 Title: Команды
 Author: Cain
-Date: 4 Августа 2025 г.
+Date: 3 Сентября 2025 г.
 
 [TOC]
 
