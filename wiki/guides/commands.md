@@ -1,4 +1,4 @@
-Title: Команды
+Title: Команды и бинды
 Author: Cain
 Date: 3 Сентября 2025 г.
 

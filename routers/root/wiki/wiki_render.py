@@ -14,8 +14,11 @@ from .extensions import (
     ConstExtension,
     FolderTreeExtension,
     ImgBlockExtension,
+    LobotomyExtension,
+    RedactExtension,
     SingleImgExtension,
     SmallTextExtension,
+    StrikethroughExtension,
     StripCommentsExtension,
     TableImgExtension,
     TocTreeExtension,
@@ -63,7 +66,7 @@ def wiki_page(request: Request, page: Path):
 
     md = Markdown(
         extensions=[
-            AutoLinkButtonsExtension(wiki_dir=WIKI_DIR),  # Динамические страницы -.-
+            AutoLinkButtonsExtension(wiki_dir=WIKI_DIR),  # Динамические кнопки
             "fenced_code",  # Блоки кода через тройные кавычки (```), как на GitHub
             "tables",  # Markdown-таблицы
             TableImgExtension(),  # Поддержка картинок в таблицах
@@ -76,11 +79,14 @@ def wiki_page(request: Request, page: Path):
             WikiLinkExtension(),  # Поддержка [[url|name]] для вики-стилей
             ConstExtension(constants=constants),  # Константы для замены
             ImgBlockExtension(),  # Для блоков с картинками и текстом
+            RedactExtension(),  # Для обфускации информации с сайта пока не заглянут в код
             SingleImgExtension(),  # Макрос для картинок
             ButtonExtension(),  # Работа с кнопками и их оформлением
             StripCommentsExtension(),  # В пизду комментарии, так же стрипает весь текст
             FolderTreeExtension(),  # Для создания красивых деревьев
             SmallTextExtension(),  # Маленький текст
+            StrikethroughExtension(),  # Зачёркнутый текст
+            LobotomyExtension(),  # Немного красоты в вики
         ],
     )
 

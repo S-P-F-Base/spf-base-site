@@ -32,7 +32,42 @@
 /* Lists */
 .markdown-body ol,
 .markdown-body ul {
-    margin: 1rem 0 1rem 1.5rem;
+    margin: 0.8rem 0 1rem 0;
+    padding-left: 1.8rem;
+    list-style: none;
+}
+
+.markdown-body li {
+    position: relative;
+    margin-bottom: 0.4rem;
+    line-height: 1.7;
+}
+
+.markdown-body ul>li::before {
+    content: "";
+    position: absolute;
+    top: 0.75rem;
+    left: -1.2rem;
+    width: 0.4rem;
+    height: 0.4rem;
+    background: orange;
+    border-radius: 50%;
+}
+
+.markdown-body ol {
+    counter-reset: list-counter;
+}
+
+.markdown-body ol>li::before {
+    counter-increment: list-counter;
+    content: counter(list-counter) ".";
+    position: absolute;
+    left: -1.8rem;
+    top: 0;
+    color: orange;
+    font-weight: 600;
+    width: 1.5rem;
+    text-align: right;
 }
 
 /* Links list */
@@ -262,4 +297,10 @@
     background-color: orange;
     color: black;
     outline: none;
+}
+
+.markdown-body del,
+.markdown-body s {
+    text-decoration: line-through;
+    opacity: 0.6;
 }
