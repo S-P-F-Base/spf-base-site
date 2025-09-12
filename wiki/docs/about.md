@@ -1,6 +1,6 @@
 Title: О проекте
 Author: Grom, Cain
-Date: 19 Августа 2025 г.
+Date: 12 Сентября 2025 г.
 
 # О проекте `!const[site_name]`
 Сервер специализируется на игре формата [Role Play](/wiki/docs/server_rules/termins#role-play-rp), опираясь на вселенную игры `Girls’ Frontline`, а также на близкие по духу и стилистике миры.
