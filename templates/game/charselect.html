@@ -3,319 +3,75 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>SPF - Выбор персонажа</title>
-    <style>
-        :root {
-            --bg: #282828;
-            --header: #1e1e1e;
-            --text: #e6e6e6;
-            --subtle: #c8c8c8;
-            --accent: #0078d7;
-            --panel: #191919;
-            --card: #282828;
-        }
-
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            background: var(--bg);
-            color: var(--text);
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
-        }
-
-        .wrap {
-            display: grid;
-            grid-template-rows: 48px 1fr 48px;
-            height: 100%;
-        }
-
-        header {
-            background: var(--header);
-            display: flex;
-            align-items: center;
-            padding: 0 16px;
-            font-weight: 700;
-        }
-
-        main {
-            display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 16px;
-            padding: 16px;
-        }
-
-        .list,
-        .panel {
-            background: var(--panel);
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .row {
-            background: var(--card);
-            border-radius: 8px;
-            padding: 10px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .title {
-            font-weight: 700;
-        }
-
-        .meta {
-            font-size: 12px;
-            color: var(--subtle);
-            margin-top: 4px;
-        }
-
-        button {
-            border: 0;
-            border-radius: 6px;
-            padding: 8px 12px;
-            background: var(--header);
-            color: var(--text);
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: var(--accent);
-        }
-
-        .field {
-            margin-bottom: 10px;
-        }
-
-        label {
-            display: block;
-            font-size: 12px;
-            color: var(--subtle);
-            margin-bottom: 4px;
-        }
-
-        input,
-        select {
-            width: 100%;
-            box-sizing: border-box;
-            border-radius: 6px;
-            border: 0;
-            padding: 8px 10px;
-            background: #202020;
-            color: var(--text);
-        }
-
-        .small {
-            font-size: 12px;
-            color: var(--subtle);
-            margin-left: 8px;
-        }
-
-        footer {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-
-        .pill {
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: #202020;
-            display: inline-block;
-        }
-
-        .row-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-    </style>
-
-    <script>
-        window.onCharacterList = (list) => document.body.innerHTML = '<pre>' + JSON.stringify(list, null, 2) + '</pre>';
-        window.onBackstories = console.log;
-        window.onCharError = alert;
-        window.GMOD_READY = () => console.log('GMOD_READY fired');
-    </script>
+    <link rel="stylesheet" href="{{ 'game/loading.css' | ver }}" />
 </head>
 
 <body>
     <div class="wrap">
-        <header>Выбор персонажа</header>
+        <header>
+            <span class="brand" id="title">Выбор персонажа</span>
+            <div class="spacer"></div>
+            <button class="btn" id="btnPrimary">Создать нового</button>
+        </header>
+
         <main>
-            <section class="list">
-                <div id="chars"></div>
+            <!-- список персонажей -->
+            <section id="screen-list">
+                <div id="listContainer" class="grid"></div>
+                <div id="listEmpty" class="empty" style="display:none;">Персонажей пока нет.</div>
             </section>
-            <section class="panel">
-                <div class="field">
-                    <label>Пол</label>
-                    <div>
-                        <button id="btnMale">Мужской</button>
-                        <button id="btnFemale" style="margin-left:8px;">Женский</button>
-                        <span class="small" id="genderHint"></span>
+
+            <!-- создание -->
+            <section id="screen-create" style="display:none;">
+                <div class="panel">
+                    <div class="row row-head">
+                        <div class="title">Создание персонажа</div>
                     </div>
-                </div>
-                <div class="field">
-                    <label>Имя персонажа</label>
-                    <input id="name" placeholder="Введите имя" />
-                    <div class="small" id="nameHint"></div>
-                </div>
-                <div class="field">
-                    <label>Предыстория</label>
-                    <div id="backstories"></div>
-                </div>
-                <div class="field">
-                    <label>Модель предпросмотра</label>
-                    <input id="modelPath" placeholder="models/... .mdl" />
-                    <div style="margin-top:8px;">
-                        <button id="btnPreview">Применить к предпросмотру</button>
+
+                    <div class="cols">
+                        <!-- LEFT -->
+                        <div class="create-left">
+                            <div class="create-preview">
+                                <div class="create-thumb"><img id="previewImg" alt=""></div>
+                                <div class="small" id="previewHint">Выбери предысторию — появится иконка модели</div>
+                            </div>
+
+                            <div class="field">
+                                <label>Пол</label>
+                                <div style="display:flex;gap:8px;">
+                                    <button class="btn" id="btnMale">Мужской</button>
+                                    <button class="btn" id="btnFemale">Женский</button>
+                                    <span class="small" id="genderHint"></span>
+                                </div>
+                            </div>
+
+                            <div class="field" id="nameField">
+                                <label>Имя персонажа</label>
+                                <input id="name" placeholder="Введите имя" />
+                                <div class="small" id="nameHint"></div>
+                            </div>
+
+                            <button class="btn" id="btnCreate" style="width:100%;padding:12px 0;">Создать</button>
+                        </div>
+
+                        <!-- RIGHT -->
+                        <div class="create-right">
+                            <label class="small" style="margin-left:4px;">Предыстории</label>
+                            <div id="backstories" class="grid"></div>
+                            <div id="bsEmpty" class="empty" style="display:none;">Сервер не прислал предыстории.</div>
+                        </div>
                     </div>
-                </div>
-                <div style="margin-top:16px;">
-                    <button id="btnCreate" style="width:100%; padding:12px 0;">Создать</button>
                 </div>
             </section>
         </main>
-        <footer>
-            <span class="pill">Нажми по персонажу → «Выбрать»</span>
-            <button id="btnReload">Обновить список</button>
-        </footer>
+
+        <a href="#" onclick="gmod.openURL('https\:\/\/spf-base.ru')" class="footer-link">Сайт проекта:
+            https://spf-base.ru</a>
     </div>
 
-    <script>
-        const gmod = (typeof window.gmod !== "undefined") ? window.gmod : {
-            requestBackstories() { console.log("[stub] requestBackstories"); },
-            createCharacter(name, gender, backstory) { console.log("[stub] createCharacter", name, gender, backstory); },
-            selectCharacter(id) { console.log("[stub] selectCharacter", id); },
-            previewModel(path) { console.log("[stub] previewModel", path); },
-            log(msg) { console.log(msg); },
-        };
-
-        let state = {
-            gender: 0,
-            name: "",
-            backstoryId: null,
-            backstories: [],
-            hasNameGenerator: false,
-            genderModels: null
-        };
-
-        const $ = sel => document.querySelector(sel);
-        const charsEl = $('#chars');
-        const backstoriesEl = $('#backstories');
-        const nameInput = $('#name');
-        const nameHint = $('#nameHint');
-        const genderHint = $('#genderHint');
-
-        function renderChars(chars) {
-            charsEl.innerHTML = '';
-            (chars || []).forEach(c => {
-                const row = document.createElement('div');
-                row.className = 'row';
-                const left = document.createElement('div');
-                left.innerHTML = `<div class="title">${escapeHtml(c.name || "Без имени")}</div>
-                        <div class="meta">Пол: ${c.gender === 0 ? "Мужской" : "Женский"} · Раса: ${(["Человек", "Полу-человек", "Кукла"][(c.race || 0)] || "?")}</div>
-                        <div class="meta">ID: ${c.id ?? "?"}</div>`;
-                const right = document.createElement('div');
-                right.className = 'row-actions';
-                const selectBtn = document.createElement('button');
-                selectBtn.textContent = 'Выбрать';
-                selectBtn.onclick = () => gmod.selectCharacter(String(c.id || 0));
-                right.appendChild(selectBtn);
-                row.appendChild(left);
-                row.appendChild(right);
-                charsEl.appendChild(row);
-            });
-        }
-
-        function renderBackstories(list) {
-            state.backstories = list || [];
-            backstoriesEl.innerHTML = '';
-            state.backstories.forEach(bs => {
-                const card = document.createElement('div');
-                card.className = 'row';
-                const left = document.createElement('div');
-                left.innerHTML = `<div class="title">${escapeHtml(bs.title || bs.id || "?")}</div>
-                        <div class="meta">${escapeHtml(bs.description || "")}</div>`;
-                const right = document.createElement('div');
-                right.className = 'row-actions';
-                const choose = document.createElement('button');
-                choose.textContent = 'Выбрать';
-                choose.onclick = () => {
-                    state.backstoryId = bs.id;
-                    state.hasNameGenerator = !!bs.has_name_generator;
-                    state.genderModels = bs.gender_models || null;
-                    if (state.hasNameGenerator) {
-                        nameInput.disabled = true;
-                        nameHint.textContent = "Имя задаётся сервером";
-                    } else {
-                        nameInput.disabled = false;
-                        nameHint.textContent = "";
-                    }
-                    const mdl = (state.genderModels && (state.genderModels[state.gender] || state.genderModels[0])) || null;
-                    if (mdl) gmod.previewModel(mdl);
-                };
-                right.appendChild(choose);
-                card.appendChild(left);
-                card.appendChild(right);
-                backstoriesEl.appendChild(card);
-            });
-        }
-
-        function escapeHtml(s) {
-            return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-        }
-
-        // Exposed entry points for Lua:
-        window.onCharacterList = function (chars) { try { renderChars(chars); } catch (e) { gmod.log(e.stack || String(e)); } };
-        window.onBackstories = function (list) { try { renderBackstories(list); } catch (e) { gmod.log(e.stack || String(e)); } };
-        window.onCharError = function (msg) { alert(msg || "Ошибка"); };
-
-        // Gender controls
-        $('#btnMale').onclick = () => {
-            state.gender = 0;
-            genderHint.textContent = "Мужской";
-            const mdl = (state.genderModels && (state.genderModels[0] || state.genderModels[0])) || null;
-            if (mdl) gmod.previewModel(mdl);
-        };
-        $('#btnFemale').onclick = () => {
-            state.gender = 1;
-            genderHint.textContent = "Женский";
-            const mdl = (state.genderModels && (state.genderModels[1] || state.genderModels[0])) || null;
-            if (mdl) gmod.previewModel(mdl);
-        };
-
-        // Name field
-        nameInput.oninput = () => state.name = nameInput.value;
-
-        // Preview custom model from input
-        $('#btnPreview').onclick = () => {
-            const path = $('#modelPath').value.trim();
-            if (path) gmod.previewModel(path);
-        };
-
-        // Create
-        $('#btnCreate').onclick = () => {
-            if (!state.backstoryId) { alert("Выбери предысторию"); return; }
-            const finalName = state.hasNameGenerator ? "" : (state.name || "");
-            gmod.createCharacter(finalName, String(state.gender), state.backstoryId);
-        };
-
-        // Reloads
-        $('#btnReload').onclick = () => {
-            gmod.requestBackstories();
-        };
-
-        (function bootstrap() {
-            try { gmod.requestBackstories(); } catch (e) { }
-        })();
-    </script>
+    <script src="/static/js/game/charselect.js"></script>
 </body>
 
 </html>
