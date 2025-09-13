@@ -4,29 +4,41 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#1e1e1e" />
     <title>SPF - Выбор персонажа</title>
-    <link rel="stylesheet" href="{{ 'game/loading.css' | ver }}" />
+    <link rel="stylesheet" href="/static/css/game/charselect.css" />
 </head>
 
 <body>
     <div class="wrap">
-        <header>
-            <span class="brand" id="title">Выбор персонажа</span>
+        <header class="app-header">
+            <div class="brand">
+                <span class="brand-mark"></span>
+                <span id="title">Выбор персонажа</span>
+            </div>
             <div class="spacer"></div>
-            <button class="btn" id="btnPrimary">Создать нового</button>
+            <button class="btn btn-primary" id="btnPrimary" type="button" aria-label="Создать нового">
+                <span class="btn-icon" aria-hidden="true">+</span>
+                Создать нового
+            </button>
         </header>
 
-        <main>
+        <main class="app-main">
             <!-- список персонажей -->
-            <section id="screen-list">
-                <div id="listContainer" class="grid"></div>
+            <section id="screen-list" class="screen">
+                <div class="section-head">
+                    <div class="section-title">Доступные персонажи</div>
+                    <div class="section-sub">Выбери, с кем продолжим игру</div>
+                </div>
+
+                <div id="listContainer" class="cards-grid" role="list"></div>
                 <div id="listEmpty" class="empty" style="display:none;">Персонажей пока нет.</div>
             </section>
 
             <!-- создание -->
-            <section id="screen-create" style="display:none;">
-                <div class="panel">
-                    <div class="row row-head">
+            <section id="screen-create" class="screen" style="display:none;">
+                <div class="panel elevate">
+                    <div class="row row-head" style="margin-bottom: 10px;">
                         <div class="title">Создание персонажа</div>
                     </div>
 
@@ -34,26 +46,30 @@
                         <!-- LEFT -->
                         <div class="create-left">
                             <div class="create-preview">
-                                <div class="create-thumb"><img id="previewImg" alt=""></div>
+                                <div class="create-thumb skeleton">
+                                    <img id="previewImg" alt="" />
+                                </div>
                                 <div class="small" id="previewHint">Выбери предысторию — появится иконка модели</div>
                             </div>
 
                             <div class="field">
                                 <label>Пол</label>
-                                <div style="display:flex;gap:8px;">
-                                    <button class="btn" id="btnMale">Мужской</button>
-                                    <button class="btn" id="btnFemale">Женский</button>
-                                    <span class="small" id="genderHint"></span>
+                                <div class="segmented" role="group" aria-label="Выбор пола">
+                                    <button class="btn btn-ghost is-active" id="btnMale" type="button">Мужской</button>
+                                    <button class="btn btn-ghost" id="btnFemale" type="button">Женский</button>
+                                    <span class="small" id="genderHint" aria-live="polite"></span>
                                 </div>
                             </div>
 
                             <div class="field" id="nameField">
-                                <label>Имя персонажа</label>
-                                <input id="name" placeholder="Введите имя" />
-                                <div class="small" id="nameHint"></div>
+                                <label for="name">Имя персонажа</label>
+                                <input id="name" placeholder="Введите имя" autocomplete="off" />
+                                <div class="small" id="nameHint" aria-live="polite"></div>
                             </div>
 
-                            <button class="btn" id="btnCreate" style="width:100%;padding:12px 0;">Создать</button>
+                            <button class="btn btn-primary cta" id="btnCreate" type="button" disabled>
+                                Создать
+                            </button>
                         </div>
 
                         <!-- RIGHT -->
@@ -67,11 +83,13 @@
             </section>
         </main>
 
-        <a href="#" onclick="gmod.openURL('https\:\/\/spf-base.ru')" class="footer-link">Сайт проекта:
-            https://spf-base.ru</a>
+        <a href="https://spf-base.ru" class="footer-link" id="projectLink" data-gmod-link>
+            <span class="link-dot" aria-hidden="true"></span>
+            Сайт проекта: spf-base.ru
+        </a>
     </div>
 
-    <script src="/static/js/game/charselect.js"></script>
+    <script src="/static/js/game/charselect.js" defer></script>
 </body>
 
 </html>
