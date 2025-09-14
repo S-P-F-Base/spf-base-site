@@ -177,7 +177,7 @@
     }
 
     function renderAdmin() {
-        setTabsActive("self");
+        setTabsActive("adminPanel");
         const wrap = el("div", "cols-2");
 
         const left = el("div", "");
@@ -215,10 +215,18 @@
         head.append(inp);
         return { node: head, input: inp };
     }
-
     function listBlock(header, items, mapToRow, onDouble) {
         const wrap = el("div", "panel", "");
-        const { node, input } = headerSearch(header, null);
+
+        // accept either string title or {node,input}
+        let headerInfo;
+        if (header && header.node && header.input) {
+            headerInfo = header;
+        } else {
+            headerInfo = headerSearch(String(header || ""), null);
+        }
+
+        const { node, input } = headerInfo;
         wrap.append(node);
 
         const list = el("div", "list");
@@ -227,14 +235,20 @@
         function rebuild() {
             list.innerHTML = "";
             const q = input.value || "";
-            const arr = items.filter(it => !it.equipped && matches(it, q))
+            const arr = items
+                .filter(it => !it.equipped && matches(it, q))
                 .slice()
                 .sort((a, b) => {
                     const na = casefold(a.name), nb = casefold(b.name);
                     if (na !== nb) return na < nb ? -1 : 1;
                     return String(a.uid).localeCompare(String(b.uid));
                 });
-            if (!arr.length) list.append(el("div", "empty", "Пусто"));
+
+            if (!arr.length) {
+                list.append(el("div", "empty", "Пусто"));
+                return;
+            }
+
             for (const it of arr) {
                 const conf = mapToRow(it);
                 const row = el("div", "row", "");
@@ -249,7 +263,7 @@
                 for (const [txt, fn] of (conf.actions || [])) actions.append(button(txt, fn));
                 if (actions.children.length) row.append(actions);
 
-                row.addEventListener("dblclick", () => onDouble && onDouble(it));
+                if (onDouble) row.addEventListener("dblclick", () => onDouble(it));
                 list.append(row);
             }
         }
