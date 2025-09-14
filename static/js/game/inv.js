@@ -510,7 +510,9 @@
         }
         catHead.input.addEventListener("input", rebuildCatalog);
 
-        wrap.append(left, el("div", "",)).lastChild.append(panel, catWrap);
+        const mid = el("div", "");
+        wrap.append(left, mid);
+        mid.append(panel, catWrap);
         root.append(wrap);
 
         try { gmod.requestPlayers(); } catch (_) { }
