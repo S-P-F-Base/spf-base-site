@@ -21,13 +21,22 @@ html,
 body {
     margin: 0;
     height: 100%;
-    background: radial-gradient(1200px 800px at 20% -10%, rgba(34, 211, 238, .08), transparent 60%),
-        radial-gradient(1000px 700px at 80% 120%, rgba(14, 165, 233, .10), transparent 60%),
+
+    background:
+        radial-gradient(1400px 1000px at 20% -12%,
+            rgba(34, 211, 238, .08) 0%,
+            rgba(34, 211, 238, .04) 45%,
+            var(--bg) 78%),
+        radial-gradient(1400px 900px at 80% 120%,
+            rgba(14, 165, 233, .10) 0%,
+            rgba(14, 165, 233, .05) 50%,
+            var(--bg) 82%),
         var(--bg);
+
+    background-repeat: no-repeat, no-repeat, no-repeat;
     color: var(--text);
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
     text-rendering: optimizeLegibility;
-    background-blend-mode: overlay;
 }
 
 .wrap {
