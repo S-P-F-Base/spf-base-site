@@ -215,11 +215,11 @@
         head.append(inp);
         return { node: head, input: inp };
     }
+
     function listBlock(header, items, mapToRow, onDouble) {
         const wrap = el("div", "panel", "");
-
-        // accept either string title or {node,input}
         let headerInfo;
+
         if (header && header.node && header.input) {
             headerInfo = header;
         } else {
@@ -244,25 +244,18 @@
                     return String(a.uid).localeCompare(String(b.uid));
                 });
 
-            if (!arr.length) {
-                list.append(el("div", "empty", "Пусто"));
-                return;
-            }
+            if (!arr.length) { list.append(el("div", "empty", "Пусто")); return; }
 
             for (const it of arr) {
                 const conf = mapToRow(it);
                 const row = el("div", "row", "");
                 const head = el("div", "row-head", "");
-                const title = el("div", "title", conf.title || "");
-                const right = el("div", "weight", conf.right || "");
-                head.append(title, right);
+                head.append(el("div", "title", conf.title || ""), el("div", "weight", conf.right || ""));
                 row.append(head);
                 if (conf.sub) row.append(el("div", "sub", conf.sub));
-
                 const actions = el("div", "actions", "");
                 for (const [txt, fn] of (conf.actions || [])) actions.append(button(txt, fn));
                 if (actions.children.length) row.append(actions);
-
                 if (onDouble) row.addEventListener("dblclick", () => onDouble(it));
                 list.append(row);
             }
@@ -450,7 +443,9 @@
         const refresh = el("button", "btn", "Обновить список");
         refresh.type = "button";
         refresh.addEventListener("click", () => { try { gmod.requestPlayers(); } catch (_) { } });
-        left.append(el("div", "",)).appendChild(refresh);
+        const refreshWrap = el("div", "");
+        refreshWrap.appendChild(refresh);
+        left.append(refreshWrap);
 
         // RIGHT — спавн предметов
         const right = el("div", "");
