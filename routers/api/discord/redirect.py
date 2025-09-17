@@ -22,7 +22,6 @@ def exchange_code(code: str):
     response = requests.post(
         "https://discord.com/api/oauth2/token",
         headers=headers,
-        proxies=Config.proxy(),
         data=data,
     )
     return response.json()
@@ -33,7 +32,6 @@ def get_user_info(access_token: str):
     response = requests.get(
         "https://discord.com/api/users/@me",
         headers=headers,
-        proxies=Config.proxy(),
     )
     return response.json()
 
@@ -43,7 +41,6 @@ def get_user_guilds(access_token: str):
     response = requests.get(
         "https://discord.com/api/users/@me/guilds",
         headers=headers,
-        proxies=Config.proxy(),
     )
     return response.json()
 
@@ -62,7 +59,6 @@ def add_user_to_guild(user_id: str, access_token: str):
         url,
         headers=headers,
         json=json_data,
-        proxies=Config.proxy(),
     )
 
     if response.status_code == 403 and "ban" in response.text.lower():

@@ -15,7 +15,6 @@ def get_discord_id_by_name(username: str) -> tuple[str, str, str]:
         f"https://discord.com/api/v10/guilds/{Config.discord_guild_id()}/members/search",
         headers={"Authorization": f"Bot {Config.discord_bot()}"},
         params={"query": username},
-        proxies=Config.proxy(),
     )
     response.raise_for_status()
     members = response.json()
@@ -41,7 +40,6 @@ def resolve_vanity_url(vanity: str) -> str:
     resp = requests.get(
         "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/",
         params={"key": Config.steam_api(), "vanityurl": vanity},
-        proxies=Config.proxy(),
         timeout=15,
     )
     resp.raise_for_status()

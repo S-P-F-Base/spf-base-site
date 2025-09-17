@@ -113,16 +113,6 @@ class Config:
 
     # endregion
 
-    # region proxy
-    @classmethod
-    def proxy(cls) -> dict:
-        return {  # РКН привет
-            "http": "socks5h://127.0.0.1:1080",
-            "https": "socks5h://127.0.0.1:1080",
-        }
-
-    # endregion
-
     # region discord
     @classmethod
     def discord_guild_id(cls) -> str:

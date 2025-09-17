@@ -23,7 +23,6 @@ def discord_member_has_role(discord_user_id: str, role_id: str) -> bool:
             url,
             headers=headers,
             timeout=5,
-            proxies=Config.proxy(),
         )
 
         if r.status_code != 200:
