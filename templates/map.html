@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Interactive Map (Client-side state)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --bar-bg: #f8f8f8;
+            --bar-bd: #ddd;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bar-bg);
+            border-bottom: 1px solid var(--bar-bd);
+            padding: 8px 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toolbar>* {
+            margin: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #ccc;
+            background: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        #map-container {
+            width: 100%;
+            height: calc(100vh - 52px);
+        }
+
+        #map-container svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="toolbar">
+        <label>Color: <input type="color" id="color" value="#ff0000"></label>
+        <button class="btn" id="resetBtn" title="Reset to server defaults">Reset</button>
+        <button class="btn" id="downloadBtn" title="Download current JSON">Download JSON</button>
+        <span class="hint" id="status">Loading…</span>
+    </div>
+
+    <div id="map-container" aria-busy="true">Loading…</div>
+
+    <script>
+        (async function () {
+            const $ = sel => document.querySelector(sel);
+            const container = $('#map-container');
+            const statusEl = $('#status');
+            const colorEl = $('#color');
+            const resetBtn = $('#resetBtn');
+            const downloadBtn = $('#downloadBtn');
+
+            const CSS_escape = (window.CSS && CSS.escape) ? CSS.escape : (s) => String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+
+            let defaults = {};
+            let state = {};
+            let svgRoot = null;
+
+            function setStatus(txt) { statusEl.textContent = txt; }
+
+            function applyFill(target, color) {
+                if (!target) return;
+                const tag = target.tagName.toLowerCase();
+                if (tag === 'g') {
+                    target.querySelectorAll('path, polygon, rect, circle, ellipse').forEach(n => {
+                        n.setAttribute('fill', color);
+                        n.style.fill = color;
+                    });
+                } else {
+                    target.setAttribute('fill', color);
+                    target.style.fill = color;
+                }
+            }
+
+            function resolveKey(el) {
+                if (!el) return null;
+                if (el.dataset.key) return el.dataset.key;
+                if (el.id) return el.id;
+                const iso = el.getAttribute && (el.getAttribute('data-iso') || el.getAttribute('iso_a2'));
+                if (iso) return iso;
+                const nameAttr = el.getAttribute && (el.getAttribute('data-name') || el.getAttribute('name'));
+                if (nameAttr) return nameAttr;
+                const t = el.querySelector && el.querySelector('title');
+                if (t && t.textContent) return t.textContent.trim();
+                const g = el.closest && el.closest('[id]');
+                if (g && g.id) return g.id;
+                return null;
+            }
+
+            function paintFromState(root, dataObj) {
+                for (const [id, color] of Object.entries(dataObj)) {
+                    const el = root.querySelector('#' + CSS_escape(id)) || root.querySelector(`[data-iso="${id}"], [iso_a2="${id}"]`);
+                    if (el) applyFill(el, color);
+                }
+            }
+
+            function attachPaintHandlers(root) {
+                const paintables = root.querySelectorAll('path, polygon, rect, circle, ellipse, g');
+                paintables.forEach(el => {
+                    const key = resolveKey(el);
+                    if (!key) return;
+                    el.dataset.key = key;
+                    el.style.cursor = 'pointer';
+                    el.addEventListener('click', (ev) => {
+                        const target = ev.target.closest('[data-key]') || el;
+                        const regionKey = target.dataset.key || resolveKey(target);
+                        if (!regionKey) return;
+                        const newColor = colorEl.value;
+                        applyFill(target, newColor);
+                        state[regionKey] = newColor;
+                        setStatus(`Set ${regionKey} = ${newColor}`);
+                    });
+                });
+            }
+
+            async function loadDefaultsAndSvg() {
+                setStatus('Loading defaults & SVG…');
+                const [dataRes, svgRes] = await Promise.all([
+                    fetch('/map-data', { cache: 'no-store' }),
+                    fetch('/static/map/world.svg', { cache: 'no-store' })
+                ]);
+                if (!dataRes.ok) throw new Error('/map-data failed: ' + dataRes.status);
+                if (!svgRes.ok) throw new Error('world.svg failed: ' + svgRes.status);
+
+                defaults = await dataRes.json();
+                state = structuredClone ? structuredClone(defaults) : JSON.parse(JSON.stringify(defaults));
+                const svgText = await svgRes.text();
+
+                const parser = new DOMParser();
+                svgRoot = parser.parseFromString(svgText, 'image/svg+xml').documentElement;
+                svgRoot.removeAttribute('width');
+                svgRoot.removeAttribute('height');
+                svgRoot.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+                container.innerHTML = '';
+                container.appendChild(svgRoot);
+                container.removeAttribute('aria-busy');
+
+                paintFromState(svgRoot, state);
+                attachPaintHandlers(svgRoot);
+
+                setStatus('Ready. Click to paint; use Download to save JSON.');
+            }
+
+            function resetToDefaults() {
+                if (!svgRoot) return;
+                state = structuredClone ? structuredClone(defaults) : JSON.parse(JSON.stringify(defaults));
+                svgRoot.querySelectorAll('[fill]').forEach(n => n.removeAttribute('fill'));
+                svgRoot.querySelectorAll('[style]').forEach(n => { if (n.style && n.style.fill) n.style.fill = ''; });
+                paintFromState(svgRoot, state);
+                setStatus('Reset to defaults.');
+            }
+
+            function downloadCurrentJson() {
+                const text = JSON.stringify(state, null, 2);
+                const blob = new Blob([text], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'world.custom.json';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                setStatus('Downloaded world.custom.json');
+            }
+
+            resetBtn.addEventListener('click', resetToDefaults);
+            downloadBtn.addEventListener('click', downloadCurrentJson);
+
+            try {
+                await loadDefaultsAndSvg();
+            } catch (e) {
+                container.textContent = 'Failed to load map.';
+                setStatus(String(e));
+                console.error(e);
+            }
+        })();
+    </script>
+</body>
+
+</html>
