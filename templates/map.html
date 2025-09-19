@@ -33,10 +33,6 @@
             flex-wrap: wrap;
         }
 
-        .toolbar>* {
-            margin: 0;
-        }
-
         .btn {
             display: inline-flex;
             align-items: center;
@@ -56,12 +52,16 @@
         #map-container {
             width: 100%;
             height: calc(100vh - 52px);
+            overflow: hidden;
+            position: relative;
         }
 
         #map-container svg {
             width: 100%;
             height: 100%;
             display: block;
+            transform-origin: center center;
+            touch-action: none;
         }
 
         .hint {
@@ -74,8 +74,14 @@
 <body>
     <div class="toolbar">
         <label>Color: <input type="color" id="color" value="#ff0000"></label>
-        <button class="btn" id="resetBtn" title="Reset to server defaults">Reset</button>
-        <button class="btn" id="downloadBtn" title="Download current JSON">Download JSON</button>
+        <button class="btn" id="resetBtn">Reset</button>
+        <button class="btn" id="downloadBtn">Download JSON</button>
+        <label class="btn">
+            Load JSON<input type="file" id="uploadJson" accept="application/json" style="display:none">
+        </label>
+        <button class="btn" id="zoomInBtn">Zoom +</button>
+        <button class="btn" id="zoomOutBtn">Zoom –</button>
+        <button class="btn" id="resetViewBtn">Reset View</button>
         <span class="hint" id="status">Loading…</span>
     </div>
 
@@ -89,6 +95,10 @@
             const colorEl = $('#color');
             const resetBtn = $('#resetBtn');
             const downloadBtn = $('#downloadBtn');
+            const uploadInput = $('#uploadJson');
+            const zoomInBtn = $('#zoomInBtn');
+            const zoomOutBtn = $('#zoomOutBtn');
+            const resetViewBtn = $('#resetViewBtn');
 
             const CSS_escape = (window.CSS && CSS.escape) ? CSS.escape : (s) => String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
 
@@ -96,7 +106,19 @@
             let state = {};
             let svgRoot = null;
 
+            let zoom = 1;
+            let panX = 0;
+            let panY = 0;
+            let isDragging = false;
+            let dragStart = null;
+
             function setStatus(txt) { statusEl.textContent = txt; }
+
+            function applyTransform() {
+                if (svgRoot) {
+                    svgRoot.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+                }
+            }
 
             function applyFill(target, color) {
                 if (!target) return;
@@ -179,7 +201,7 @@
                 paintFromState(svgRoot, state);
                 attachPaintHandlers(svgRoot);
 
-                setStatus('Ready. Click to paint; use Download to save JSON.');
+                setStatus('Ready. Click to paint; use Download/Load to manage JSON.');
             }
 
             function resetToDefaults() {
@@ -204,8 +226,45 @@
                 setStatus('Downloaded world.custom.json');
             }
 
+            function loadJsonFromFile(file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        state = data;
+                        svgRoot.querySelectorAll('[fill]').forEach(n => n.removeAttribute('fill'));
+                        svgRoot.querySelectorAll('[style]').forEach(n => { if (n.style && n.style.fill) n.style.fill = ''; });
+                        paintFromState(svgRoot, state);
+                        setStatus('Loaded JSON.');
+                    } catch (err) {
+                        setStatus('Invalid JSON file.');
+                        console.error(err);
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            zoomInBtn.addEventListener('click', () => { zoom *= 1.2; applyTransform(); });
+            zoomOutBtn.addEventListener('click', () => { zoom /= 1.2; applyTransform(); });
+            resetViewBtn.addEventListener('click', () => { zoom = 1; panX = 0; panY = 0; applyTransform(); });
+
+            container.addEventListener('mousedown', e => {
+                isDragging = true;
+                dragStart = { x: e.clientX - panX, y: e.clientY - panY };
+            });
+            container.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                panX = e.clientX - dragStart.x;
+                panY = e.clientY - dragStart.y;
+                applyTransform();
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
             resetBtn.addEventListener('click', resetToDefaults);
             downloadBtn.addEventListener('click', downloadCurrentJson);
+            uploadInput.addEventListener('change', e => {
+                if (e.target.files && e.target.files[0]) loadJsonFromFile(e.target.files[0]);
+            });
 
             try {
                 await loadDefaultsAndSvg();
