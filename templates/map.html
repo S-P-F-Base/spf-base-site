@@ -60,7 +60,7 @@
             width: 100%;
             height: 100%;
             display: block;
-            transform-origin: center center;
+            transform-origin: 0 0;
             touch-action: none;
         }
 
@@ -118,6 +118,14 @@
                 if (svgRoot) {
                     svgRoot.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
                 }
+            }
+
+            function changeZoom(factor, cx = container.clientWidth / 2, cy = container.clientHeight / 2) {
+                const oldZoom = zoom;
+                zoom *= factor;
+                panX = cx - (cx - panX) * (zoom / oldZoom);
+                panY = cy - (cy - panY) * (zoom / oldZoom);
+                applyTransform();
             }
 
             function applyFill(target, color) {
@@ -244,9 +252,12 @@
                 reader.readAsText(file);
             }
 
-            zoomInBtn.addEventListener('click', () => { zoom *= 1.2; applyTransform(); });
-            zoomOutBtn.addEventListener('click', () => { zoom /= 1.2; applyTransform(); });
-            resetViewBtn.addEventListener('click', () => { zoom = 1; panX = 0; panY = 0; applyTransform(); });
+            zoomInBtn.addEventListener('click', () => changeZoom(1.2));
+            zoomOutBtn.addEventListener('click', () => changeZoom(1 / 1.2));
+            resetViewBtn.addEventListener('click', () => {
+                zoom = 1; panX = 0; panY = 0;
+                applyTransform();
+            });
 
             container.addEventListener('mousedown', e => {
                 isDragging = true;
@@ -259,6 +270,12 @@
                 applyTransform();
             });
             window.addEventListener('mouseup', () => { isDragging = false; });
+
+            container.addEventListener('wheel', e => {
+                e.preventDefault();
+                const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+                changeZoom(factor, e.clientX, e.clientY);
+            }, { passive: false });
 
             resetBtn.addEventListener('click', resetToDefaults);
             downloadBtn.addEventListener('click', downloadCurrentJson);
