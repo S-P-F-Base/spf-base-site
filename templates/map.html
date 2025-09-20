@@ -1,297 +1,567 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8">
-    <title>Interactive Map (Client-side state)</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        :root {
-            --bar-bg: #f8f8f8;
-            --bar-bd: #ddd;
-        }
+  <meta charset="utf-8">
+  <title>Interactive Map (Client-side state)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bar-bg: #f8f8f8;
+      --bar-bd: #ddd;
+      --btn: #fff;
+      --btn-bd: #ccc;
+      --btn-active: #e9f3ff;
+    }
 
-        * {
-            box-sizing: border-box;
-        }
+    * { box-sizing: border-box; }
 
-        body {
-            margin: 0;
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
 
-        .toolbar {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: var(--bar-bg);
-            border-bottom: 1px solid var(--bar-bd);
-            padding: 8px 12px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+    .toolbar {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bar-bg);
+      border-bottom: 1px solid var(--bar-bd);
+      padding: 8px 12px;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    }
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            border: 1px solid #ccc;
-            background: #fff;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            user-select: none;
-        }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid var(--btn-bd);
+      background: var(--btn);
+      padding: 6px 10px; border-radius: 6px;
+      cursor: pointer; user-select: none;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn.active { background: var(--btn-active); border-color: #9ac3ff; }
 
-        .btn:active {
-            transform: translateY(1px);
-        }
+    #map-container {
+      width: 100%;
+      height: calc(100vh - 52px);
+      overflow: hidden;
+      position: relative;
+    }
 
-        #map-container {
-            width: 100%;
-            height: calc(100vh - 52px);
-            overflow: hidden;
-            position: relative;
-        }
+    /* Границы поверх заливки и не масштабируются визуально */
+    #map-container svg path,
+    #map-container svg polygon,
+    #map-container svg rect,
+    #map-container svg circle,
+    #map-container svg ellipse {
+      stroke: #222;
+      stroke-width: 0.8;
+      vector-effect: non-scaling-stroke;
+      paint-order: fill stroke;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
 
-        #map-container svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-            transform-origin: 0 0;
-            touch-action: none;
-        }
+    /* Маркеры поверх всего */
+    .marker { cursor: pointer; }
+    .marker .hit {
+      fill: transparent;
+      stroke: none;
+      pointer-events: all;
+    }
+    .marker .label-bg {
+      fill: #ffffffcc;
+      stroke: #333;
+      vector-effect: non-scaling-stroke;
+    }
+    .marker .label {
+      font-size: 10px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      dominant-baseline: hanging;
+    }
 
-        .hint {
-            color: #666;
-            font-size: 12px;
-        }
-    </style>
+    .hint { color: #666; font-size: 12px; }
+
+    /* Tooltip */
+    #tooltip {
+      position: fixed;
+      z-index: 20;
+      padding: 4px 6px;
+      background: #111;
+      color: #fff;
+      font-size: 12px;
+      border-radius: 4px;
+      pointer-events: none;
+      transform: translate(10px, 10px);
+      opacity: 0;
+      transition: opacity .08s ease;
+      max-width: 40ch;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #tooltip.show { opacity: 0.95; }
+  </style>
 </head>
-
 <body>
-    <div class="toolbar">
-        <label>Color: <input type="color" id="color" value="#ff0000"></label>
-        <button class="btn" id="resetBtn">Reset</button>
-        <button class="btn" id="downloadBtn">Download JSON</button>
-        <label class="btn">
-            Load JSON<input type="file" id="uploadJson" accept="application/json" style="display:none">
-        </label>
-        <button class="btn" id="zoomInBtn">Zoom +</button>
-        <button class="btn" id="zoomOutBtn">Zoom –</button>
-        <button class="btn" id="resetViewBtn">Reset View</button>
-        <span class="hint" id="status">Loading…</span>
-    </div>
+  <div class="toolbar">
+    <label>Color: <input type="color" id="color" value="#ff0000"></label>
+    <button class="btn" id="resetBtn">Reset</button>
+    <button class="btn" id="downloadBtn">Download JSON</button>
+    <label class="btn">Load JSON
+      <input type="file" id="uploadJson" accept="application/json" style="display:none">
+    </label>
+    <button class="btn" id="zoomInBtn">Zoom +</button>
+    <button class="btn" id="zoomOutBtn">Zoom –</button>
+    <button class="btn" id="resetViewBtn">Reset View</button>
+    <span style="margin-left:16px"></span>
+    <button class="btn" id="modePaintBtn" title="Paint regions">Paint</button>
+    <button class="btn" id="modeBranchBtn" title="Place Branch marker">Place Branch</button>
+    <button class="btn" id="modeHQBtn" title="Place HQ marker">Place HQ</button>
+    <span class="hint" id="status" style="margin-left:auto">Loading…</span>
+  </div>
 
-    <div id="map-container" aria-busy="true">Loading…</div>
+  <div id="map-container" aria-busy="true">Loading…</div>
+  <div id="tooltip" role="tooltip" aria-hidden="true"></div>
 
-    <script>
-        (async function () {
-            const $ = sel => document.querySelector(sel);
-            const container = $('#map-container');
-            const statusEl = $('#status');
-            const colorEl = $('#color');
-            const resetBtn = $('#resetBtn');
-            const downloadBtn = $('#downloadBtn');
-            const uploadInput = $('#uploadJson');
-            const zoomInBtn = $('#zoomInBtn');
-            const zoomOutBtn = $('#zoomOutBtn');
-            const resetViewBtn = $('#resetViewBtn');
+  <script>
+    (async function () {
+      const $ = sel => document.querySelector(sel);
+      const container = $('#map-container');
+      const statusEl = $('#status');
+      const colorEl = $('#color');
+      const resetBtn = $('#resetBtn');
+      const downloadBtn = $('#downloadBtn');
+      const uploadInput = $('#uploadJson');
+      const zoomInBtn = $('#zoomInBtn');
+      const zoomOutBtn = $('#zoomOutBtn');
+      const resetViewBtn = $('#resetViewBtn');
+      const modePaintBtn = $('#modePaintBtn');
+      const modeBranchBtn = $('#modeBranchBtn');
+      const modeHQBtn = $('#modeHQBtn');
+      const tooltip = $('#tooltip');
 
-            const CSS_escape = (window.CSS && CSS.escape) ? CSS.escape : (s) => String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+      const CSS_escape = (window.CSS && CSS.escape) ? CSS.escape : (s) => String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+      const NS = 'http://www.w3.org/2000/svg';
 
-            let defaults = {};
-            let state = {};
-            let svgRoot = null;
+      let defaults = { regions: {}, markers: [] };
+      let state = { regions: {}, markers: [] };
 
-            let zoom = 1;
-            let panX = 0;
-            let panY = 0;
-            let isDragging = false;
-            let dragStart = null;
+      let svgRoot = null;    // <svg>
+      let vpGroup = null;    // <g id="vp"> — всё содержимое карты
+      let markersGroup = null; // <g id="markers"> — слой маркеров
 
-            function setStatus(txt) { statusEl.textContent = txt; }
+      let zoom = 1;
+      let panX = 0;
+      let panY = 0;
+      let isDragging = false;
+      let dragStart = null;
 
-            function applyTransform() {
-                if (svgRoot) {
-                    svgRoot.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-                }
-            }
+      let mode = 'paint'; // 'paint' | 'branch' | 'hq'
 
-            function changeZoom(factor, cx = container.clientWidth / 2, cy = container.clientHeight / 2) {
-                const oldZoom = zoom;
-                zoom *= factor;
-                panX = cx - (cx - panX) * (zoom / oldZoom);
-                panY = cy - (cy - panY) * (zoom / oldZoom);
-                applyTransform();
-            }
+      function setStatus(txt) { statusEl.textContent = txt; }
 
-            function applyFill(target, color) {
-                if (!target) return;
-                const tag = target.tagName.toLowerCase();
-                if (tag === 'g') {
-                    target.querySelectorAll('path, polygon, rect, circle, ellipse').forEach(n => {
-                        n.setAttribute('fill', color);
-                        n.style.fill = color;
-                    });
-                } else {
-                    target.setAttribute('fill', color);
-                    target.style.fill = color;
-                }
-            }
+      function setMode(m) {
+        mode = m;
+        [modePaintBtn, modeBranchBtn, modeHQBtn].forEach(b => b.classList.remove('active'));
+        if (m === 'paint') modePaintBtn.classList.add('active');
+        if (m === 'branch') modeBranchBtn.classList.add('active');
+        if (m === 'hq') modeHQBtn.classList.add('active');
+        setStatus({
+          paint: 'Paint mode: click to color regions.',
+          branch: 'Branch mode: click to place a branch marker.',
+          hq: 'HQ mode: click to place a HQ marker.'
+        }[m]);
+      }
 
-            function resolveKey(el) {
-                if (!el) return null;
-                if (el.dataset.key) return el.dataset.key;
-                if (el.id) return el.id;
-                const iso = el.getAttribute && (el.getAttribute('data-iso') || el.getAttribute('iso_a2'));
-                if (iso) return iso;
-                const nameAttr = el.getAttribute && (el.getAttribute('data-name') || el.getAttribute('name'));
-                if (nameAttr) return nameAttr;
-                const t = el.querySelector && el.querySelector('title');
-                if (t && t.textContent) return t.textContent.trim();
-                const g = el.closest && el.closest('[id]');
-                if (g && g.id) return g.id;
-                return null;
-            }
+      function ensureStateShape(obj) {
+        // Поддержка старого формата: просто { "RU": "#fff", ... }
+        if (!obj) return { regions: {}, markers: [] };
+        if ('regions' in obj || 'markers' in obj) {
+          return { regions: obj.regions || {}, markers: obj.markers || [] };
+        }
+        return { regions: obj, markers: [] };
+      }
 
-            function paintFromState(root, dataObj) {
-                for (const [id, color] of Object.entries(dataObj)) {
-                    const el = root.querySelector('#' + CSS_escape(id)) || root.querySelector(`[data-iso="${id}"], [iso_a2="${id}"]`);
-                    if (el) applyFill(el, color);
-                }
-            }
+      function applyTransform() {
+        if (vpGroup) {
+          vpGroup.setAttribute('transform', `translate(${panX} ${panY}) scale(${zoom})`);
+        }
+      }
 
-            function attachPaintHandlers(root) {
-                const paintables = root.querySelectorAll('path, polygon, rect, circle, ellipse, g');
-                paintables.forEach(el => {
-                    const key = resolveKey(el);
-                    if (!key) return;
-                    el.dataset.key = key;
-                    el.style.cursor = 'pointer';
-                    el.addEventListener('click', (ev) => {
-                        const target = ev.target.closest('[data-key]') || el;
-                        const regionKey = target.dataset.key || resolveKey(target);
-                        if (!regionKey) return;
-                        const newColor = colorEl.value;
-                        applyFill(target, newColor);
-                        state[regionKey] = newColor;
-                        setStatus(`Set ${regionKey} = ${newColor}`);
-                    });
-                });
-            }
+      function changeZoom(factor, cx = container.clientWidth / 2, cy = container.clientHeight / 2) {
+        // центрирование вокруг точки (cx, cy) в экранных координатах
+        const oldZoom = zoom;
+        zoom *= factor;
+        // Коррекция панорамирования, чтобы визуальный центр сохранялся
+        panX = cx - (cx - panX) * (zoom / oldZoom);
+        panY = cy - (cy - panY) * (zoom / oldZoom);
+        applyTransform();
+      }
 
-            async function loadDefaultsAndSvg() {
-                setStatus('Loading defaults & SVG…');
-                const [dataRes, svgRes] = await Promise.all([
-                    fetch('/map-data', { cache: 'no-store' }),
-                    fetch('/static/map/world.svg', { cache: 'no-store' })
-                ]);
-                if (!dataRes.ok) throw new Error('/map-data failed: ' + dataRes.status);
-                if (!svgRes.ok) throw new Error('world.svg failed: ' + svgRes.status);
+      function resolveKey(el) {
+        if (!el) return null;
+        if (el.dataset && el.dataset.key) return el.dataset.key;
+        if (el.id) return el.id;
+        const iso = el.getAttribute && (el.getAttribute('data-iso') || el.getAttribute('iso_a2'));
+        if (iso) return iso;
+        const nameAttr = el.getAttribute && (el.getAttribute('data-name') || el.getAttribute('name'));
+        if (nameAttr) return nameAttr;
+        const t = el.querySelector && el.querySelector('title');
+        if (t && t.textContent) return t.textContent.trim();
+        const g = el.closest && el.closest('[id]');
+        if (g && g.id) return g.id;
+        return null;
+      }
 
-                defaults = await dataRes.json();
-                state = structuredClone ? structuredClone(defaults) : JSON.parse(JSON.stringify(defaults));
-                const svgText = await svgRes.text();
+      function applyFill(target, color) {
+        if (!target) return;
+        const tag = target.tagName.toLowerCase();
+        if (tag === 'g') {
+          target.querySelectorAll('path, polygon, rect, circle, ellipse').forEach(n => {
+            n.setAttribute('fill', color);
+            n.style.fill = color;
+          });
+        } else {
+          target.setAttribute('fill', color);
+          target.style.fill = color;
+        }
+      }
 
-                const parser = new DOMParser();
-                svgRoot = parser.parseFromString(svgText, 'image/svg+xml').documentElement;
-                svgRoot.removeAttribute('width');
-                svgRoot.removeAttribute('height');
-                svgRoot.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      function paintFromRegions(root, regionsObj) {
+        for (const [id, color] of Object.entries(regionsObj)) {
+          const el = root.querySelector('#' + CSS_escape(id)) || root.querySelector(`[data-iso="${id}"], [iso_a2="${id}"]`);
+          if (el) applyFill(el, color);
+        }
+      }
 
-                container.innerHTML = '';
-                container.appendChild(svgRoot);
-                container.removeAttribute('aria-busy');
+      function attachPaintHandlers(root) {
+        const paintables = root.querySelectorAll('path, polygon, rect, circle, ellipse, g');
+        paintables.forEach(el => {
+          const key = resolveKey(el);
+          if (!key) return;
+          el.dataset.key = key;
+          el.style.cursor = 'pointer';
+          el.addEventListener('click', (ev) => {
+            if (mode !== 'paint') return; // не красим в режиме маркеров
+            const target = ev.target.closest('[data-key]') || el;
+            const regionKey = target.dataset.key || resolveKey(target);
+            if (!regionKey) return;
+            const newColor = colorEl.value;
+            applyFill(target, newColor);
+            state.regions[regionKey] = newColor;
+            setStatus(`Set ${regionKey} = ${newColor}`);
+          });
+        });
+      }
 
-                paintFromState(svgRoot, state);
-                attachPaintHandlers(svgRoot);
+      function clientToVP(evt) {
+        if (!svgRoot || !vpGroup) return { x: 0, y: 0 };
+        const pt = svgRoot.createSVGPoint();
+        pt.x = evt.clientX;
+        pt.y = evt.clientY;
+        const m = vpGroup.getScreenCTM();
+        if (!m) return { x: 0, y: 0 };
+        const inv = m.inverse();
+        const p = pt.matrixTransform(inv);
+        return { x: p.x, y: p.y };
+      }
 
-                setStatus('Ready. Click to paint; use Download/Load to manage JSON.');
-            }
+      function markerShape(type, size = 8) {
+        if (type === 'hq') {
+          // пятиконечная звезда
+          const spikes = 5;
+          const outer = size, inner = size * 0.45;
+          let pts = [];
+          const step = Math.PI / spikes;
+          let rot = -Math.PI / 2;
+          for (let i = 0; i < spikes * 2; i++) {
+            const r = (i % 2 === 0) ? outer : inner;
+            pts.push([Math.cos(rot) * r, Math.sin(rot) * r]);
+            rot += step;
+          }
+          return { kind: 'polygon', points: pts.map(p => p.join(',')).join(' ') };
+        }
+        // branch: кружок
+        return { kind: 'circle', r: size * 0.6 };
+      }
 
-            function resetToDefaults() {
-                if (!svgRoot) return;
-                state = structuredClone ? structuredClone(defaults) : JSON.parse(JSON.stringify(defaults));
-                svgRoot.querySelectorAll('[fill]').forEach(n => n.removeAttribute('fill'));
-                svgRoot.querySelectorAll('[style]').forEach(n => { if (n.style && n.style.fill) n.style.fill = ''; });
-                paintFromState(svgRoot, state);
-                setStatus('Reset to defaults.');
-            }
+      function renderMarkers() {
+        if (!markersGroup) {
+          markersGroup = document.createElementNS(NS, 'g');
+          markersGroup.id = 'markers';
+          vpGroup.appendChild(markersGroup);
+        }
+        markersGroup.innerHTML = '';
 
-            function downloadCurrentJson() {
-                const text = JSON.stringify(state, null, 2);
-                const blob = new Blob([text], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = 'world.custom.json';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
-                setStatus('Downloaded world.custom.json');
-            }
+        state.markers.forEach((mk, idx) => {
+          const g = document.createElementNS(NS, 'g');
+          g.classList.add('marker');
+          g.dataset.index = String(idx);
 
-            function loadJsonFromFile(file) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        state = data;
-                        svgRoot.querySelectorAll('[fill]').forEach(n => n.removeAttribute('fill'));
-                        svgRoot.querySelectorAll('[style]').forEach(n => { if (n.style && n.style.fill) n.style.fill = ''; });
-                        paintFromState(svgRoot, state);
-                        setStatus('Loaded JSON.');
-                    } catch (err) {
-                        setStatus('Invalid JSON file.');
-                        console.error(err);
-                    }
-                };
-                reader.readAsText(file);
-            }
+          const s = markerShape(mk.type, 8);
+          if (s.kind === 'circle') {
+            const c = document.createElementNS(NS, 'circle');
+            c.setAttribute('cx', mk.x);
+            c.setAttribute('cy', mk.y);
+            c.setAttribute('r', s.r);
+            c.setAttribute('fill', mk.type === 'hq' ? '#000' : '#fff');
+            c.setAttribute('stroke', '#000');
+            c.setAttribute('stroke-width', '1.2');
+            c.setAttribute('vector-effect', 'non-scaling-stroke');
+            g.appendChild(c);
+          } else if (s.kind === 'polygon') {
+            const poly = document.createElementNS(NS, 'polygon');
+            // Сместим точки к mk.x/mk.y
+            const translated = s.points.split(' ').map(pt => {
+              const [px, py] = pt.split(',').map(Number);
+              return (px + mk.x) + ',' + (py + mk.y);
+            }).join(' ');
+            poly.setAttribute('points', translated);
+            poly.setAttribute('fill', '#ffd700');
+            poly.setAttribute('stroke', '#000');
+            poly.setAttribute('stroke-width', '1.2');
+            poly.setAttribute('vector-effect', 'non-scaling-stroke');
+            g.appendChild(poly);
+          }
 
-            zoomInBtn.addEventListener('click', () => changeZoom(1.2));
-            zoomOutBtn.addEventListener('click', () => changeZoom(1 / 1.2));
-            resetViewBtn.addEventListener('click', () => {
-                zoom = 1; panX = 0; panY = 0;
-                applyTransform();
-            });
+          // Невидимая зона для удобного клика/контекстного меню
+          const hit = document.createElementNS(NS, 'circle');
+          hit.setAttribute('class', 'hit');
+          hit.setAttribute('cx', mk.x);
+          hit.setAttribute('cy', mk.y);
+          hit.setAttribute('r', 12);
+          g.appendChild(hit);
 
-            container.addEventListener('mousedown', e => {
-                isDragging = true;
-                dragStart = { x: e.clientX - panX, y: e.clientY - panY };
-            });
-            container.addEventListener('mousemove', e => {
-                if (!isDragging) return;
-                panX = e.clientX - dragStart.x;
-                panY = e.clientY - dragStart.y;
-                applyTransform();
-            });
-            window.addEventListener('mouseup', () => { isDragging = false; });
+          // Подпись
+          if (mk.label) {
+            const padX = 4, padY = 2;
+            const text = document.createElementNS(NS, 'text');
+            text.setAttribute('x', mk.x + 10);
+            text.setAttribute('y', mk.y + 10);
+            text.setAttribute('class', 'label');
+            text.textContent = mk.label;
 
-            container.addEventListener('wheel', e => {
-                e.preventDefault();
-                const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
-                changeZoom(factor, e.clientX, e.clientY);
-            }, { passive: false });
+            // Простой фон под текстом
+            // Сначала добавим временно, чтобы измерить bbox
+            g.appendChild(text);
+            const bb = text.getBBox();
+            const bg = document.createElementNS(NS, 'rect');
+            bg.setAttribute('class', 'label-bg');
+            bg.setAttribute('x', bb.x - padX);
+            bg.setAttribute('y', bb.y - padY);
+            bg.setAttribute('width', bb.width + padX * 2);
+            bg.setAttribute('height', bb.height + padY * 2);
+            g.insertBefore(bg, text);
+          }
 
-            resetBtn.addEventListener('click', resetToDefaults);
-            downloadBtn.addEventListener('click', downloadCurrentJson);
-            uploadInput.addEventListener('change', e => {
-                if (e.target.files && e.target.files[0]) loadJsonFromFile(e.target.files[0]);
-            });
+          // Подсказка
+          g.addEventListener('mouseenter', (e) => showTooltip(mk.label || (mk.type === 'hq' ? 'HQ' : 'Branch'), e));
+          g.addEventListener('mousemove', (e) => moveTooltip(e));
+          g.addEventListener('mouseleave', hideTooltip);
 
-            try {
-                await loadDefaultsAndSvg();
-            } catch (e) {
-                container.textContent = 'Failed to load map.';
-                setStatus(String(e));
-                console.error(e);
-            }
-        })();
-    </script>
+          // Удаление правым кликом
+          g.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const i = Number(g.dataset.index);
+            state.markers.splice(i, 1);
+            renderMarkers();
+            setStatus('Marker removed.');
+          });
+
+          markersGroup.appendChild(g);
+        });
+      }
+
+      function placeMarker(type, evt) {
+        const pt = clientToVP(evt);
+        let label = prompt(type === 'hq' ? 'HQ label:' : 'Branch label:', '');
+        if (label === null) return; // cancel
+        label = String(label).trim();
+        state.markers.push({ type, x: pt.x, y: pt.y, label });
+        renderMarkers();
+        setStatus(`${type.toUpperCase()} marker placed.`);
+      }
+
+      function resetToDefaults() {
+        if (!svgRoot) return;
+        state = ensureStateShape(defaults);
+        // Сброс заливки
+        vpGroup.querySelectorAll('[fill]').forEach(n => n.removeAttribute('fill'));
+        vpGroup.querySelectorAll('[style]').forEach(n => { if (n.style && n.style.fill) n.style.fill = ''; });
+        paintFromRegions(vpGroup, state.regions);
+        renderMarkers();
+        setStatus('Reset to defaults.');
+      }
+
+      function downloadCurrentJson() {
+        const payload = JSON.stringify(state, null, 2);
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'world.custom.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setStatus('Downloaded world.custom.json');
+      }
+
+      function loadJsonFromFile(file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          try {
+            const data = JSON.parse(e.target.result);
+            state = ensureStateShape(data);
+            // Сброс заливки и перерисовка
+            vpGroup.querySelectorAll('[fill]').forEach(n => n.removeAttribute('fill'));
+            vpGroup.querySelectorAll('[style]').forEach(n => { if (n.style && n.style.fill) n.style.fill = ''; });
+            paintFromRegions(vpGroup, state.regions);
+            renderMarkers();
+            setStatus('Loaded JSON.');
+          } catch (err) {
+            setStatus('Invalid JSON file.');
+            console.error(err);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      function showTooltip(text, evt) {
+        if (!text) return hideTooltip();
+        tooltip.textContent = text;
+        tooltip.classList.add('show');
+        tooltip.setAttribute('aria-hidden', 'false');
+        moveTooltip(evt);
+      }
+      function moveTooltip(evt) {
+        const x = evt.clientX, y = evt.clientY;
+        tooltip.style.left = x + 'px';
+        tooltip.style.top = y + 'px';
+      }
+      function hideTooltip() {
+        tooltip.classList.remove('show');
+        tooltip.setAttribute('aria-hidden', 'true');
+      }
+
+      function tryShowHoverName(evt) {
+        // Если навели на маркер — обработчики маркера уже показывают tooltip
+        if (evt.target.closest && evt.target.closest('.marker')) return;
+        const t = evt.target;
+        const el = (t.closest && t.closest('[data-key]')) ? t.closest('[data-key]') : t;
+        const key = resolveKey(el);
+        if (key) showTooltip(key, evt);
+        else hideTooltip();
+      }
+
+      async function loadDefaultsAndSvg() {
+        setStatus('Loading defaults & SVG…');
+        const [dataRes, svgRes] = await Promise.all([
+          fetch('/map-data', { cache: 'no-store' }),
+          fetch('/static/map/world.svg', { cache: 'no-store' })
+        ]);
+        if (!dataRes.ok) throw new Error('/map-data failed: ' + dataRes.status);
+        if (!svgRes.ok) throw new Error('world.svg failed: ' + svgRes.status);
+
+        defaults = ensureStateShape(await dataRes.json());
+        state = ensureStateShape(
+          (typeof structuredClone === 'function') ? structuredClone(defaults) : JSON.parse(JSON.stringify(defaults))
+        );
+        const svgText = await svgRes.text();
+
+        const parser = new DOMParser();
+        svgRoot = parser.parseFromString(svgText, 'image/svg+xml').documentElement;
+        svgRoot.removeAttribute('width');
+        svgRoot.removeAttribute('height');
+        svgRoot.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+        // Оборачиваем содержимое в <g id="vp">, чтобы трансформировать карту корректно
+        const group = document.createElementNS(NS, 'g');
+        group.id = 'vp';
+
+        // Перемещаем все узлы (кроме defs) внутрь vp
+        const children = Array.from(svgRoot.childNodes);
+        let defs = svgRoot.querySelector('defs');
+        if (!defs) {
+          defs = document.createElementNS(NS, 'defs');
+          svgRoot.insertBefore(defs, svgRoot.firstChild);
+        }
+        children.forEach(ch => {
+          if (ch.nodeType === 1 && ch.tagName && ch.tagName.toLowerCase() === 'defs') return;
+          group.appendChild(ch);
+        });
+        svgRoot.appendChild(group);
+        vpGroup = group;
+
+        container.innerHTML = '';
+        container.appendChild(svgRoot);
+        container.removeAttribute('aria-busy');
+
+        // Рисуем раскраску и подключаем обработчики
+        paintFromRegions(vpGroup, state.regions);
+        attachPaintHandlers(vpGroup);
+        renderMarkers();
+
+        // Общие обработчики наведения для tooltip по областям
+        vpGroup.addEventListener('mousemove', tryShowHoverName);
+        vpGroup.addEventListener('mouseleave', hideTooltip);
+
+        setStatus('Ready. Paint or place markers; use Download/Load to manage JSON.');
+        setMode('paint');
+        applyTransform();
+      }
+
+      // ==== Управление камерой (панорамирование/зум) ====
+      zoomInBtn.addEventListener('click', () => changeZoom(1.2));
+      zoomOutBtn.addEventListener('click', () => changeZoom(1 / 1.2));
+      resetViewBtn.addEventListener('click', () => { zoom = 1; panX = 0; panY = 0; applyTransform(); });
+
+      container.addEventListener('mousedown', e => {
+        // Перетаскивание только когда не кликаем по маркеру
+        if (e.target.closest && e.target.closest('.marker')) return;
+        isDragging = true;
+        dragStart = { x: e.clientX - panX, y: e.clientY - panY };
+      });
+      container.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        panX = e.clientX - dragStart.x;
+        panY = e.clientY - dragStart.y;
+        applyTransform();
+      });
+      window.addEventListener('mouseup', () => { isDragging = false; });
+
+      container.addEventListener('wheel', e => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+        changeZoom(factor, e.clientX, e.clientY);
+      }, { passive: false });
+
+      // ==== Кнопки режимов ====
+      modePaintBtn.addEventListener('click', () => setMode('paint'));
+      modeBranchBtn.addEventListener('click', () => setMode('branch'));
+      modeHQBtn.addEventListener('click', () => setMode('hq'));
+
+      // Клик по карте в режимах маркеров
+      container.addEventListener('click', (e) => {
+        if (!vpGroup) return;
+        if (e.target.closest && e.target.closest('.marker')) return; // не ставим поверх маркера
+        if (mode === 'branch') placeMarker('branch', e);
+        else if (mode === 'hq') placeMarker('hq', e);
+      });
+
+      // ==== Кнопки загрузки/сохранения/сброса ====
+      resetBtn.addEventListener('click', resetToDefaults);
+      downloadBtn.addEventListener('click', downloadCurrentJson);
+      uploadInput.addEventListener('change', e => {
+        if (e.target.files && e.target.files[0]) loadJsonFromFile(e.target.files[0]);
+        e.target.value = '';
+      });
+
+      try {
+        await loadDefaultsAndSvg();
+      } catch (e) {
+        container.textContent = 'Failed to load map.';
+        setStatus(String(e));
+        console.error(e);
+      }
+    })();
+  </script>
 </body>
-
 </html>
