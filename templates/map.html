@@ -379,8 +379,16 @@
             function tryShowHoverName(e) {
                 if (e.target.closest && e.target.closest('.marker')) return;
                 const el = e.target.closest ? e.target.closest('[data-key],path,polygon,rect,circle,ellipse,g') : e.target;
+                if (!el) { hideTooltip(); return; }
+
                 const k = resolveKey(el);
-                if (k) { const name = state.names[k]; showTooltip(name || k, e); } else hideTooltip();
+                if (!k) { hideTooltip(); return; }
+
+                const customName = state.names[k];
+                const defaultName = el.getAttribute('data-name_ru');
+                const displayName = customName || defaultName || k;
+
+                showTooltip(displayName, e);
             }
 
             async function loadDefaultsAndSvg() {
