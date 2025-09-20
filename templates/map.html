@@ -114,6 +114,14 @@
         #tooltip.show {
             opacity: 0.95;
         }
+
+        #map-container svg path:not([fill]),
+        #map-container svg polygon:not([fill]),
+        #map-container svg rect:not([fill]),
+        #map-container svg circle:not([fill]),
+        #map-container svg ellipse:not([fill]) {
+            fill: rgba(255, 255, 255, 0.4);
+        }
     </style>
 </head>
 
