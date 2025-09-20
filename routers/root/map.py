@@ -8,7 +8,7 @@ router = APIRouter()
 
 TEMPLATES = Path("templates")
 STATIC_DIR = Path("static")
-MAP_JSON = Path("map") / "world.json"
+MAP_JSON = STATIC_DIR / "map" / "world.json"
 
 
 @router.get("/map_edit")
@@ -28,5 +28,7 @@ def map_data():
 @router.get("/map-download-default")
 def map_download_default():
     return FileResponse(
-        MAP_JSON, media_type="application/json", filename="world.default.json"
+        MAP_JSON,
+        media_type="application/json",
+        filename="world.default.json",
     )
