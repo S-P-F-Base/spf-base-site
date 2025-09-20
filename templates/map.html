@@ -166,8 +166,7 @@
             let svgRoot = null, vpGroup = null, markersGroup = null;
 
             let cam = new DOMMatrix();
-            const Z_MIN = 0.3;
-            const Z_MAX = 8.0;
+            const Z_MAX = 3.0;
 
             let isDragging = false;
             let dragPrevClient = null;
@@ -206,7 +205,7 @@
             function getScale() {
                 return Math.hypot(cam.a, cam.b) || 1;
             }
-            function clampScale(s) { return Math.min(Z_MAX, Math.max(Z_MIN, s)); }
+            function clampScale(s) { return Math.min(Z_MAX, s); }
 
             function clientToWorld(evt) {
                 const pt = svgRoot.createSVGPoint();
