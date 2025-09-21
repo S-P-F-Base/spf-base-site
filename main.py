@@ -5,12 +5,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from data_bases import LogDB, PaymentServiceDB, PlayerDB, UserDB
-from data_control import AutoTax, Config, MailControl, ServerControl
+from data_control import AutoTax, Config, ServerControl
 from discord_bot import bot
 from routers.api.auth import router as api_auth
 from routers.api.discord import router as api_discord
@@ -54,7 +53,6 @@ async def lifespan(app: FastAPI):
             logging.error(f"AutoTax setup fail: {err}")
 
         ServerControl.setup()
-        MailControl.setup()
 
         asyncio.create_task(ServerControl.server_status_updater())
         asyncio.create_task(AutoTax.run_queue_worker(interval_sec=60))
@@ -154,10 +152,3 @@ app.include_router(api_user_control, prefix="/api/user_control")
 app.include_router(api_websocket, prefix="/api/websocket")
 app.include_router(api_yoomoney, prefix="/api/yoomoney")
 app.include_router(root)
-
-if os.getenv("DEBUG") == "1":
-    for route in app.routes:
-        if isinstance(route, APIRoute):
-            methods = ", ".join(route.methods)
-            path = route.path
-            print(f"{methods} -> {path}")

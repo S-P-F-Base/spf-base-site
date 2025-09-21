@@ -24,7 +24,6 @@ class Config:
             "TAX_PASSWORD",
             "TAX_INN",
             "OVERHOSTING_COOKIES",
-            "RESEND_API",
             "STEAM_API",
             "DISCORD_BOT",
             "DISCORD_APP",
@@ -76,10 +75,6 @@ class Config:
     @classmethod
     def overhosting_cookies(cls) -> dict:
         return json.loads(cls._base_get_env("OVERHOSTING_COOKIES"))
-
-    @classmethod
-    def resend_api(cls) -> str:
-        return cls._base_get_env("RESEND_API")
 
     @classmethod
     def steam_api(cls) -> str:

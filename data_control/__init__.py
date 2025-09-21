@@ -6,7 +6,6 @@ from .jwt_control import (
     req_authorization_websocket,
     req_refresh,
 )
-from .mail_control import MailControl
 from .player_jwt import PlayerSession
 from .server_control import ServerControl
 from .websocket_manager import WebSocketManager
