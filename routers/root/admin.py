@@ -14,8 +14,8 @@ def access(request: Request):
     if not pdata:
         return RedirectResponse("/api/discord/login", status_code=302)
 
-    u_id, discord_id, steam_id, data = pdata
-    if u_id != 1:  # bruh
+    _, _, _, data = pdata
+    if not data.admin_access.get("admin"):
         return RedirectResponse("/", status_code=302)
 
     return None
