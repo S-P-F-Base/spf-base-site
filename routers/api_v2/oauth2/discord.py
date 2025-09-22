@@ -22,6 +22,7 @@ def discord_login():
             "redirect_uri": REDIRECT_URI,
             "response_type": "code",
             "scope": "identify",
+            "prompt": "none",
         }
     )
     return RedirectResponse(f"https://discord.com/api/oauth2/authorize?{query}")
@@ -68,6 +69,6 @@ def discord_callback(request: Request, code: str | None = None):
     )
     jwt_token = create_jwt(merged)
 
-    resp = RedirectResponse("/")
+    resp = RedirectResponse("/api_v2/oauth2/me")
     resp.set_cookie("session", jwt_token, httponly=True, secure=True)
     return resp

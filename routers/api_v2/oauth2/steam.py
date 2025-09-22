@@ -46,6 +46,6 @@ def steam_callback(request: Request):
     merged = merge_with_old(request, {"steam_id": steam_id})
     jwt_token = create_jwt(merged)
 
-    resp = RedirectResponse("/")
+    resp = RedirectResponse("/api_v2/oauth2/me")
     resp.set_cookie("session", jwt_token, httponly=True, secure=True)
     return resp
