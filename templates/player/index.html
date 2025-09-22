@@ -46,9 +46,15 @@
             {% endif %}
 
             {% if is_admin %}
-            <div class="alert-flag admin-flag" title="Вы администратор с полными правами">
+            <a href="/admin" class="alert-flag admin-flag" title="Вы администратор с полными правами">
                 <div class="icon">&#9733;</div>
-            </div>
+                <div class="tooltip">
+                    <div class="warn-entry">
+                        <strong>Панель администратора</strong><br>
+                        Нажмите, чтобы перейти в административный раздел сайта.
+                    </div>
+                </div>
+            </a>
             {% endif %}
 
             {% if discord_id and data.discord_avatar %}
