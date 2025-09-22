@@ -82,7 +82,7 @@ if os.getenv("FASTAPISTATIC") == "1":
 @app.middleware("http")
 async def user_agent_blocker(request: Request, call_next):
     path = request.url.path
-    if path.startswith("/api") and path not in ALLOWED_PATHS:
+    if path.startswith("/api") and not path.startswith("/api_v2") and path not in ALLOWED_PATHS:
         user_agent = request.headers.get("user-agent", "")
         if user_agent != REQUIRED_AGENT:
             return JSONResponse(status_code=403, content={"detail": "Invalid agent"})
