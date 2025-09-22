@@ -4,7 +4,7 @@ import requests
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .utils import create_jwt
+from .utils import create_jwt, merge_with_old
 
 REDIRECT_URI = "https://spf-base.ru/api_v2/oauth2/steam/callback"
 STEAM_OPENID = "https://steamcommunity.com/openid/login"
@@ -30,9 +30,9 @@ def steam_login():
 @router.get("/steam/callback")
 def steam_callback(request: Request):
     params = dict(request.query_params)
-
     verify = params.copy()
     verify["openid.mode"] = "check_authentication"
+
     resp = requests.post(STEAM_OPENID, data=verify, timeout=10)
     if resp.status_code != 200 or "is_valid:true" not in resp.text:
         raise HTTPException(400, "Failed to verify OpenID response")
@@ -43,7 +43,9 @@ def steam_callback(request: Request):
 
     steam_id = claimed_id.rsplit("/", 1)[-1]
 
-    jwt_token = create_jwt({"steam_id": steam_id})
+    merged = merge_with_old(request, {"steam_id": steam_id})
+    jwt_token = create_jwt(merged)
+
     resp = RedirectResponse("/")
-    resp.set_cookie("session", jwt_token, httponly=True, secure=False)
+    resp.set_cookie("session", jwt_token, httponly=True, secure=True)
     return resp

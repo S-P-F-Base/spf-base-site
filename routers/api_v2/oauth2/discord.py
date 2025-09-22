@@ -1,12 +1,12 @@
 from urllib.parse import urlencode
 
 import requests
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from data_control import Config
 
-from .utils import create_jwt
+from .utils import create_jwt, merge_with_old
 
 CLIENT_SECRET = Config.discord_app()
 REDIRECT_URI = "https://spf-base.ru/api_v2/oauth2/discord/callback"
@@ -15,7 +15,7 @@ router = APIRouter()
 
 
 @router.get("/discord/login")
-def login():
+def discord_login():
     query = urlencode(
         {
             "client_id": "1370825296839839795",
@@ -28,7 +28,7 @@ def login():
 
 
 @router.get("/discord/callback")
-def callback(code: str | None = None):
+def discord_callback(request: Request, code: str | None = None):
     if not code:
         raise HTTPException(400, "Missing code")
 
@@ -62,7 +62,12 @@ def callback(code: str | None = None):
 
     me = me_resp.json()
 
-    jwt_token = create_jwt({"discord_id": me["id"], "username": me["username"]})
+    merged = merge_with_old(
+        request,
+        {"discord_id": me["id"], "username": me["username"]},
+    )
+    jwt_token = create_jwt(merged)
+
     resp = RedirectResponse("/")
-    resp.set_cookie("session", jwt_token, httponly=True, secure=False)
+    resp.set_cookie("session", jwt_token, httponly=True, secure=True)
     return resp
