@@ -11,11 +11,10 @@ from .config import Config
 
 class PlayerSession:
     def __init__(self, request: Request):
-        self.request = request
-        self.token_data = self._decode_token()
+        self.token_data = self._decode_token(request)
 
-    def _decode_token(self) -> dict | None:
-        raw = self.request.cookies.get("session")
+    def _decode_token(self, request) -> dict | None:
+        raw = request.cookies.get("session")
         if not raw:
             return None
 

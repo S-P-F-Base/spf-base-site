@@ -1,7 +1,8 @@
 import json
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import MISSING, asdict, dataclass, field, fields
 from enum import Enum
 from sqlite3 import IntegrityError
+from typing import Any
 
 from .base_db import BaseDB
 
@@ -34,6 +35,17 @@ class NoteData:
         return cls(**clean)
 
 
+def _default_admin_access() -> dict[str, bool]:
+    return {
+        "admin": False,
+        # player control
+        "player_read": False,
+        "player_create": False,
+        "player_edit": False,
+        "player_delete": False,
+    }
+
+
 def _default_blacklist() -> dict[str, bool]:
     return {"admin": False, "char": False, "lore": False}
 
@@ -43,38 +55,71 @@ class PlayerData:
     discord_name: str | None = None
     discord_avatar: str | None = None
 
+    admin_access: dict[str, bool] = field(default_factory=_default_admin_access)
+
     blacklist: dict[str, bool] = field(default_factory=_default_blacklist)
     note: list[NoteData] = field(default_factory=list)
 
+    mb_base_limit: float = 0
     mb_limit: float = 0
     mb_taken: float = 0
+
     initialized: bool = False
 
     @classmethod
-    def from_dict(cls, raw: dict) -> "PlayerData":
-        valid = {f.name for f in fields(cls)}
-        clean = {k: v for k, v in raw.items() if k in valid}
+    def from_dict(cls, raw: dict[str, Any]) -> "PlayerData":
+        init_data: dict[str, Any] = {}
 
-        if "note" in clean and isinstance(clean["note"], list):
-            clean["note"] = [
-                NoteData.from_dict(n) if isinstance(n, dict) else n
-                for n in clean["note"]
-            ]
+        for f in fields(cls):
+            key = f.name
+            val = raw.get(key, MISSING)
 
-        base_bl = _default_blacklist()
-        raw_bl = clean.get("blacklist", {})
-        if not isinstance(raw_bl, dict):
-            raw_bl = {}
+            if val is MISSING:
+                if f.default is not MISSING:
+                    init_data[key] = f.default
 
-        merged_bl = {**base_bl, **raw_bl}
-        merged_bl = {k: bool(v) for k, v in merged_bl.items()}
-        clean["blacklist"] = merged_bl
+                elif f.default_factory is not MISSING:
+                    init_data[key] = f.default_factory()
 
-        clean.setdefault("initialized", False)
-        clean.setdefault("mb_limit", 0.0)
-        clean.setdefault("mb_taken", 0.0)
+                else:
+                    init_data[key] = None
 
-        return cls(**clean)
+                continue
+
+            if key == "note":
+                if isinstance(val, list):
+                    init_data[key] = [
+                        NoteData.from_dict(n) if isinstance(n, dict) else n for n in val
+                    ]
+
+                else:
+                    init_data[key] = []
+
+                continue
+
+            if key == "blacklist":
+                base = _default_blacklist()
+                if isinstance(val, dict):
+                    init_data[key] = {k: bool(val.get(k, base[k])) for k in base}
+
+                else:
+                    init_data[key] = base
+
+                continue
+
+            if key == "admin_access":
+                base = _default_admin_access()
+                if isinstance(val, dict):
+                    init_data[key] = {k: bool(val.get(k, base[k])) for k in base}
+
+                else:
+                    init_data[key] = base
+
+                continue
+
+            init_data[key] = val
+
+        return cls(**init_data)
 
 
 class PlayerDB(BaseDB):
