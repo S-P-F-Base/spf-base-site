@@ -33,7 +33,20 @@ def decode_jwt(token: str) -> dict | None:
         return None
 
 
-@router.get("/login")
+@router.get("/me")
+def me(request: Request):
+    token = request.cookies.get("session")
+    if not token:
+        return JSONResponse({"authenticated": False})
+
+    data = decode_jwt(token)
+    if not data:
+        return JSONResponse({"authenticated": False})
+
+    return {"authenticated": True, "user": data}
+
+
+@router.get("/discord/login")
 def login():
     query = urlencode(
         {
@@ -46,7 +59,7 @@ def login():
     return RedirectResponse(f"{DISCORD_API}/oauth2/authorize?{query}")
 
 
-@router.get("/callback")
+@router.get("/discord/callback")
 def callback(code: str | None = None):
     if not code:
         raise HTTPException(400, "Missing code")
@@ -85,16 +98,3 @@ def callback(code: str | None = None):
     resp = RedirectResponse("/")
     resp.set_cookie("session", jwt_token, httponly=True, secure=False)
     return resp
-
-
-@router.get("/me")
-def me(request: Request):
-    token = request.cookies.get("session")
-    if not token:
-        return JSONResponse({"authenticated": False})
-
-    data = decode_jwt(token)
-    if not data:
-        return JSONResponse({"authenticated": False})
-
-    return {"authenticated": True, "user": data}
