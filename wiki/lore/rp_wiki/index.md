@@ -7,4 +7,4 @@ Date: 3 Сентября 2025 г.
     Страница в разработке
     !endimgblock
 
-!btn[/wiki/lore/rp_wiki/spf|О Ч.В.К. S.P.F.]
+!auto_link_btn(sort="alpha")
