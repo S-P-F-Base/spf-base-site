@@ -4,7 +4,7 @@ import requests
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from .utils import create_jwt, merge_with_old
+import utils.jwt
 
 REDIRECT_URI = "https://spf-base.ru/api_v2/oauth2/steam/callback"
 STEAM_OPENID = "https://steamcommunity.com/openid/login"
@@ -43,8 +43,8 @@ def steam_callback(request: Request):
 
     steam_id = claimed_id.rsplit("/", 1)[-1]
 
-    merged = merge_with_old(request, {"steam_id": steam_id})
-    jwt_token = create_jwt(merged)
+    merged = utils.jwt.merge_with_old(request, {"steam_id": steam_id})
+    jwt_token = utils.jwt.create(merged)
 
     resp = RedirectResponse("/api_v2/oauth2/me")
     resp.set_cookie("session", jwt_token, httponly=True, secure=True)

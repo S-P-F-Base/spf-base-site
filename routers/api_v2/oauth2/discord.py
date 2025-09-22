@@ -4,9 +4,8 @@ import requests
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
+import utils.jwt
 from data_control import Config
-
-from .utils import create_jwt, merge_with_old
 
 CLIENT_SECRET = Config.discord_app()
 REDIRECT_URI = "https://spf-base.ru/api_v2/oauth2/discord/callback"
@@ -63,11 +62,11 @@ def discord_callback(request: Request, code: str | None = None):
 
     me = me_resp.json()
 
-    merged = merge_with_old(
+    merged = utils.jwt.merge_with_old(
         request,
         {"discord_id": me["id"], "username": me["username"]},
     )
-    jwt_token = create_jwt(merged)
+    jwt_token = utils.jwt.create(merged)
 
     resp = RedirectResponse("/api_v2/oauth2/me")
     resp.set_cookie("session", jwt_token, httponly=True, secure=True)

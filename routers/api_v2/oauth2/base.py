@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from .utils import decode_jwt
+import utils.jwt
 
 router = APIRouter()
 
@@ -12,7 +12,7 @@ def me(request: Request):
     if not token:
         return JSONResponse({"authenticated": False})
 
-    data = decode_jwt(token)
+    data = utils.jwt.decode(token)
     if not data:
         return JSONResponse({"authenticated": False})
 

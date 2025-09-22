@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Профиль игрока</title>
+
+    <meta property="og:title" content="S.P.F. Base profile" />
+    <meta property="og:description" content="Старица профиля игрока" />
+
+    {% include 'partials/base_header.html' %}
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
+        <div class="content-tile">
+            <h1>Профиль игрока</h1>
+
+            {% if not authenticated %}
+                <p>Вы не авторизованы.</p>
+            {% else %}
+                <pre style="white-space: pre-wrap; word-break: break-word;">
+Discord ID : {{ profile.discord_id or "—" }}
+Steam ID   : {{ profile.steam_id or "—" }}
+UUID       : {{ profile.uuid or "—" }}
+                </pre>
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>
