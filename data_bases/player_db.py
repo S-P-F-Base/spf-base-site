@@ -56,14 +56,12 @@ class PlayerData:
     discord_avatar: str | None = None
 
     admin_access: dict[str, bool] = field(default_factory=_default_admin_access)
-
     blacklist: dict[str, bool] = field(default_factory=_default_blacklist)
     note: list[NoteData] = field(default_factory=list)
 
-    mb_base_limit: float = 0
-    mb_limit: float = 0
-    mb_taken: float = 0
-
+    mb_base_limit: float = 50.0
+    mb_limit: float = 0.0
+    mb_taken: float = 0.0
     initialized: bool = False
 
     @classmethod
@@ -77,13 +75,10 @@ class PlayerData:
             if val is MISSING:
                 if f.default is not MISSING:
                     init_data[key] = f.default
-
-                elif f.default_factory is not MISSING:
+                elif getattr(f, "default_factory", MISSING) is not MISSING:
                     init_data[key] = f.default_factory()
-
                 else:
                     init_data[key] = None
-
                 continue
 
             if key == "note":
@@ -91,30 +86,24 @@ class PlayerData:
                     init_data[key] = [
                         NoteData.from_dict(n) if isinstance(n, dict) else n for n in val
                     ]
-
                 else:
                     init_data[key] = []
-
                 continue
 
             if key == "blacklist":
                 base = _default_blacklist()
                 if isinstance(val, dict):
                     init_data[key] = {k: bool(val.get(k, base[k])) for k in base}
-
                 else:
                     init_data[key] = base
-
                 continue
 
             if key == "admin_access":
                 base = _default_admin_access()
                 if isinstance(val, dict):
                     init_data[key] = {k: bool(val.get(k, base[k])) for k in base}
-
                 else:
                     init_data[key] = base
-
                 continue
 
             init_data[key] = val

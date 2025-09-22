@@ -45,6 +45,12 @@
             </div>
             {% endif %}
 
+            {% if is_admin %}
+            <div class="alert-flag admin-flag" title="Вы администратор с полными правами">
+                <div class="icon">&#9733;</div>
+            </div>
+            {% endif %}
+
             {% if discord_id and data.discord_avatar %}
             <div class="player-profile">
                 <h3>Профиль игрока</h3>

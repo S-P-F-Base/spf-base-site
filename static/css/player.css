@@ -168,6 +168,14 @@
     margin-bottom: 0;
 }
 
+/* Admin flag */
+.alert-flag.admin-flag .icon {
+    background: gold;
+    color: black;
+    font-size: 18px;
+    text-shadow: 0 0 4px rgba(0, 0, 0, .5);
+}
+
 /* Player ID Card */
 .player-id-card {
     background: rgba(17, 17, 17, .9);
