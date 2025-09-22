@@ -8,9 +8,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+import discord_bot
 from data_bases import LogDB, PaymentServiceDB, PlayerDB, UserDB
 from data_control import AutoTax, Config, ServerControl
-from discord_bot import bot
 from routers.api.auth import router as api_auth
 from routers.api.discord import router as api_discord
 from routers.api.logs import router as api_logs
@@ -56,11 +56,11 @@ async def lifespan(app: FastAPI):
 
         asyncio.create_task(ServerControl.server_status_updater())
         asyncio.create_task(AutoTax.run_queue_worker(interval_sec=60))
-        asyncio.create_task(bot.start(Config.discord_bot()))
+        asyncio.create_task(discord_bot.start())
 
         yield
 
-        await bot.close()
+        await discord_bot.stop()
 
     finally:
         pass

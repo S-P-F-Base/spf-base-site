@@ -1,1 +1,1 @@
-from .main_obj import bot
+from .bot_obj import bot, start, stop
