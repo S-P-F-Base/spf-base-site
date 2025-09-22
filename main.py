@@ -24,6 +24,7 @@ from routers.api.steam import router as api_steam
 from routers.api.user_control import router as api_user_control
 from routers.api.websocket import router as api_websocket
 from routers.api.yoomoney import router as api_yoomoney
+from routers.api_v2.oauth2 import router as api_v2_oauth2
 from routers.root import router as root
 from templates import templates
 
@@ -82,7 +83,11 @@ if os.getenv("FASTAPISTATIC") == "1":
 @app.middleware("http")
 async def user_agent_blocker(request: Request, call_next):
     path = request.url.path
-    if path.startswith("/api") and not path.startswith("/api_v2") and path not in ALLOWED_PATHS:
+    if (
+        path.startswith("/api")
+        and not path.startswith("/api_v2")
+        and path not in ALLOWED_PATHS
+    ):
         user_agent = request.headers.get("user-agent", "")
         if user_agent != REQUIRED_AGENT:
             return JSONResponse(status_code=403, content={"detail": "Invalid agent"})
@@ -151,4 +156,7 @@ app.include_router(api_steam, prefix="/api/steam")
 app.include_router(api_user_control, prefix="/api/user_control")
 app.include_router(api_websocket, prefix="/api/websocket")
 app.include_router(api_yoomoney, prefix="/api/yoomoney")
+
+app.include_router(api_v2_oauth2, prefix="/api_v2/oauth2")
+
 app.include_router(root)
