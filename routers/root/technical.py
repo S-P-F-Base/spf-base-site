@@ -12,7 +12,8 @@ def robots_txt():
     content = """
 User-agent: *
 Disallow: /api/
-Disallow: /download/
+Disallow: /api_v2/
+Disallow: /profile/
 """
     return content.strip()
 
