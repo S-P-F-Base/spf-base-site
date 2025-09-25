@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 import utils.jwt
+from data_class import ProfileDataBase
 
 REDIRECT_URI = "https://spf-base.ru/api_v2/oauth2/steam/callback"
 STEAM_OPENID = "https://steamcommunity.com/openid/login"
@@ -43,9 +44,32 @@ def steam_callback(request: Request):
 
     steam_id = claimed_id.rsplit("/", 1)[-1]
 
-    merged = utils.jwt.merge_with_old(request, {"steam_id": steam_id})
-    jwt_token = utils.jwt.create(merged)
+    token = request.cookies.get("session")
+    old = utils.jwt.decode(token) if token else None
 
-    resp = RedirectResponse("/api_v2/oauth2/me")
+    if not old:
+        p_uuid = ProfileDataBase.get_profile_by_steam(steam_id)
+        if p_uuid is None:
+            p_uuid = ProfileDataBase.create_profile(steam_id=steam_id)
+        else:
+            p_uuid = p_uuid.get("uuid")
+    else:
+        uuid = old.get("uuid")
+        if not uuid:
+            raise HTTPException(400, "Invalid session: missing uuid")
+
+        profile = ProfileDataBase.get_profile_by_uuid(uuid)
+        if not profile:
+            raise HTTPException(400, "Profile not found")
+
+        if profile.get("steam_id"):
+            raise HTTPException(400, "Steam account already linked")
+
+        ProfileDataBase.update_profile(uuid, steam_id=steam_id)
+        p_uuid = uuid
+
+    jwt_token = utils.jwt.create({"uuid": p_uuid})
+
+    resp = RedirectResponse("/profile")
     resp.set_cookie("session", jwt_token, httponly=True, secure=True)
     return resp

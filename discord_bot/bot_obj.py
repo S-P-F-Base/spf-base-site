@@ -3,7 +3,7 @@ from discord.ext import commands
 
 from data_control import Config
 
-from .cogs import EventCog
+from .cogs import DebugCog, EventCog, UserControlCog
 
 intents = discord.Intents.all()
 
@@ -11,7 +11,9 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 
 async def start():
-    await bot.add_cog(EventCog(bot))
+    for cls in [DebugCog, EventCog, UserControlCog]:
+        await bot.add_cog(cls(bot))
+
     await bot.start(Config.discord_bot())
 
 

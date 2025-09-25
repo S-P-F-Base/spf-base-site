@@ -1,0 +1,405 @@
+/* === Базовые состояния === */
+.not-auth {
+    color: #ccc;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+/* === Верх профиля (аватар, имя, UUID, статус) === */
+.profile-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 2.5rem;
+}
+
+.avatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 4px solid orange;
+    box-shadow: 0 0 20px rgba(255, 140, 0, .4);
+}
+
+.username {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: orange;
+    text-shadow: 0 0 8px rgba(255, 140, 0, .5);
+}
+
+/* === UUID === */
+.profile-uuid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+    color: #ccc;
+    font-size: 1rem;
+}
+
+.copy-uuid {
+    padding: 0.4rem 0.9rem;
+    background: rgba(34, 34, 34, .85);
+    border: 2px solid orange;
+    border-radius: 8px;
+    color: orange;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .3s ease, color .3s ease, transform .2s ease;
+}
+
+.copy-uuid:hover,
+.copy-uuid:focus {
+    background-color: orange;
+    color: black;
+    transform: translateY(-2px);
+    outline: none;
+}
+
+/* Уведомление (toast) при копировании */
+.copy-toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(34, 34, 34, .9);
+    color: orange;
+    border: 2px solid orange;
+    padding: 0.7rem 1.4rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease, transform .3s ease;
+    z-index: 9999;
+}
+
+.copy-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* === Статус Discord / Steam === */
+.discord-status,
+.steam-status {
+    display: flex;
+    justify-content: center;
+    /* Центрирование */
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+    margin: 1.2rem auto;
+    border: 1px solid rgba(255, 165, 0, .25);
+    border-radius: 12px;
+    background: rgba(34, 34, 34, .8);
+}
+
+.discord-status img,
+.steam-status img {
+    width: 26px;
+    height: 26px;
+}
+
+.steam-status.connected span {
+    color: #7cfc00;
+    font-weight: 600;
+}
+
+.steam-status.not-connected span {
+    color: #ff6961;
+    font-weight: 600;
+}
+
+.connect-discord,
+.connect-steam {
+    color: #ff6961;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #ff6961;
+    border-radius: 8px;
+    padding: 0.3rem 0.7rem;
+    transition: background-color .3s ease, color .3s ease;
+}
+
+.connect-discord:hover,
+.connect-discord:focus,
+.connect-steam:hover,
+.connect-steam:focus {
+    background-color: #ff6961;
+    color: black;
+    outline: none;
+}
+
+/* === Сетка навигационных кнопок === */
+.profile-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.2rem;
+}
+
+.profile-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(34, 34, 34, .85);
+    color: orange;
+    border: 2px solid orange;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: background-color .3s ease, color .3s ease, transform .2s ease;
+}
+
+.profile-link:hover,
+.profile-link:focus {
+    background-color: orange;
+    color: black;
+    transform: translateY(-2px);
+    outline: none;
+}
+
+/* === Декоративные значки === */
+.profile-decor {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    width: 97%;
+    display: flex;
+    justify-content: space-between;
+    z-index: 5;
+}
+
+.decor-box {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, .4);
+    cursor: pointer;
+}
+
+.decor-box.star {
+    background: gold;
+    color: black;
+}
+
+.decor-box.warn {
+    background: #ff4d4d;
+    color: white;
+}
+
+/* === Поп-апы внутри значков === */
+.decor-popups {
+    position: absolute;
+    top: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    max-height: 60vh;
+    padding-right: 0.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease, transform .3s ease;
+    transform-origin: top center;
+}
+
+.decor-popup {
+    min-width: 260px;
+    max-width: 320px;
+    padding: 1rem 1.2rem;
+    background: rgba(20, 20, 20, .95);
+    border: 2px solid orange;
+    border-radius: 14px;
+    color: #f5f5f5;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    box-shadow: 0 0 25px rgba(255, 140, 0, .4), 0 0 12px rgba(0, 0, 0, .6);
+}
+
+.decor-popup h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    color: orange;
+    text-shadow: 0 0 8px rgba(255, 140, 0, .4);
+}
+
+.decor-popup:first-child::before {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-bottom-color: rgba(20, 20, 20, .95);
+    filter: drop-shadow(0 -1px 1px rgba(255, 140, 0, .4));
+}
+
+.decor-box:hover .decor-popups {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(4px);
+}
+
+/* Красная версия поп-апов для warn */
+.decor-box.warn .decor-popup {
+    border-color: #ff4d4d;
+    box-shadow: 0 0 25px rgba(255, 77, 77, .4), 0 0 12px rgba(0, 0, 0, .6);
+}
+
+.decor-box.warn .decor-popup h3 {
+    color: #ff4d4d;
+}
+
+.welcome-title {
+    text-align: center;
+    font-size: 2rem;
+    color: orange;
+    margin-top: 1rem;
+}
+
+.circles-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    flex-wrap: wrap;
+    margin-top: 3rem;
+}
+
+.circle-card {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(17, 17, 17, .9) 60%, transparent 61%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+.circle-card svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: rotate(-90deg);
+}
+
+.circle-bg {
+    stroke: rgba(255, 255, 255, .15);
+}
+
+.circle-fg {
+    stroke: orange;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s ease;
+}
+
+.circle-center {
+    text-align: center;
+    z-index: 2;
+}
+
+.circle-center .value {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.circle-center .label {
+    font-size: .9rem;
+    color: rgba(255, 255, 255, .7);
+    margin-top: .4rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+/* Персонажи */
+.chars-section {
+    margin: 4rem auto 2rem;
+    max-width: 900px;
+}
+
+.chars-section h2 {
+    text-align: center;
+    color: orange;
+    margin-bottom: 2.5rem;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.char-card {
+    background: linear-gradient(145deg, rgba(20, 20, 20, .95), rgba(30, 30, 30, .9));
+    border: 1px solid rgba(255, 165, 0, .25);
+    border-radius: 18px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.char-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(255, 140, 0, .35);
+}
+
+.char-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.char-name {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: .5px;
+}
+
+/* Кнопки ссылок */
+.char-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.char-buttons a {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .6rem 1.2rem;
+    background: rgba(255, 165, 0, .08);
+    border: 1px solid rgba(255, 165, 0, .3);
+    border-radius: 10px;
+    text-decoration: none;
+    color: orange;
+    font-weight: 500;
+    transition: background .2s, transform .2s;
+}
+
+.char-buttons a img {
+    height: 20px;
+    width: 20px;
+}
+
+.char-buttons a:hover {
+    background: rgba(255, 165, 0, .2);
+    transform: translateY(-2px);
+}

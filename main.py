@@ -10,9 +10,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import discord_bot
 from data_bases import LogDB, PaymentServiceDB, PlayerDB, UserDB
+from data_class import ProfileDataBase
 from data_control import AutoTax, Config, ServerControl
 from routers.api.auth import router as api_auth
-from routers.api.discord import router as api_discord
 from routers.api.logs import router as api_logs
 from routers.api.lore_char_control import router as api_lore_char_control
 from routers.api.payment_control import router as api_payment_control
@@ -20,7 +20,6 @@ from routers.api.player_control import router as api_player_control
 from routers.api.server_control import router as api_server_control
 from routers.api.service_control import router as api_service_control
 from routers.api.site_control import router as api_site_control
-from routers.api.steam import router as api_steam
 from routers.api.user_control import router as api_user_control
 from routers.api.websocket import router as api_websocket
 from routers.api.yoomoney import router as api_yoomoney
@@ -46,6 +45,8 @@ async def lifespan(app: FastAPI):
         UserDB.create_db_table()
         PlayerDB.create_db_table()
         PaymentServiceDB.create_db_table()
+
+        ProfileDataBase.setup_db()
 
         try:
             AutoTax.setup()
@@ -144,7 +145,6 @@ def custom_http_exception_handler(request: Request, exc: StarletteHTTPException)
 
 
 app.include_router(api_auth, prefix="/api/auth")
-app.include_router(api_discord, prefix="/api/discord")
 app.include_router(api_logs, prefix="/api/logs")
 app.include_router(api_lore_char_control, prefix="/api/lore_char_control")
 app.include_router(api_player_control, prefix="/api/player_control")
@@ -152,7 +152,6 @@ app.include_router(api_server_control, prefix="/api/server_control")
 app.include_router(api_payment_control, prefix="/api/payment_control")
 app.include_router(api_service_control, prefix="/api/service_control")
 app.include_router(api_site_control, prefix="/api/site_control")
-app.include_router(api_steam, prefix="/api/steam")
 app.include_router(api_user_control, prefix="/api/user_control")
 app.include_router(api_websocket, prefix="/api/websocket")
 app.include_router(api_yoomoney, prefix="/api/yoomoney")
