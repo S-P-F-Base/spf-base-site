@@ -2,8 +2,9 @@ import asyncio
 import logging
 import re
 from datetime import UTC, datetime
-from typing import Optional
+from typing import Any, Optional
 
+import aiohttp
 import requests
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -480,26 +481,39 @@ async def profile_admin_note_add(
 async def _fetch_workshop_sizes(ids: list[str]) -> dict[str, int]:
     if not ids:
         return {}
+
     url = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/"
+    payload: dict[str, Any] = {"itemcount": len(ids)}
+    for i, fid in enumerate(ids):
+        payload[f"publishedfileids[{i}]"] = fid
 
-    def _req():
-        try:
-            payload = {"itemcount": len(ids)}
-            for i, fid in enumerate(ids):
-                payload[f"publishedfileids[{i}]"] = fid
-            r = requests.post(url, data=payload, timeout=8)
-            r.raise_for_status()
-            js = r.json()
-            out: dict[str, int] = {}
-            for it in js.get("response", {}).get("publishedfiledetails", []):
-                if it.get("result") == 1:
-                    out[it["publishedfileid"]] = int(it.get("file_size", 0))
-            return out
-        except Exception as e:
-            logger.exception("Workshop size fetch failed: %s", e)
-            return {}
+    try:
+        async with aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=8)
+        ) as session:
+            async with session.post(url, data=payload) as resp:
+                if resp.status != 200:
+                    logger.warning(
+                        "Steam API bad status %s for ids %s", resp.status, ids
+                    )
+                    return {}
 
-    return await asyncio.to_thread(_req)
+                js = await resp.json(content_type=None)
+
+    except Exception as e:
+        logger.exception("Workshop size fetch failed: %s", e)
+        return {}
+
+    out: dict[str, int] = {}
+    for it in js.get("response", {}).get("publishedfiledetails", []):
+        rid = it.get("publishedfileid")
+        result = it.get("result")
+        if result == 1:
+            out[rid] = int(it.get("file_size", 0))
+        else:
+            logger.warning("Steam API returned result=%s for id=%s", result, rid)
+
+    return out
 
 
 @router.post("/profile/admin/char/add")
