@@ -410,7 +410,7 @@ async def profile_admin_update(
         logger.exception("update_profile failed: %s", e)
         _server_error("profile_update_failed", "Failed to update profile", uuid=uuid)
 
-    return RedirectResponse("/profile/admin")
+    return 200
 
 
 @router.post("/profile/admin/delete")
@@ -428,7 +428,7 @@ async def profile_admin_delete(request: Request, uuid: str = Form(...)):
         logger.exception("delete_profile failed: %s", e)
         _server_error("profile_delete_failed", "Failed to delete profile", uuid=uuid)
 
-    return RedirectResponse("/profile/admin")
+    return 200
 
 
 # Admin: notes & chars
@@ -474,7 +474,7 @@ async def profile_admin_note_add(
             "profile_update_failed", "Failed to update profile with note", uuid=uuid
         )
 
-    return RedirectResponse("/profile/admin")
+    return 200
 
 
 async def _fetch_workshop_sizes(ids: list[str]) -> dict[str, int]:
@@ -562,7 +562,7 @@ async def profile_admin_char_add(
             uuid=uuid,
         )
 
-    return RedirectResponse("/profile/admin")
+    return 200
 
 
 # Admin: create & role check
@@ -609,7 +609,7 @@ async def profile_admin_create(
             steam_id=sid64,
         )
 
-    return RedirectResponse("/profile/admin")
+    return 200
 
 
 @router.post("/profile/admin/recalc_roles")
@@ -648,7 +648,7 @@ async def profile_admin_recalc_roles(request: Request):
         ProfileDataBase.update_profile(p["uuid"], data=data)
 
     await asyncio.gather(*(update_one(p) for p in profiles))
-    return RedirectResponse("/profile/admin")
+    return 200
 
 
 @router.post("/profile/admin/recalc_weights")
@@ -684,4 +684,4 @@ async def profile_admin_recalc_weights(request: Request):
         ProfileDataBase.update_profile(p["uuid"], data=data)
 
     await asyncio.gather(*(process_profile(p) for p in profiles))
-    return RedirectResponse("/profile/admin")
+    return 200
