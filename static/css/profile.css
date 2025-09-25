@@ -275,58 +275,50 @@
 
 .circles-wrapper {
     display: flex;
-    justify-content: center;
-    gap: 3rem;
     flex-wrap: wrap;
-    margin-top: 3rem;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 2rem;
 }
 
 .circle-card {
     position: relative;
     width: 220px;
     height: 220px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(17, 17, 17, .9) 60%, transparent 61%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-}
-
-.circle-card svg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform: rotate(-90deg);
+    flex-shrink: 0;
 }
 
 .circle-bg {
-    stroke: rgba(255, 255, 255, .15);
+    stroke: rgba(255, 255, 255, 0.12);
 }
 
 .circle-fg {
     stroke: orange;
-    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
     transition: stroke-dashoffset 1s ease;
 }
 
 .circle-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
     text-align: center;
-    z-index: 2;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .circle-center .value {
-    font-size: 1.8rem;
-    font-weight: 700;
+    font-size: 1.1rem;
+    font-weight: 600;
+    white-space: normal;
 }
 
 .circle-center .label {
-    font-size: .9rem;
-    color: rgba(255, 255, 255, .7);
-    margin-top: .4rem;
-    text-transform: uppercase;
-    letter-spacing: .5px;
+    font-size: 0.9rem;
+    opacity: .8;
 }
 
 /* Персонажи */

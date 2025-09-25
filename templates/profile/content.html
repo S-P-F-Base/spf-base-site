@@ -89,15 +89,25 @@
 
     <script>
         document.querySelectorAll('.circle-card').forEach(card => {
-            const used = parseFloat(card.dataset.used);
-            const total = parseFloat(card.dataset.total);
-            const percent = total > 0 ? (used / total) : 0;
+            const used = parseFloat(card.dataset.used) || 0;
+            const total = parseFloat(card.dataset.total) || 0;
+
+            const percent = total > 0 ? Math.min(used / total, 1) : 0;
+
             const circle = card.querySelector('.circle-fg');
             const circumference = 2 * Math.PI * 90;
             const offset = circumference * (1 - percent);
+
             circle.style.strokeDasharray = circumference;
             circle.style.strokeDashoffset = circumference;
-            setTimeout(() => { circle.style.strokeDashoffset = offset; }, 100);
+
+            requestAnimationFrame(() => {
+                circle.style.strokeDashoffset = offset;
+            });
+
+            if (used > total) {
+                card.querySelector('.value').style.color = 'tomato';
+            }
         });
     </script>
 </body>
