@@ -483,32 +483,37 @@ async def _fetch_workshop_sizes(ids: list[str]) -> dict[str, int]:
         return {}
 
     url = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/"
-    payload: dict[str, Any] = {"itemcount": len(ids)}
+    payload: dict[str, str] = {"itemcount": str(len(ids))}
     for i, fid in enumerate(ids):
-        payload[f"publishedfileids[{i}]"] = fid
+        payload[f"publishedfileids[{i}]"] = str(fid)
 
     try:
         async with aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=8)
         ) as session:
-            async with session.post(url, data=payload) as resp:
+            async with session.post(
+                url,
+                data=payload,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            ) as resp:
                 if resp.status != 200:
                     logger.warning(
                         "Steam API bad status %s for ids %s", resp.status, ids
                     )
                     return {}
 
-                js = await resp.json(content_type=None)
+                js: dict[str, Any] = await resp.json(content_type=None)
 
     except Exception as e:
         logger.exception("Workshop size fetch failed: %s", e)
         return {}
 
     out: dict[str, int] = {}
-    for it in js.get("response", {}).get("publishedfiledetails", []):
+    details = (js.get("response") or {}).get("publishedfiledetails") or []
+    for it in details:
         rid = it.get("publishedfileid")
         result = it.get("result")
-        if result == 1:
+        if result == 1 and rid:
             out[rid] = int(it.get("file_size", 0))
         else:
             logger.warning("Steam API returned result=%s for id=%s", result, rid)
