@@ -104,11 +104,3 @@ def req_authorization(request: Request) -> str:
 def req_refresh(request: Request) -> str:
     token = _get_authorization_header_payload(request, "X-Authorization-Refresh")
     return _jwt_sanity_check(token, "ref")
-
-
-def req_authorization_websocket(token: str) -> str | None:
-    try:
-        return _jwt_sanity_check(token.removeprefix("Bearer ").strip(), "acc")
-
-    except HTTPException:
-        return None

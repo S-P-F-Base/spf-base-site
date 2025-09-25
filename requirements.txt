@@ -9,4 +9,3 @@ python-multipart
 requests
 requests[socks]
 uvicorn
-websockets

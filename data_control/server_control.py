@@ -1,4 +1,3 @@
-import asyncio
 import json
 from pathlib import Path
 from typing import Literal
@@ -6,7 +5,6 @@ from typing import Literal
 from requests import Session
 
 from .config import Config
-from .websocket_manager import WebSocketManager
 
 
 class ServerControl:
@@ -97,21 +95,3 @@ class ServerControl:
 
         cls._last_status = None
         cls._get_status()
-
-    @classmethod
-    async def server_status_updater(cls):
-        prev_text: str | None = None
-        while True:
-            try:
-                text = cls._get_status()
-                if text != prev_text:
-                    prev_text = text
-                    await WebSocketManager.send_event(
-                        "server_control_status",
-                        {"status": text},
-                    )
-
-            except Exception:
-                pass
-
-            await asyncio.sleep(5)
