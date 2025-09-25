@@ -483,7 +483,17 @@ async def _fetch_workshop_sizes(ids: list[str]) -> dict[str, int]:
         return {}
 
     url = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/"
-    payload: dict[str, str] = {"itemcount": str(len(ids))}
+
+    key = Config.steam_api()
+    key = key() if callable(key) else key
+    if not key:
+        logger.warning("Steam API key is not configured")
+        return {}
+
+    payload: dict[str, str] = {
+        "key": str(key),
+        "itemcount": str(len(ids)),
+    }
     for i, fid in enumerate(ids):
         payload[f"publishedfileids[{i}]"] = str(fid)
 
