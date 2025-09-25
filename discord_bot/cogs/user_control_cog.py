@@ -80,22 +80,11 @@ class UserControlCog(commands.Cog):
 
         await self._rate_limit()
         try:
-            if guild:
-                member = await guild.fetch_member(user_id)
-                if member:
-                    data = {
-                        "username": member.display_name or member.name,
-                        "avatar_url": member.display_avatar.url
-                        if member.display_avatar
-                        else "",
-                    }
-
-            if data is None:
-                u = await self.bot.fetch_user(user_id)
-                data = {
-                    "username": u.global_name or u.name,
-                    "avatar_url": u.display_avatar.url if u.display_avatar else "",
-                }
+            u = await self.bot.fetch_user(user_id)
+            data = {
+                "username": u.name,
+                "avatar_url": u.display_avatar.url if u.display_avatar else "",
+            }
 
         except Exception:
             data = None
