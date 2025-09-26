@@ -1,104 +1,76 @@
 #!/usr/bin/env python3
 import json
-import subprocess
 import sys
 from io import BytesIO
 from pathlib import Path
 
-missing = []
-for lib in ("cairosvg", "lxml", "PIL"):
-    try:
-        __import__("Pillow" if lib == "PIL" else lib)
-    except ImportError:
-        missing.append("pillow" if lib == "PIL" else lib)
-
-if missing:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
-
-import cairosvg  # noqa: E402
-from lxml import etree  # type: ignore # noqa: E402
-from PIL import Image  # noqa: E402
+from lxml import etree
+from PIL import Image
+from reportlab.graphics import renderPM
+from svglib.svglib import svg2rlg
 
 
-def only_svg_text(path: Path) -> str:
-    text = path.read_text(encoding="utf-8")
-    
-    return text
+def load_svg_tree(svg_path: Path, regions: dict[str, str]) -> bytes:
+    root = etree.fromstring(svg_path.read_bytes())
+    for el in root.iter():
+        el_id = el.get("id")
+        if el_id and el_id in regions:
+            el.set("fill", regions[el_id])
+
+    return etree.tostring(root)
 
 
 def export_map(
     svg_path: Path,
     json_path: Path,
     out_path: Path,
-    width=4096,
-    height=2048,
-    quality=95,
-    keep_alpha=True,
-):
+    width: int = 4096,
+    height: int = 2048,
+    quality: int = 95,
+    keep_alpha: bool = True,
+) -> None:
     print("start export map")
-    svg_text = only_svg_text(svg_path)
-    root = etree.fromstring(svg_text.encode("utf-8"))
-    print("map loaded")
+    regions = json.loads(json_path.read_text(encoding="utf-8")).get("regions", {})
+    svg_bytes = load_svg_tree(svg_path, regions)
+    print("svg patched")
 
-    colors = json.loads(json_path.read_text(encoding="utf-8"))
-    print("colors loaded")
-    regions = colors.get("regions", {})
+    drawing = svg2rlg(BytesIO(svg_bytes))
+    print("svg parsed")
 
-    for el in root.iter():
-        el_id = el.get("id")
-        if el_id and el_id in regions:
-            el.set("fill", regions[el_id])
-
-    svg_bytes = etree.tostring(root, encoding="utf-8")
-    print("render to bitmap")
     png_buffer = BytesIO()
-    cairosvg.svg2png(
-        bytestring=svg_bytes,
-        write_to=png_buffer,
-        output_width=width,
-        output_height=height,
-        background_color=None if keep_alpha else "white",
-    )
-
+    renderPM.drawToFile(drawing, png_buffer, fmt="PNG", dpi=width / drawing.width * 72)
     png_buffer.seek(0)
-    if keep_alpha:
-        Image.open(png_buffer).save(out_path, format="PNG", optimize=True)
-    else:
-        img = Image.open(png_buffer).convert("RGBA")
+    print("rendered")
+
+    img = Image.open(png_buffer)
+    if not keep_alpha:
+        img = img.convert("RGBA")
         bg = Image.new("RGB", img.size, (255, 255, 255))
         bg.paste(img, mask=img.split()[3])
-        bg.save(out_path, "JPEG", quality=quality, optimize=True)
+        img = bg
+        img.save(out_path, "JPEG", quality=quality, optimize=True)
+    else:
+        img.save(out_path, "PNG", optimize=False)
 
     print(f"Done: {out_path}")
 
 
-def main():
-    if len(sys.argv) < 3:
-        print(
-            "Usage: script.py <map.svg> <colors.json> [--out out.png] "
-            "[--width 4096] [--height 2048] [--quality 95] [--jpeg]"
-        )
-        sys.exit(1)
-
-    svg, jsn = Path(sys.argv[1]), Path(sys.argv[2])
-    out = Path("world_map.png")
-    width, height, quality = 4096, 2048, 95
-    keep_alpha = True
+def main() -> None:
+    svg, jsn = (
+        Path("static/map/world.svg"),
+        Path("static/map/world.json"),
+    )
+    width, height = 4096, 2048
 
     args = sys.argv[3:]
     for i, a in enumerate(args):
-        if a == "--out" and i + 1 < len(args):
-            out = Path(args[i + 1])
-        elif a == "--width" and i + 1 < len(args):
+        if a == "--width" and i + 1 < len(args):
             width = int(args[i + 1])
         elif a == "--height" and i + 1 < len(args):
             height = int(args[i + 1])
-        elif a == "--quality" and i + 1 < len(args):
-            quality = int(args[i + 1])
-        elif a == "--jpeg":
-            keep_alpha = False
 
-    export_map(svg, jsn, out, width, height, quality, keep_alpha)
+    export_map(svg, jsn, Path("static/map/world.png"), width, height, 100, True)
+    export_map(svg, jsn, Path("static/map/world.jpeg"), width, height, 90, False)
 
 
 if __name__ == "__main__":

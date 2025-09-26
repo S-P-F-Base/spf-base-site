@@ -8,4 +8,4 @@ Date: 22 Сентября 2025 г.
 - Grom
 - Cain
 
-!img[/static/wiki/images/lore/world_map.png]
+!img[/static/map/world.png]
