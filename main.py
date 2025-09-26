@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import discord_bot
-from data_bases import LogDB, PaymentServiceDB, PlayerDB, UserDB
+from data_bases import PaymentServiceDB
 from data_class import ProfileDataBase
 from data_control import AutoTax, Config, ServerControl
 from routers.api.payment_control import router as api_payment_control
@@ -33,11 +33,7 @@ REQUIRED_AGENT = "spf-agent-v2"
 async def lifespan(app: FastAPI):
     try:
         Config.load()
-        LogDB.create_db_table()
-        UserDB.create_db_table()
-        PlayerDB.create_db_table()
         PaymentServiceDB.create_db_table()
-
         ProfileDataBase.setup_db()
 
         try:

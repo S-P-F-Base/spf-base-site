@@ -3,9 +3,8 @@ from typing import Any, Literal
 from fastapi import APIRouter, Body, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from data_bases import LogDB, LogType, PaymentServiceDB, UserAccess, UserDB
+from data_bases import PaymentServiceDB
 from data_bases import Service as ServiceModel
-from data_control import req_authorization
 
 router = APIRouter()
 
@@ -46,9 +45,7 @@ class EditServiceReq(BaseModel):
 
 @router.post("/edit")
 def edit_service(request: Request, payload: EditServiceReq = Body(...)):
-    username = req_authorization(request)
-    if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
-        raise HTTPException(status_code=403, detail="Insufficient access")
+    return 404
 
     current = PaymentServiceDB.get_service(payload.u_id)
     if not current:
@@ -112,16 +109,5 @@ def edit_service(request: Request, payload: EditServiceReq = Body(...)):
     add_change("oferta_limit", current.oferta_limit, updated.oferta_limit)
 
     PaymentServiceDB.upsert_service(payload.u_id, updated)
-
-    LogDB.add_log(
-        LogType.SERVICE_UPDATE,
-        f"Service {payload.u_id} "
-        + (
-            "edited:\n" + "\n".join(changes)
-            if changes
-            else "edit attempted with no changes"
-        ),
-        username,
-    )
 
     return {"success": True}

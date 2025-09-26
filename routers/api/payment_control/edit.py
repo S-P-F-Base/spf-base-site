@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Body, HTTPException, Request
 
-from data_bases import LogDB, LogType, PaymentServiceDB, UserAccess, UserDB
-from data_control import req_authorization
+from data_bases import PaymentServiceDB
 
 from .base_func import CommissionKey, PaymentStatus
 
@@ -16,9 +15,7 @@ def edit_payment(
     player_id: str | None = Body(None),
     commission_key: CommissionKey | None = Body(None),
 ):
-    username = req_authorization(request)
-    if not UserDB.has_access(username, UserAccess.CONTROL_PAYMENT):
-        raise HTTPException(status_code=403, detail="Insufficient access")
+    return 404
 
     pay = PaymentServiceDB.get_payment(u_id)
     if not pay:
@@ -57,12 +54,5 @@ def edit_payment(
         pay.commission_key = commission_key
 
     PaymentServiceDB.upsert_payment(u_id, pay)
-
-    if changes:
-        LogDB.add_log(
-            LogType.PAYMENT_UPDATE,
-            f"Payment {u_id} edited:\n" + ("\n".join(changes)),
-            username,
-        )
 
     return {"success": True, "total": f"{pay.total():.2f}"}

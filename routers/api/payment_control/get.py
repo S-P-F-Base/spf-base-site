@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Body, HTTPException, Request
 
-from data_bases import PaymentServiceDB, UserAccess, UserDB
-from data_control import req_authorization
+from data_bases import PaymentServiceDB
 
 router = APIRouter()
 
@@ -11,9 +10,7 @@ def get_payment(
     request: Request,
     u_id: str = Body(..., embed=True),
 ):
-    username = req_authorization(request)
-    if not UserDB.has_access(username, UserAccess.CONTROL_PAYMENT):
-        raise HTTPException(status_code=403, detail="Insufficient access")
+    return 404
 
     pay = PaymentServiceDB.get_payment(u_id)
     if not pay:
