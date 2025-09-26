@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Interactive Map (Client-side state)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --bar-bg: #f8f8f8;
+            --bar-bd: #ddd;
+            --btn: #fff;
+            --btn-bd: #ccc;
+            --btn-active: #e9f3ff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bar-bg);
+            border-bottom: 1px solid var(--bar-bd);
+            padding: 8px 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--btn-bd);
+            background: var(--btn);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn.active {
+            background: var(--btn-active);
+            border-color: #9ac3ff;
+        }
+
+        #map-container {
+            width: 100%;
+            height: calc(100vh - 52px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        #map-container svg path,
+        #map-container svg polygon,
+        #map-container svg rect,
+        #map-container svg circle,
+        #map-container svg ellipse {
+            stroke: #222;
+            stroke-width: 0.8;
+            vector-effect: non-scaling-stroke;
+            paint-order: fill stroke;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            cursor: pointer;
+        }
+
+        .marker {
+            cursor: pointer;
+        }
+
+        .marker .hit {
+            fill: transparent;
+            stroke: none;
+            pointer-events: all;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 12px;
+        }
+
+        #tooltip {
+            position: fixed;
+            z-index: 20;
+            padding: 4px 6px;
+            background: #111;
+            color: #fff;
+            font-size: 12px;
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translate(10px, 10px);
+            opacity: 0;
+            transition: opacity .08s ease;
+            max-width: 40ch;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #tooltip.show {
+            opacity: 0.95;
+        }
+
+        #map-container svg path:not([fill]),
+        #map-container svg polygon:not([fill]),
+        #map-container svg rect:not([fill]),
+        #map-container svg circle:not([fill]),
+        #map-container svg ellipse:not([fill]) {
+            fill: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="toolbar">
+        <label>Color: <input type="color" id="color" value="#ff0000"></label>
+        <button class="btn" id="resetBtn">Reset</button>
+        <button class="btn" id="downloadBtn">Download JSON</button>
+        <label class="btn">Load JSON
+            <input type="file" id="uploadJson" accept="application/json" style="display:none">
+        </label>
+        <button class="btn" id="zoomInBtn">Zoom +</button>
+        <button class="btn" id="zoomOutBtn">Zoom –</button>
+        <button class="btn" id="resetViewBtn">Reset View</button>
+        <span style="margin-left:16px"></span>
+        <button class="btn" id="modePaintBtn">Paint</button>
+        <button class="btn" id="modeBranchBtn">Place Branch</button>
+        <button class="btn" id="modeHQBtn">Place HQ</button>
+        <button class="btn" id="modeRenameBtn">Rename region</button>
+        <span class="hint" id="status" style="margin-left:auto">Loading…</span>
+    </div>
+
+    <div id="map-container" aria-busy="true">Loading…</div>
+    <div id="tooltip" role="tooltip" aria-hidden="true"></div>
+
+    <script>
+        (async function () {
+            const $ = sel => document.querySelector(sel);
+            const container = $('#map-container');
+            const statusEl = $('#status');
+            const colorEl = $('#color');
+            const resetBtn = $('#resetBtn');
+            const downloadBtn = $('#downloadBtn');
+            const uploadInput = $('#uploadJson');
+            const zoomInBtn = $('#zoomInBtn');
+            const zoomOutBtn = $('#zoomOutBtn');
+            const resetViewBtn = $('#resetViewBtn');
+            const modePaintBtn = $('#modePaintBtn');
+            const modeBranchBtn = $('#modeBranchBtn');
+            const modeHQBtn = $('#modeHQBtn');
+            const modeRenameBtn = $('#modeRenameBtn');
+            const tooltip = $('#tooltip');
+
+            const CSS_escape = (window.CSS && CSS.escape) ? CSS.escape : s => String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+            const NS = 'http://www.w3.org/2000/svg';
+
+            let defaults = { regions: {}, markers: [], names: {} };
+            let state = { regions: {}, markers: [], names: {} };
+
+            let svgRoot = null, vpGroup = null, markersGroup = null;
+
+            let cam = new DOMMatrix();
+            const Z_MIN = 0.5;
+
+            let isDragging = false;
+            let dragPrevClient = null;
+            let dragPrevWorld = null;
+
+            let mode = 'paint';
+
+            const deepClone = obj => JSON.parse(JSON.stringify(obj));
+            function setStatus(t) { statusEl.textContent = t; }
+
+            function setMode(m) {
+                mode = m;
+                [modePaintBtn, modeBranchBtn, modeHQBtn, modeRenameBtn].forEach(b => b.classList.remove('active'));
+                ({ paint: modePaintBtn, branch: modeBranchBtn, hq: modeHQBtn, rename: modeRenameBtn }[m]).classList.add('active');
+                setStatus({
+                    paint: 'Paint mode: click to color regions.',
+                    branch: 'Branch mode: click to place a branch marker.',
+                    hq: 'HQ mode: click to place a HQ marker.',
+                    rename: 'Rename mode: click a region to rename it.'
+                }[m]);
+            }
+
+            function ensureStateShape(o) {
+                if (!o) return { regions: {}, markers: [], names: {} };
+                return {
+                    regions: o.regions || {},
+                    markers: o.markers || [],
+                    names: o.names || {}
+                };
+            }
+
+            function applyCam() {
+                const m = cam;
+                vpGroup.setAttribute('transform', `matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})`);
+            }
+            function getScale() {
+                return Math.hypot(cam.a, cam.b) || 1;
+            }
+            function clampScale(s) { return Math.max(Z_MIN, s); }
+
+            function clientToWorld(evt) {
+                const pt = svgRoot.createSVGPoint();
+                pt.x = evt.clientX; pt.y = evt.clientY;
+                const m = vpGroup.getScreenCTM();
+                if (!m) return { x: 0, y: 0 };
+                const inv = m.inverse();
+                const p = pt.matrixTransform(inv);
+                return { x: p.x, y: p.y };
+            }
+
+            function zoomAtClient(factor, clientX, clientY) {
+                const worldPt = clientToWorld({ clientX, clientY });
+
+                const cur = getScale();
+                const desired = clampScale(cur * factor);
+                const actual = desired / cur;
+                if (actual === 1) return;
+
+                const t1 = new DOMMatrix().translate(worldPt.x, worldPt.y);
+                const s = new DOMMatrix().scale(actual, actual);
+                const t2 = new DOMMatrix().translate(-worldPt.x, -worldPt.y);
+                cam = cam.multiply(t1).multiply(s).multiply(t2);
+                applyCam();
+            }
+
+            function panToKeepDrag(prevClient, curClient) {
+                const w1 = clientToWorld(prevClient);
+                const w2 = clientToWorld(curClient);
+
+                const dx = w2.x - w1.x;
+                const dy = w2.y - w1.y;
+
+                cam = cam.multiply(new DOMMatrix().translate(dx, dy));
+                applyCam();
+            }
+
+            function zoomStep(step) {
+                const r = container.getBoundingClientRect();
+                zoomAtClient(step, r.left + r.width / 2, r.top + r.height / 2);
+            }
+
+            function resolveKey(el) {
+                if (!el) return null;
+                if (el.dataset && el.dataset.key) return el.dataset.key;
+                if (el.id) return el.id;
+                const iso = el.getAttribute && (el.getAttribute('data-iso') || el.getAttribute('iso_a2'));
+                if (iso) return iso;
+                const n = el.getAttribute && (el.getAttribute('data-name') || el.getAttribute('name'));
+                if (n) return n;
+                const t = el.querySelector && el.querySelector('title');
+                if (t && t.textContent) return t.textContent.trim();
+                const g = el.closest && el.closest('[id]');
+                if (g && g.id) return g.id;
+                return null;
+            }
+            function applyFill(target, color) {
+                if (!target) return;
+                const tag = target.tagName.toLowerCase();
+                if (tag === 'g') {
+                    target.querySelectorAll('path,polygon,rect,circle,ellipse').forEach(n => {
+                        n.setAttribute('fill', color); n.style.fill = color;
+                    });
+                } else { target.setAttribute('fill', color); target.style.fill = color; }
+            }
+            function paintFromRegions(root, regions) {
+                for (const [id, color] of Object.entries(regions)) {
+                    const el = root.querySelector('#' + CSS_escape(id)) ||
+                        root.querySelector(`[data-iso="${id}"],[iso_a2="${id}"]`);
+                    if (el) applyFill(el, color);
+                }
+            }
+            function displayNameFor(k) { return state.names[k] || k; }
+
+            function markerShape(type, s = 3) {
+                if (type === 'hq') {
+                    const spikes = 5, outer = s, inner = s * 0.45; let pts = [], step = Math.PI / spikes, rot = -Math.PI / 2;
+                    for (let i = 0; i < spikes * 2; i++) { const r = (i % 2 === 0) ? outer : inner; pts.push([Math.cos(rot) * r, Math.sin(rot) * r]); rot += step; }
+                    return { kind: 'polygon', points: pts.map(p => p.join(',')).join(' ') };
+                }
+                return { kind: 'circle', r: s * 0.6 };
+            }
+            function renderMarkers() {
+                if (!markersGroup) { markersGroup = document.createElementNS(NS, 'g'); markersGroup.id = 'markers'; vpGroup.appendChild(markersGroup); }
+                markersGroup.innerHTML = '';
+                state.markers.forEach((mk, idx) => {
+                    const g = document.createElementNS(NS, 'g'); g.classList.add('marker'); g.dataset.index = idx;
+                    const s = markerShape(mk.type, 3);
+                    if (s.kind === 'circle') {
+                        const c = document.createElementNS(NS, 'circle');
+                        c.setAttribute('cx', mk.x); c.setAttribute('cy', mk.y); c.setAttribute('r', s.r);
+                        c.setAttribute('fill', mk.type === 'hq' ? '#000' : '#fff');
+                        c.setAttribute('stroke', '#000'); c.setAttribute('stroke-width', '1.2');
+                        c.setAttribute('vector-effect', 'non-scaling-stroke'); g.appendChild(c);
+                    } else {
+                        const poly = document.createElementNS(NS, 'polygon');
+                        const pts = s.points.split(' ').map(pt => { const [px, py] = pt.split(',').map(Number); return (px + mk.x) + ',' + (py + mk.y); }).join(' ');
+                        poly.setAttribute('points', pts);
+                        poly.setAttribute('fill', '#ffd700'); poly.setAttribute('stroke', '#000');
+                        poly.setAttribute('stroke-width', '1.2'); poly.setAttribute('vector-effect', 'non-scaling-stroke'); g.appendChild(poly);
+                    }
+                    const hit = document.createElementNS(NS, 'circle'); hit.setAttribute('class', 'hit');
+                    hit.setAttribute('cx', mk.x); hit.setAttribute('cy', mk.y); hit.setAttribute('r', 8); g.appendChild(hit);
+
+                    g.addEventListener('mouseenter', e => showTooltip(mk.label || (mk.type === 'hq' ? 'HQ' : 'Branch'), e));
+                    g.addEventListener('mousemove', moveTooltip);
+                    g.addEventListener('mouseleave', hideTooltip);
+                    g.addEventListener('contextmenu', e => {
+                        e.preventDefault(); state.markers.splice(idx, 1); renderMarkers(); setStatus('Marker removed.');
+                    });
+                    markersGroup.appendChild(g);
+                });
+            }
+            function placeMarker(type, e) {
+                const pt = clientToWorld(e);
+                let label = prompt(type === 'hq' ? 'HQ label:' : 'Branch label:', '');
+                if (label === null) return;
+                label = label.trim();
+                state.markers.push({ type, x: pt.x, y: pt.y, label });
+                renderMarkers();
+                setStatus(`${type.toUpperCase()} marker placed.`);
+            }
+
+            function repaintFromState() {
+                vpGroup.querySelectorAll('[fill]').forEach(n => n.removeAttribute('fill'));
+                vpGroup.querySelectorAll('[style]').forEach(n => { if (n.style && n.style.fill) n.style.fill = ''; });
+                paintFromRegions(vpGroup, state.regions);
+                renderMarkers();
+            }
+
+            function resetDataToDefaults() {
+                state = ensureStateShape(deepClone(defaults));
+                repaintFromState();
+                setStatus('Data reset to defaults.');
+            }
+
+            function downloadCurrentJson() {
+                const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'world.custom.json';
+                document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                setStatus('Downloaded world.custom.json');
+            }
+
+            function loadJsonFromFile(file) {
+                const r = new FileReader();
+                r.onload = e => {
+                    try {
+                        state = ensureStateShape(deepClone(JSON.parse(e.target.result)));
+                        repaintFromState();
+                        setStatus('Loaded JSON.');
+                    } catch (err) {
+                        console.error(err); setStatus('Invalid JSON');
+                    }
+                };
+                r.readAsText(file);
+            }
+
+            function showTooltip(t, e) { if (!t) { hideTooltip(); return; } tooltip.textContent = t; tooltip.classList.add('show'); tooltip.setAttribute('aria-hidden', 'false'); moveTooltip(e); }
+            function moveTooltip(e) { tooltip.style.left = e.clientX + 'px'; tooltip.style.top = e.clientY + 'px'; }
+            function hideTooltip() { tooltip.classList.remove('show'); tooltip.setAttribute('aria-hidden', 'true'); }
+
+            function tryShowHoverName(e) {
+                if (e.target.closest && e.target.closest('.marker')) return;
+                const el = e.target.closest ? e.target.closest('[data-key],path,polygon,rect,circle,ellipse,g') : e.target;
+                if (!el) { hideTooltip(); return; }
+
+                const k = resolveKey(el);
+                if (!k) { hideTooltip(); return; }
+
+                const customName = state.names[k];
+                const defaultName = el.getAttribute('data-name_ru');
+                const displayName = customName || defaultName || k;
+
+                showTooltip(displayName, e);
+            }
+
+            async function loadDefaultsAndSvg() {
+                const [d, s] = await Promise.all([
+                    fetch('/map-data', { cache: 'no-store' }),
+                    fetch('/static/map/world.svg')
+                ]);
+                defaults = ensureStateShape(await d.json());
+                state = ensureStateShape(deepClone(defaults));
+
+                const svgText = await s.text();
+                const parser = new DOMParser();
+                svgRoot = parser.parseFromString(svgText, 'image/svg+xml').documentElement;
+                svgRoot.removeAttribute('width'); svgRoot.removeAttribute('height');
+                svgRoot.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+                const group = document.createElementNS(NS, 'g'); group.id = 'vp';
+
+                const children = [...svgRoot.childNodes];
+                let defs = svgRoot.querySelector('defs');
+                if (!defs) { defs = document.createElementNS(NS, 'defs'); svgRoot.insertBefore(defs, svgRoot.firstChild); }
+                children.forEach(ch => { if (ch.nodeType === 1 && ch.tagName.toLowerCase() === 'defs') return; group.appendChild(ch); });
+                svgRoot.appendChild(group); vpGroup = group;
+
+                container.innerHTML = ''; container.appendChild(svgRoot);
+                container.removeAttribute('aria-busy');
+
+                repaintFromState();
+
+                vpGroup.addEventListener('mousemove', tryShowHoverName);
+                vpGroup.addEventListener('mouseleave', hideTooltip);
+
+                cam = new DOMMatrix();
+                applyCam();
+
+                setMode('paint'); setStatus('Ready.');
+            }
+
+            zoomInBtn.addEventListener('click', () => zoomStep(1.2));
+            zoomOutBtn.addEventListener('click', () => zoomStep(1 / 1.2));
+            resetViewBtn.addEventListener('click', () => { cam = new DOMMatrix(); applyCam(); setStatus('View reset.'); });
+
+            modePaintBtn.addEventListener('click', () => setMode('paint'));
+            modeBranchBtn.addEventListener('click', () => setMode('branch'));
+            modeHQBtn.addEventListener('click', () => setMode('hq'));
+            modeRenameBtn.addEventListener('click', () => setMode('rename'));
+
+            resetBtn.addEventListener('click', resetDataToDefaults);
+            downloadBtn.addEventListener('click', downloadCurrentJson);
+            uploadInput.addEventListener('change', e => { if (e.target.files && e.target.files[0]) loadJsonFromFile(e.target.files[0]); e.target.value = ''; });
+
+            container.addEventListener('mousedown', e => {
+                if (e.button !== 1) return;
+                if (e.target.closest && e.target.closest('.marker')) return;
+                isDragging = true;
+                dragPrevClient = { clientX: e.clientX, clientY: e.clientY };
+                dragPrevWorld = clientToWorld(e);
+            });
+            window.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                panToKeepDrag(dragPrevClient, { clientX: e.clientX, clientY: e.clientY });
+                dragPrevClient = { clientX: e.clientX, clientY: e.clientY };
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            container.addEventListener('wheel', e => {
+                e.preventDefault();
+                const dy = e.deltaY * (e.deltaMode === 1 ? 15 : e.deltaMode === 2 ? 120 : 1);
+                const factor = Math.exp(-dy * 0.0015);
+                zoomAtClient(factor, e.clientX, e.clientY);
+            }, { passive: false });
+
+            container.addEventListener('click', e => {
+                if (!vpGroup) return;
+                if (e.target.closest && e.target.closest('.marker')) return;
+
+                const t = e.target.closest ? e.target.closest('path,polygon,rect,circle,ellipse,g') : e.target;
+                const k = resolveKey(t); if (!k) return;
+
+                if (mode === 'branch') { placeMarker('branch', e); return; }
+                if (mode === 'hq') { placeMarker('hq', e); return; }
+                if (mode === 'rename') {
+                    const name = prompt('New region name (empty to reset):', state.names[k] || '');
+                    if (name === null) return;
+                    const n = name.trim();
+                    if (n) { state.names[k] = n; setStatus(`Name set: ${n}`); }
+                    else { delete state.names[k]; setStatus(`Name reset for ${k}`); }
+                    return;
+                }
+                if (mode === 'paint') {
+                    const c = colorEl.value;
+                    applyFill(t, c);
+                    state.regions[k] = c;
+                    setStatus(`Set ${displayNameFor(k)} = ${c}`);
+                }
+            });
+
+            try {
+                await loadDefaultsAndSvg();
+            } catch (err) {
+                console.error(err);
+                container.textContent = 'Failed to load map.';
+                setStatus(String(err));
+            }
+        })();
+    </script>
+</body>
+
+</html>

@@ -13,6 +13,7 @@ def static_with_version(file: str) -> str:
     if static_path.exists():
         v = int(static_path.stat().st_mtime)
         return f"/static/css/{file}?v={v}"
+    
     return f"/static/css/{file}"
 
 

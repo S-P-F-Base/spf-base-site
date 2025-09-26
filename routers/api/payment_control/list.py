@@ -1,16 +1,13 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
 
-from data_bases import PaymentServiceDB, UserAccess, UserDB
-from data_control import req_authorization
+from data_bases import PaymentServiceDB
 
 router = APIRouter()
 
 
 @router.get("/list")
 def list_payments(request: Request):
-    username = req_authorization(request)
-    if not UserDB.has_access(username, UserAccess.CONTROL_PAYMENT):
-        raise HTTPException(status_code=403, detail="Insufficient access")
+    return 404
 
     rows = PaymentServiceDB.list_payments()
     out = []

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#1e1e1e" />
+    <title>SPF - Выбор персонажа</title>
+
+    <link rel="stylesheet" href="/static/css/game/base.css" />
+    <link rel="stylesheet" href="/static/css/game/charselect.css" />
+</head>
+
+<body>
+    <div class="wrap">
+        <header class="app-header">
+            <div class="brand">
+                <span class="brand-mark"></span>
+                <span id="title">Выбор персонажа</span>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn btn-primary" id="btnPrimary" type="button" aria-label="Создать нового">
+                <span class="btn-icon" aria-hidden="true">+</span>
+                Создать нового
+            </button>
+        </header>
+
+        <main class="app-main">
+            <!-- список персонажей -->
+            <section id="screen-list" class="screen">
+                <div class="section-head">
+                    <div class="section-title">Доступные персонажи</div>
+                    <div class="section-sub">Выбери, с кем продолжим игру</div>
+                </div>
+
+                <div id="listContainer" class="cards-grid" role="list"></div>
+                <div id="listEmpty" class="empty" style="display:none;">Персонажей пока нет.</div>
+            </section>
+
+            <!-- создание -->
+            <section id="screen-create" class="screen" style="display:none;">
+                <div class="panel elevate">
+                    <div class="row row-head" style="margin-bottom: 10px;">
+                        <div class="title">Создание персонажа</div>
+                    </div>
+
+                    <div class="cols">
+                        <!-- LEFT -->
+                        <div class="create-left">
+                            <div class="create-preview">
+                                <div class="create-thumb skeleton">
+                                    <img id="previewImg" alt="" />
+                                </div>
+                                <div class="small" id="previewHint">Выбери предысторию — появится иконка модели</div>
+                            </div>
+
+                            <div class="field">
+                                <label>Пол</label>
+                                <div class="segmented" role="group" aria-label="Выбор пола">
+                                    <button class="btn btn-ghost is-active" id="btnMale" type="button">Мужской</button>
+                                    <button class="btn btn-ghost" id="btnFemale" type="button">Женский</button>
+                                    <span class="small" id="genderHint" aria-live="polite"></span>
+                                </div>
+                            </div>
+
+                            <div class="field" id="nameField">
+                                <label for="name">Имя персонажа</label>
+                                <input id="name" placeholder="Введите имя" autocomplete="off" />
+                                <div class="small" id="nameHint" aria-live="polite"></div>
+                            </div>
+
+                            <button class="btn btn-primary cta" id="btnCreate" type="button" disabled>
+                                Создать
+                            </button>
+                        </div>
+
+                        <!-- RIGHT -->
+                        <div class="create-right">
+                            <label class="small" style="margin-left:4px;">Предыстории</label>
+                            <div id="backstories" class="grid"></div>
+                            <div id="bsEmpty" class="empty" style="display:none;">Сервер не прислал предыстории.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <a href="https://spf-base.ru" class="footer-link" id="projectLink" data-gmod-link>
+            <span class="link-dot" aria-hidden="true"></span>
+            Сайт проекта: spf-base.ru
+        </a>
+    </div>
+
+    <script src="/static/js/game/charselect.js" defer></script>
+</body>
+
+</html>

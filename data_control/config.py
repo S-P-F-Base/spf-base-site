@@ -24,7 +24,6 @@ class Config:
             "TAX_PASSWORD",
             "TAX_INN",
             "OVERHOSTING_COOKIES",
-            "RESEND_API",
             "STEAM_API",
             "DISCORD_BOT",
             "DISCORD_APP",
@@ -78,10 +77,6 @@ class Config:
         return json.loads(cls._base_get_env("OVERHOSTING_COOKIES"))
 
     @classmethod
-    def resend_api(cls) -> str:
-        return cls._base_get_env("RESEND_API")
-
-    @classmethod
     def steam_api(cls) -> str:
         return cls._base_get_env("STEAM_API")
 
@@ -110,16 +105,6 @@ class Config:
             raise ValueError(f"Unknown key for get_commission_rates {key}")
 
         return commission_rates
-
-    # endregion
-
-    # region proxy
-    @classmethod
-    def proxy(cls) -> dict:
-        return {  # РКН привет
-            "http": "socks5h://127.0.0.1:1080",
-            "https": "socks5h://127.0.0.1:1080",
-        }
 
     # endregion
 

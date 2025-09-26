@@ -142,10 +142,17 @@ def update_date_in_items(
 def fix_headings(text: str) -> str:
     fixed = []
     prev_blank = True
+    in_code = False
     for raw in text.splitlines():
+        if raw.strip().startswith("```"):
+            in_code = not in_code
+            fixed.append(raw.rstrip())
+            prev_blank = raw.strip() == ""
+            continue
+
         m = HEADING_LINE.match(raw)
         line = raw
-        if m:
+        if not in_code and m:
             hashes, title = m.groups()
             line = f"{hashes} {title.strip()}"
             if not prev_blank:

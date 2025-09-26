@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Body, HTTPException, Request
 
-from data_bases import LogDB, LogType, PaymentServiceDB, UserAccess, UserDB
-from data_control import req_authorization
+from data_bases import PaymentServiceDB
 
 router = APIRouter()
 
@@ -11,9 +10,7 @@ def delete_service(
     request: Request,
     u_id: str = Body(..., embed=True),
 ):
-    username = req_authorization(request)
-    if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
-        raise HTTPException(status_code=403, detail="Insufficient access")
+    return 404
 
     svc = PaymentServiceDB.get_service(u_id)
     if not svc:
@@ -23,7 +20,4 @@ def delete_service(
     if not ok:
         raise HTTPException(status_code=500, detail="Failed to delete service")
 
-    LogDB.add_log(
-        LogType.SERVICE_DELETE, f"Service deleted {u_id} '{svc.name}'", username
-    )
     return {"success": True}

@@ -1,0 +1,141 @@
+.tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.cols-2 {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 320px 1fr;
+}
+
+.cols-3 {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 320px 1fr 360px;
+}
+
+.section-head {
+    margin: 4px 0 10px;
+}
+
+.header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.kv {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+}
+
+.kv .muted {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.search {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    background: #151515;
+    color: var(--text);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.search:focus {
+    outline: none;
+    border-color: rgba(34, 211, 238, .45);
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, .12);
+}
+
+.list {
+    display: grid;
+    gap: 8px;
+}
+
+.row .title {
+    font-weight: 700;
+}
+
+.row .sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+.row.head {
+    padding: 10px 12px;
+}
+
+.row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.row.unavail .title,
+.row.unavail .sub {
+    color: #c87878;
+}
+
+/* мини-меню действий */
+.actions {
+    display: flex;
+    gap: 6px;
+}
+
+.action {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    background: var(--card);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.action:hover {
+    background: var(--card-2);
+}
+
+.sticky-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: linear-gradient(180deg, var(--panel), #101010);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+}
+
+.load-line {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.weight {
+    font-weight: 700;
+}
+
+.side-title {
+    margin: 4px 0 6px;
+    font-weight: 700;
+}
+
+/* таблица игроков в админке */
+.players,
+.catalog {
+    display: grid;
+    gap: 8px;
+}
+
+.cat-row-id {
+    color: var(--muted);
+    font-size: 12px;
+}

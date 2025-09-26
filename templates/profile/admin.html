@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Админ-панель: список игроков</title>
+    <meta property="og:title" content="S.P.F. Base – Список игроков">
+    <meta property="og:description" content="Просмотр всех профилей">
+
+    {% include 'partials/base_header.html' %}
+    <link rel="stylesheet" href="{{ 'profile.css' | ver }}">
+
+    <style>
+        /* Layout cards */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .player-card {
+            background: rgba(17, 17, 17, .92);
+            border: 1px solid rgba(255, 165, 0, .35);
+            border-radius: 14px;
+            padding: 1rem;
+            box-shadow: 0 0 14px rgba(255, 140, 0, .18);
+        }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+            margin-bottom: .6rem;
+        }
+
+        .player-header img {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 2px solid #7289da;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .player-name {
+            font-weight: 700;
+            color: orange;
+            font-size: 1.05rem;
+        }
+
+        .player-meta {
+            font-size: .95rem;
+            color: #ddd;
+            line-height: 1.45;
+            word-break: normal;
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            background: #0b0b0b;
+            border: 1px solid #333;
+            color: #eee;
+            padding: .12rem .35rem;
+            border-radius: 6px;
+            display: inline-block;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .kv {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: .25rem .6rem;
+            align-items: start;
+        }
+
+        .kv .k {
+            color: #bbb;
+        }
+
+        .kv .v {
+            color: #e6e6e6;
+        }
+
+        .badges {
+            margin-top: .5rem;
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-size: .8rem;
+            padding: .15rem .5rem;
+            border: 1px solid #555;
+            border-radius: 6px;
+            background: #111;
+        }
+
+        .badge.admin {
+            border-color: #ffd54f;
+        }
+
+        .badge.blacklist {
+            border-color: #ff6e6e;
+        }
+
+        .card-actions {
+            margin-top: .8rem;
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #222;
+            color: #eee;
+            border: 1px solid #666;
+            padding: .45rem .75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #2b2b2b;
+        }
+
+        .btn.danger {
+            border-color: #a33;
+            color: #f55;
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .82);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            width: min(900px, 96vw);
+            max-height: 92vh;
+            overflow-y: auto;
+            background: #101010;
+            border: 1px solid rgba(255, 165, 0, .35);
+            border-radius: 16px;
+            padding: 24px 24px 18px;
+            box-shadow: 0 0 28px rgba(255, 140, 0, .45);
+        }
+
+        .modal h2 {
+            margin: 0 0 1rem;
+            color: orange;
+            text-align: center;
+            font-size: 1.7rem;
+        }
+
+        .id-block {
+            background: #161616;
+            border: 1px solid rgba(255, 165, 0, .28);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin: 0 0 18px;
+        }
+
+        .id-row {
+            display: grid;
+            grid-template-columns: 140px 1fr auto;
+            gap: .4rem .6rem;
+            align-items: center;
+        }
+
+        .copy-btn {
+            margin-left: .4rem;
+            padding: .25rem .45rem;
+            font-size: .85rem;
+        }
+
+        .fieldset {
+            border: 1px solid rgba(255, 165, 0, .25);
+            border-radius: 12px;
+            margin: 0 0 16px;
+            padding: 12px 14px;
+        }
+
+        .fieldset legend {
+            color: orange;
+            font-weight: 700;
+            padding: 0 .4rem;
+        }
+
+        .checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .9rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .85rem 1rem;
+            margin-top: .35rem;
+        }
+
+        .form-grid label {
+            color: #ddd;
+            display: flex;
+            flex-direction: column;
+            gap: .28rem;
+            font-size: 1rem;
+        }
+
+        .form-grid input[type="number"],
+        .form-grid input[type="text"],
+        .form-grid select,
+        .form-grid textarea {
+            background: #0e0e0e;
+            border: 1px solid #444;
+            color: #f1f1f1;
+            border-radius: 8px;
+            padding: .55rem .6rem;
+        }
+
+        .form-grid textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .read-list {
+            list-style: none;
+            padding: 0;
+            margin: .4rem 0 0;
+        }
+
+        .read-list li {
+            border-bottom: 1px solid rgba(255, 165, 0, .16);
+            padding: .45rem 0;
+            color: #d0d0d0;
+            line-height: 1.45;
+        }
+
+        .read-list a {
+            color: #bfbfbf;
+            text-decoration: none;
+        }
+
+        .read-list a:hover {
+            color: orange;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: .75rem;
+            margin-top: .8rem;
+        }
+
+        .muted {
+            color: #bdbdbd;
+        }
+
+        /* Create form */
+        .create-form {
+            margin-top: 0.75rem;
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .create-form input[type="text"] {
+            background: #111;
+            color: #eee;
+            border: 1px solid #666;
+            border-radius: 8px;
+            padding: .55rem .6rem;
+            min-width: 260px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+        <main class="content-tile" style="max-width:1100px;">
+            <h1 class="welcome-title">Список игроков</h1>
+
+            <form method="get" action="/profile/admin">
+                <input type="text" name="q" placeholder="Поиск: имя / UUID / Discord / Steam" value="{{ q or '' }}"
+                    style="width:min(520px,90%);padding:.55rem;border-radius:8px;border:1px solid #666;background:#111;color:#eee;">
+                <button class="btn" type="submit">Искать</button>
+            </form>
+
+            <section style="margin-top:1rem;">
+                <h2 class="welcome-title" style="margin-bottom:.4rem;">Добавить игрока</h2>
+                <form method="post" action="/profile/admin/create" class="create-form">
+                    <input type="text" name="discord_id" placeholder="Discord ID (числа)" pattern="\d{5,}" required>
+                    <input type="text" name="steam" placeholder="Steam: ссылка / vanity / SteamID / SteamID64" required>
+                    <button class="btn" type="submit">Создать профиль</button>
+                </form>
+            </section>
+
+            <section style="margin-top:1rem;">
+                <h2 class="welcome-title" style="margin-bottom:.4rem;">Массовые действия</h2>
+                <form method="post" action="/profile/admin/recalc_weights" style="margin-bottom:.5rem;">
+                    <button class="btn" type="submit"
+                        onclick="return confirm('Пересчитать вес контента у всех игроков? Это может занять время.');">
+                        Обновить вес по всему контенту
+                    </button>
+                </form>
+                <form method="post" action="/profile/admin/recalc_roles">
+                    <button class="btn" type="submit"
+                        onclick="return confirm('Обновить лимиты ролей Discord у всех игроков?');">
+                        Обновить роли у всех игроков
+                    </button>
+                </form>
+            </section>
+
+            {% if not users or users|length == 0 %}
+            <p>Пока пусто.</p>
+            {% else %}
+            <div class="players-grid" id="players">
+                {% for u in users %}
+                <div class="player-card" data-uuid="{{ u.uuid }}" data-username="{{ u.username|e }}"
+                    data-discord="{{ u.discord_id or '' }}" data-steam="{{ u.steam_id or '' }}"
+                    data-is-admin="{{ '1' if u.is_admin else '0' }}"
+                    data-bl-chars="{{ '1' if u.blacklist.chars else '0' }}"
+                    data-bl-lore="{{ '1' if u.blacklist.lore_chars else '0' }}"
+                    data-bl-admin="{{ '1' if u.blacklist.admin else '0' }}" data-lim-base="{{ u.limits.base_limit }}"
+                    data-lim-donate="{{ u.limits.donate_limit }}"
+                    data-lim-used="{{ u.limits.used if u.limits.used is not none else 0 }}"
+                    data-lim-basechar="{{ u.limits.base_char }}" data-lim-donatechar="{{ u.limits.donate_char }}"
+                    data-notes='{{ u.notes|tojson if u.notes else "[]" }}'
+                    data-chars='{{ u.chars|tojson if u.chars else "[]" }}'>
+                    <div class="player-header">
+                        <img src="{{ u.avatar_url or '/static/images/logo/discord.png' }}" alt="avatar">
+                        <div class="player-name">{{ u.username }}</div>
+                    </div>
+                    <div class="badges">
+                        {% if u.is_admin %}<span class="badge admin">Администратор</span>{% endif %}
+                        {% if u.has_blacklist %}<span class="badge blacklist">ЧС</span>{% endif %}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-edit" type="button">Изменить</button>
+                        <form method="post" action="/profile/admin/delete"
+                            onsubmit="return confirm('Удалить профиль? Это необратимо.');" style="display:inline;">
+                            <input type="hidden" name="uuid" value="{{ u.uuid }}">
+                            <button class="btn danger" type="submit">Удалить</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <div class="modal-backdrop" id="modal-backdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-player-name">
+            <h2 id="modal-player-name">Игрок</h2>
+
+            <div class="id-block">
+                <div class="id-row">
+                    <div class="k muted">UUID</div>
+                    <div class="v"><span id="modal-uuid" class="mono"></span></div>
+                    <div><button type="button" class="btn copy-btn" data-copy="#modal-uuid">Копировать</button></div>
+                </div>
+                <div class="id-row">
+                    <div class="k muted">Discord ID</div>
+                    <div class="v"><span id="modal-discord" class="mono"></span></div>
+                    <div><button type="button" class="btn copy-btn" data-copy="#modal-discord">Копировать</button></div>
+                </div>
+                <div class="id-row">
+                    <div class="k muted">Steam ID</div>
+                    <div class="v"><span id="modal-steam" class="mono"></span></div>
+                    <div><button type="button" class="btn copy-btn" data-copy="#modal-steam">Копировать</button></div>
+                </div>
+            </div>
+
+            <form id="edit-form" method="post" action="/profile/admin/update">
+                <input type="hidden" name="uuid" id="f_uuid">
+
+                <fieldset class="fieldset">
+                    <legend>Права и ограничения</legend>
+                    <div class="checkboxes">
+                        <label><input type="checkbox" name="is_admin" id="f_is_admin"> Администратор</label>
+                        <label><input type="checkbox" name="blacklist_chars" id="f_bl_chars"> ЧС: новые
+                            персонажи</label>
+                        <label><input type="checkbox" name="blacklist_lore" id="f_bl_lore"> ЧС: лорные персонажи</label>
+                        <label><input type="checkbox" name="blacklist_admin" id="f_bl_admin"> ЧС: администрация</label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="fieldset">
+                    <legend>Лимиты</legend>
+                    <div class="form-grid">
+                        <label>Место (MB)
+                            <input type="number" name="base_limit" id="f_lim_base" min="0" step="0.01">
+                        </label>
+                        <label>Донат место (MB)
+                            <input type="number" name="donate_limit" id="f_lim_donate" min="0" step="0.01">
+                        </label>
+                        <label>Использовано (MB)
+                            <input type="number" name="used" id="f_lim_used" min="0" step="0.01">
+                        </label>
+                        <label>Базовые персонажи
+                            <input type="number" name="base_char" id="f_lim_basechar" min="0" step="1">
+                        </label>
+                        <label>Донат персонажи
+                            <input type="number" name="donate_char" id="f_lim_donatechar" min="0" step="1">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <div class="modal-actions">
+                    <button class="btn" type="button" id="btn-cancel">Отмена</button>
+                    <button class="btn" type="submit">Сохранить</button>
+                </div>
+            </form>
+
+            <fieldset class="fieldset">
+                <legend>Персонажи</legend>
+                <ul class="read-list" id="f_char_list"></ul>
+                <div class="muted">Список текущих персонажей. Добавление возможно, редактирование и удаление отключены.
+                </div>
+
+                <form id="char-form" method="post" action="/profile/admin/char/add">
+                    <input type="hidden" name="uuid" id="c_uuid">
+                    <div class="form-grid">
+                        <label>Имя персонажа
+                            <input type="text" name="name" required>
+                        </label>
+                        <label>Ссылка на анкету (Discord)
+                            <input type="text" name="discord_url"
+                                placeholder="https://discord.com/channels/.../message_id">
+                        </label>
+                        <label style="grid-column: 1 / -1;">Ссылки на контент (Steam), по одной в строке
+                            <textarea name="steam_urls"></textarea>
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn" type="submit">Добавить персонажа</button>
+                    </div>
+                </form>
+            </fieldset>
+
+            <fieldset class="fieldset">
+                <legend>Заметки</legend>
+                <ul class="read-list" id="f_note_list"></ul>
+                <div class="muted">Новая заметка:</div>
+
+                <form id="note-form" method="post" action="/profile/admin/note/add">
+                    <input type="hidden" name="uuid" id="n_uuid">
+                    <div class="form-grid">
+                        <label>Статус
+                            <select name="status">
+                                <option value="info">info</option>
+                                <option value="warn">warn</option>
+                                <option value="ban">ban</option>
+                            </select>
+                        </label>
+                        <label style="grid-column: 1 / -1;">Текст
+                            <textarea name="content" required></textarea>
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn" type="submit">Добавить заметку</button>
+                    </div>
+                </form>
+            </fieldset>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const grid = document.getElementById('players');
+            const backdrop = document.getElementById('modal-backdrop');
+
+            const modalName = document.getElementById('modal-player-name');
+            const modalUuid = document.getElementById('modal-uuid');
+            const modalDiscord = document.getElementById('modal-discord');
+            const modalSteam = document.getElementById('modal-steam');
+
+            const f_uuid = document.getElementById('f_uuid');
+            const f_is_admin = document.getElementById('f_is_admin');
+            const f_bl_chars = document.getElementById('f_bl_chars');
+            const f_bl_lore = document.getElementById('f_bl_lore');
+            const f_bl_admin = document.getElementById('f_bl_admin');
+
+            const f_lim_base = document.getElementById('f_lim_base');
+            const f_lim_donate = document.getElementById('f_lim_donate');
+            const f_lim_used = document.getElementById('f_lim_used');
+            const f_lim_basechar = document.getElementById('f_lim_basechar');
+            const f_lim_donatechar = document.getElementById('f_lim_donatechar');
+
+            const charList = document.getElementById('f_char_list');
+            const noteList = document.getElementById('f_note_list');
+
+            function openModal(card) {
+                modalName.textContent = card.dataset.username || 'Без имени';
+
+                const uuid = card.dataset.uuid || '—';
+                modalUuid.textContent = uuid;
+                modalDiscord.textContent = card.dataset.discord || '—';
+                modalSteam.textContent = card.dataset.steam || '—';
+
+                f_uuid.value = uuid;
+                const cUuid = document.getElementById('c_uuid');
+                const nUuid = document.getElementById('n_uuid');
+                if (cUuid) cUuid.value = uuid;
+                if (nUuid) nUuid.value = uuid;
+
+                f_is_admin.checked = card.dataset.isAdmin === '1';
+                f_bl_chars.checked = card.dataset.blChars === '1';
+                f_bl_lore.checked = card.dataset.blLore === '1';
+                f_bl_admin.checked = card.dataset.blAdmin === '1';
+
+                f_lim_base.value = card.dataset.limBase || 0;
+                f_lim_donate.value = card.dataset.limDonate || 0;
+                f_lim_used.value = card.dataset.limUsed || 0;
+                f_lim_basechar.value = card.dataset.limBasechar || 0;
+                f_lim_donatechar.value = card.dataset.limDonatechar || 0;
+
+                noteList.innerHTML = '';
+                try {
+                    const notes = JSON.parse(card.dataset.notes || '[]');
+                    notes.forEach(n => {
+                        const li = document.createElement('li');
+                        li.textContent = `[${n.date}] (${n.status}) ${n.content}`;
+                        noteList.appendChild(li);
+                    });
+                } catch (e) { console.error(e); }
+
+                charList.innerHTML = '';
+                try {
+                    const chars = JSON.parse(card.dataset.chars || '[]');
+                    chars.forEach(c => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>${c.name}</strong>` +
+                            (c.discord_url ? ` — <a href="${c.discord_url}" target="_blank" rel="noopener noreferrer">анкета</a>` : '');
+                        if (Array.isArray(c.steam_urls) && c.steam_urls.length) {
+                            li.innerHTML += '<br>Контент: ' +
+                                c.steam_urls.map(s => `<a href="${s}" target="_blank" rel="noopener noreferrer">link</a>`).join(', ');
+                        }
+                        charList.appendChild(li);
+                    });
+                } catch (e) { console.error(e); }
+
+                backdrop.style.display = 'flex';
+            }
+
+            function closeModal() { backdrop.style.display = 'none'; }
+
+            document.addEventListener('click', e => {
+                const edit = e.target.closest('.btn-edit');
+                if (edit) openModal(edit.closest('.player-card'));
+            });
+            document.getElementById('btn-cancel').addEventListener('click', e => { e.preventDefault(); closeModal(); });
+            backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+            document.addEventListener('click', e => {
+                const btn = e.target.closest('.copy-btn');
+                if (!btn) return;
+                const sel = btn.getAttribute('data-copy');
+                const el = document.querySelector(sel);
+                if (!el) return;
+                navigator.clipboard.writeText(el.textContent.trim()).catch(() => { });
+            });
+
+            const qInput = document.querySelector('input[name="q"]');
+            if (qInput && grid) {
+                qInput.addEventListener('input', () => {
+                    const q = qInput.value.trim().toLowerCase();
+                    grid.querySelectorAll('.player-card').forEach(card => {
+                        const hay = [
+                            card.dataset.username || '',
+                            card.dataset.uuid || '',
+                            card.dataset.discord || '',
+                            card.dataset.steam || ''
+                        ].join(' ').toLowerCase();
+                        card.style.display = hay.includes(q) ? '' : 'none';
+                    });
+                });
+            }
+        })();
+    </script>
+</body>
+
+</html>

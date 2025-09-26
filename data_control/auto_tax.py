@@ -10,7 +10,6 @@ from typing import Final, Literal
 
 from requests import Response, Session
 
-from data_bases.log_db import LogDB, LogType
 from data_bases.payment_db import PaymentServiceDB
 
 from .config import Config
@@ -338,11 +337,6 @@ class AutoTax:
                             pay.tax_check_id = tax_uuid
                             PaymentServiceDB.upsert_payment(payment_id, pay)
 
-                        LogDB.add_log(
-                            LogType.PAYMENT_RESIVE,
-                            f"[TAX_OK] payment_id={payment_id} tax_id={tax_uuid}",
-                            "AutoTax worker",
-                        )
                         processed_ids.add(payment_id)
 
                     except Exception as e:
@@ -353,11 +347,6 @@ class AutoTax:
                         item["last_error"] = str(e)[:500]
                         item["next_try_ts"] = next_ts
                         rest.append(item)
-                        LogDB.add_log(
-                            LogType.PAYMENT_RESIVE,
-                            f"[TAX_RETRY] payment_id={payment_id} attempts={attempts} next={next_ts} err={e}",
-                            "AutoTax worker",
-                        )
 
                 remaining = [
                     i for i in rest if i.get("payment_id") not in processed_ids

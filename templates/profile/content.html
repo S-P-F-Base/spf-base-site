@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Контент игрока</title>
+    <meta property="og:title" content="S.P.F. Base – Контент игрока" />
+    <meta property="og:description" content="Ваши лимиты и персонажи" />
+
+    {% include 'partials/base_header.html' %}
+    <link rel="stylesheet" href="{{ 'profile.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
+        <main class="content-tile">
+            <h1 class="welcome-title">Ваш контент</h1>
+
+            {% set base = profile.data.limits.base_limit %}
+            {% set donate = profile.data.limits.donate_limit %}
+            {% set total = base + donate %}
+            {% set used = profile.data.limits.used or 0 %}
+
+            {% set base_char = profile.data.limits.base_char %}
+            {% set donate_char = profile.data.limits.donate_char %}
+            {% set total_char = base_char + donate_char %}
+            {% set used_char = profile.data.chars | length %}
+
+            <div class="circles-wrapper">
+                <div class="circle-card" data-used="{{ used }}" data-total="{{ total }}">
+                    <svg width="220" height="220">
+                        <circle class="circle-bg" cx="110" cy="110" r="90" stroke-width="20" fill="none" />
+                        <circle class="circle-fg" cx="110" cy="110" r="90" stroke-width="20" fill="none"
+                            stroke-dasharray="565" stroke-dashoffset="565" />
+                    </svg>
+                    <div class="circle-center">
+                        <div class="value">{{ used }} / {{ total }} МБ</div>
+                        <div class="label">Лимит места</div>
+                    </div>
+                </div>
+
+                <div class="circle-card" data-used="{{ used_char }}" data-total="{{ total_char }}">
+                    <svg width="220" height="220">
+                        <circle class="circle-bg" cx="110" cy="110" r="90" stroke-width="20" fill="none" />
+                        <circle class="circle-fg" cx="110" cy="110" r="90" stroke-width="20" fill="none"
+                            stroke-dasharray="565" stroke-dashoffset="565" />
+                    </svg>
+                    <div class="circle-center">
+                        <div class="value">{{ used_char }} / {{ total_char }}</div>
+                        <div class="label">Персонажи</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if profile.data.chars and profile.data.chars[0] %}
+            <section class="chars-section">
+                <h2>Ваши персонажи</h2>
+
+                {% for char in profile.data.chars %}
+                <div class="char-card">
+                    <div class="char-header">
+                        <div class="char-name">{{ char.name or "Безымянный персонаж" }}</div>
+                    </div>
+
+                    <div class="char-buttons">
+                        {% if char.discord_url %}
+                        <a href="{{ char.discord_url }}" target="_blank">
+                            <img src="/static/images/logo/discord.png" alt="Discord">
+                            Анкета
+                        </a>
+                        {% endif %}
+
+                        {% if char.steam_urls %}
+                        {% for s_link in char.steam_urls %}
+                        <a href="{{ s_link }}" target="_blank">
+                            <img src="/static/images/logo/steam.png" alt="Steam">
+                            Контент {{ loop.index }}
+                        </a>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    <script>
+        document.querySelectorAll('.circle-card').forEach(card => {
+            const used = parseFloat(card.dataset.used) || 0;
+            const total = parseFloat(card.dataset.total) || 0;
+
+            const percent = total > 0 ? Math.min(used / total, 1) : 0;
+
+            const circle = card.querySelector('.circle-fg');
+            const circumference = 2 * Math.PI * 90;
+            const offset = circumference * (1 - percent);
+
+            circle.style.strokeDasharray = circumference;
+            circle.style.strokeDashoffset = circumference;
+
+            requestAnimationFrame(() => {
+                circle.style.strokeDashoffset = offset;
+            });
+
+            if (used > total) {
+                card.querySelector('.value').style.color = 'tomato';
+            }
+        });
+    </script>
+</body>
+
+</html>

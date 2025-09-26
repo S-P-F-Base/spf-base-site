@@ -4,9 +4,8 @@ from typing import Literal
 
 from fastapi import APIRouter, Body, HTTPException, Request
 
-from data_bases import LogDB, LogType, PaymentServiceDB, UserAccess, UserDB
+from data_bases import PaymentServiceDB
 from data_bases import Service as ServiceModel
-from data_control import req_authorization
 
 router = APIRouter()
 
@@ -24,9 +23,7 @@ def create_service(
     sell_time: str | None = Body(None),
     oferta_limit: bool = Body(False),
 ):
-    username = req_authorization(request)
-    if not UserDB.has_access(username, UserAccess.SERVICE_CONTROL):
-        raise HTTPException(status_code=403, detail="Insufficient access")
+    return 404
 
     if discount_value < 0 or discount_value > 100:
         raise HTTPException(
@@ -57,7 +54,5 @@ def create_service(
         raise HTTPException(status_code=400, detail=f"Invalid service data: {e}")
 
     PaymentServiceDB.upsert_service(u_id, svc)
-    LogDB.add_log(
-        LogType.SERVICE_CREATE, f"Service created {u_id} ({svc.name})", username
-    )
+
     return {"u_id": u_id}

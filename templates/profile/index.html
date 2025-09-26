@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Профиль игрока</title>
+
+    <meta property="og:title" content="S.P.F. Base profile" />
+    <meta property="og:description" content="Страница профиля игрока" />
+
+    {% include 'partials/base_header.html' %}
+    <link rel="stylesheet" href="{{ 'profile.css' | ver }}" />
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
+        <main class="content-tile">
+            {% if not authenticated %}
+            <p class="not-auth">Вы не авторизованы.</p>
+
+            <div class="discord-status not-connected">
+                <img src="/static/images/logo/discord.png" alt="Discord">
+                <a href="/api_v2/oauth2/discord/login" class="connect-discord">Войти через Discord</a>
+            </div>
+            {% else %}
+
+            <div class="profile-decor">
+                {% if profile.data.is_admin %}
+                <div class="decor-box star">
+                    &#9733;
+                    <div class="decor-popups">
+                        <div class="decor-popup">
+                            <h3>Администратор</h3>
+                            <p>Вы - администратор сервера.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if profile.data.has_blacklist %}
+                <div class="decor-box warn">
+                    !
+                    <div class="decor-popups">
+                        {% if profile.data.blacklist.get('chars') %}
+                        <div class="decor-popup">
+                            <h3>ЧС на новых персонажей</h3>
+                            <p>Вам запрещено создавать новых личных персонажей. Для подробностей свяжитесь с
+                                администрацией.</p>
+                        </div>
+                        {% endif %}
+
+                        {% if profile.data.blacklist.get('lore_chars') %}
+                        <div class="decor-popup">
+                            <h3>ЧС на лорных персонажей</h3>
+                            <p>Вам запрещено подавать на лорных персонажей. Для подробностей свяжитесь с администрацией.
+                            </p>
+                        </div>
+                        {% endif %}
+
+                        {% if profile.data.blacklist.get('admin') %}
+                        <div class="decor-popup">
+                            <h3>ЧС на администрацию</h3>
+                            <p>Вам запрещено вставать на администрацию. Для подробностей свяжитесь с администрацией.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="profile-top">
+                <img class="avatar" src="{{ profile.avatar_url }}" alt="Аватар Discord">
+                <h1 class="username">{{ profile.username or "Неизвестный" }}</h1>
+
+                <div class="profile-uuid">
+                    <button class="copy-uuid" onclick="copyUUID('`{{ profile.uuid }}`')">Копировать UUID</button>
+                </div>
+
+                <div class="steam-status {% if profile.steam_id %}connected{% else %}not-connected{% endif %}">
+                    <img src="/static/images/logo/steam.png" alt="Steam">
+                    {% if profile.steam_id %}
+                    <span>Steam подключён</span>
+                    {% else %}
+                    <a href="/api_v2/oauth2/steam/login" class="connect-steam">Подключить Steam</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="profile-links">
+                <a class="profile-link" href="/profile/content">Персонажи</a>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <div id="copy-toast" class="copy-toast">UUID скопирован в буфер обмена</div>
+
+    <script>
+        function copyUUID(uuid) {
+            if (!uuid || uuid === "None") return;
+            navigator.clipboard.writeText(uuid).then(() => {
+                const toast = document.getElementById('copy-toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2500);
+            }).catch(err => console.error("Ошибка копирования UUID:", err));
+        }
+    </script>
+</body>
+
+</html>
