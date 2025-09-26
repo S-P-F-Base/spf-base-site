@@ -50,7 +50,7 @@ class ForumBlockCog(commands.Cog):
             )
             await thread.edit(
                 reason="ЧС администрации с БД spf-base.ru",
-                applied_tags=[no_tag],
+                applied_tags=thread.applied_tags + [no_tag],
                 locked=True,
             )
 
@@ -74,7 +74,7 @@ class ForumBlockCog(commands.Cog):
                     )
                     await thread.edit(
                         reason="ЧС лорных с БД spf-base.ru",
-                        applied_tags=[no_tag],
+                        applied_tags=thread.applied_tags + [no_tag],
                         locked=True,
                     )
 
@@ -85,6 +85,6 @@ class ForumBlockCog(commands.Cog):
                     )
                     await thread.edit(
                         reason="ЧС обычных с БД spf-base.ru",
-                        applied_tags=[no_tag],
+                        applied_tags=thread.applied_tags + [no_tag],
                         locked=True,
                     )
