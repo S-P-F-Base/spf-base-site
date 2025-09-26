@@ -9,6 +9,7 @@ Date: 3 Сентября 2025 г.
 
 !btn[/wiki/lore/nrp_wiki/lore_info|История мира]
 !btn[/wiki/lore/nrp_wiki/dolls|Информация о куклах]
+!btn[/wiki/lore/nrp_wiki/doll_docs|Техническая информация о куклах]
 !btn[/wiki/lore/nrp_wiki/elid|Информация об ELID]
 !btn[/wiki/lore/nrp_wiki/organisations/SPF|О Ч.В.К. S.P.F.]
 !btn[/wiki/lore/nrp_wiki/organisations|Об организациях]

@@ -13,5 +13,5 @@ Date: 4 Августа 2025 г.
 
     Если же вы хотите что-то дополнить или исправить в писанине которая тут будет - [дискорд канал предложения-и-идеи](!const[discord_link]) 
 
-!btn[/wiki/doll_docs/modules|Комплектующие кукл]
-!btn[/wiki/doll_docs/type|Модели кукл]
+!btn[/wiki/lore/nrp_wiki/doll_docs/modules|Комплектующие кукл]
+!btn[/wiki/lore/nrp_wiki/doll_docs/type|Модели кукл]
