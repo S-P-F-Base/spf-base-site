@@ -506,10 +506,10 @@
             function openModal(card) {
                 modalName.textContent = card.dataset.username || 'Без имени';
 
-                const uuid = card.dataset.uuid || '—';
+                const uuid = card.dataset.uuid || '-';
                 modalUuid.textContent = uuid;
-                modalDiscord.textContent = card.dataset.discord || '—';
-                modalSteam.textContent = card.dataset.steam || '—';
+                modalDiscord.textContent = card.dataset.discord || '-';
+                modalSteam.textContent = card.dataset.steam || '-';
 
                 f_uuid.value = uuid;
                 const cUuid = document.getElementById('c_uuid');
@@ -541,14 +541,21 @@
                 charList.innerHTML = '';
                 try {
                     const chars = JSON.parse(card.dataset.chars || '[]');
-                    chars.forEach(c => {
+                    chars.forEach((c, i) => {
                         const li = document.createElement('li');
                         li.innerHTML = `<strong>${c.name}</strong>` +
-                            (c.discord_url ? ` — <a href="${c.discord_url}" target="_blank" rel="noopener noreferrer">анкета</a>` : '');
+                            (c.discord_url ? ` - <a href="${c.discord_url}" target="_blank" rel="noopener noreferrer">анкета</a>` : '');
                         if (Array.isArray(c.steam_urls) && c.steam_urls.length) {
                             li.innerHTML += '<br>Контент: ' +
                                 c.steam_urls.map(s => `<a href="${s}" target="_blank" rel="noopener noreferrer">link</a>`).join(', ');
                         }
+                        li.innerHTML += `
+                        <form method="post" action="/profile/admin/char/delete" style="margin-top:.3rem;"
+                            onsubmit="return confirm('Удалить персонажа «${c.name}»?');">
+                            <input type="hidden" name="uuid" value="${uuid}">
+                            <input type="hidden" name="index" value="${i}">
+                            <button class="btn danger" type="submit">Удалить</button>
+                        </form>`;
                         charList.appendChild(li);
                     });
                 } catch (e) { console.error(e); }

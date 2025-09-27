@@ -21,23 +21,15 @@ router = APIRouter()
 
 # Error helpers (uniform)
 def _bad_request(code: str, message: str, **extra) -> None:
-    payload = {"code": code, "message": message}
+    payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
 
     raise HTTPException(status_code=400, detail=payload)
 
 
-def _unauthorized(code: str, message: str, **extra) -> None:
-    payload = {"code": code, "message": message}
-    if extra:
-        payload["context"] = extra
-
-    raise HTTPException(status_code=401, detail=payload)
-
-
 def _forbidden(code: str, message: str, **extra) -> None:
-    payload = {"code": code, "message": message}
+    payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
 
@@ -45,7 +37,7 @@ def _forbidden(code: str, message: str, **extra) -> None:
 
 
 def _not_found(code: str, message: str, **extra) -> None:
-    payload = {"code": code, "message": message}
+    payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
 
@@ -53,7 +45,7 @@ def _not_found(code: str, message: str, **extra) -> None:
 
 
 def _failed_dep(code: str, message: str, **extra) -> None:
-    payload = {"code": code, "message": message}
+    payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
 
@@ -61,7 +53,7 @@ def _failed_dep(code: str, message: str, **extra) -> None:
 
 
 def _server_error(code: str, message: str, **extra) -> None:
-    payload = {"code": code, "message": message}
+    payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
 
@@ -186,6 +178,7 @@ async def normalize_steam_input(raw: str) -> str:
             return await normalize_steam_input(inner)
 
     _bad_request("steam_input_unsupported", "Unsupported Steam input format", input=s)
+    return ""
 
 
 # Auth helpers
@@ -212,12 +205,12 @@ def _get_admin_profile(request: Request):
 
 def _require_admin(request: Request) -> dict:
     admin = _get_admin_profile(request)
-    if not admin:
+    if admin is None:
         _forbidden(
             "admin_required", "Admin privileges required to access this endpoint"
         )
 
-    return admin
+    return admin  # type: ignore
 
 
 # Public pages
@@ -306,7 +299,7 @@ async def profile_admin(request: Request):
         if tasks:
             results = await asyncio.gather(*tasks, return_exceptions=True)
             for idx, res in zip(index_map, results):
-                extra_map[idx] = {} if isinstance(res, Exception) else (res or {})
+                extra_map[idx] = {} if isinstance(res, Exception) else (res or {}) # type: ignore
 
     def as_float(x, d=0.0):
         try:
@@ -388,7 +381,7 @@ async def profile_admin_update(
     if not target:
         _not_found("profile_not_found", "Profile not found", uuid=uuid)
 
-    data: ProfileData = target.get("data", ProfileData())
+    data: ProfileData = target.get("data", ProfileData())  # type: ignore
     if not isinstance(data, ProfileData):
         _server_error(
             "profile_data_invalid", "Profile data has invalid type", uuid=uuid
@@ -446,7 +439,7 @@ async def profile_admin_note_add(
     if not target:
         _not_found("profile_not_found", "Profile not found", uuid=uuid)
 
-    data: ProfileData = target.get("data", ProfileData())
+    data: ProfileData = target.get("data", ProfileData())  # type: ignore
     if not isinstance(data, ProfileData):
         _server_error(
             "profile_data_invalid", "Profile data has invalid type", uuid=uuid
@@ -545,7 +538,7 @@ async def profile_admin_char_add(
     if not target:
         _not_found("profile_not_found", "Profile not found", uuid=uuid)
 
-    data = target.get("data", ProfileData())
+    data = target.get("data", ProfileData())  # type: ignore
     if not isinstance(data, ProfileData):
         _server_error(
             "profile_data_invalid", "Profile data has invalid type", uuid=uuid
@@ -594,6 +587,42 @@ async def profile_admin_char_add(
     return RedirectResponse(url="/profile/admin", status_code=303)
 
 
+@router.post("/profile/admin/char/delete")
+async def profile_admin_char_delete(
+    request: Request,
+    uuid: str = Form(...),
+    index: int = Form(...),
+):
+    _require_admin(request)
+
+    target = ProfileDataBase.get_profile_by_uuid(uuid)
+    if not target:
+        _not_found("profile_not_found", "Profile not found", uuid=uuid)
+
+    data = target.get("data", ProfileData())  # type: ignore
+    if not isinstance(data, ProfileData):
+        _server_error(
+            "profile_data_invalid", "Profile data has invalid type", uuid=uuid
+        )
+
+    if index < 0 or index >= len(data.chars):
+        _bad_request(
+            "char_index_invalid", "Invalid character index", uuid=uuid, index=index
+        )
+
+    data.chars.pop(index)
+    total_mb = round(sum(c.get("weight_mb", 0) for c in data.chars), 2)
+    data.limits["used"] = total_mb
+
+    try:
+        ProfileDataBase.update_profile(uuid, data=data)
+    except Exception as e:
+        logger.exception("delete_profile_char failed: %s", e)
+        _server_error("profile_update_failed", "Failed to delete character", uuid=uuid)
+
+    return RedirectResponse(url="/profile/admin", status_code=303)
+
+
 # Admin: create & role check
 @router.post("/profile/admin/create")
 async def profile_admin_create(
@@ -611,6 +640,7 @@ async def profile_admin_create(
 
     try:
         sid64 = await normalize_steam_input(steam)
+
     except HTTPException:
         raise
 
@@ -619,6 +649,7 @@ async def profile_admin_create(
         _server_error(
             "steam_normalize_failed", "Failed to normalize Steam input", input=steam
         )
+        return
 
     all_profiles = ProfileDataBase.get_all_profiles()
     if any(p.get("discord_id") == did for p in all_profiles):
@@ -629,6 +660,7 @@ async def profile_admin_create(
 
     try:
         ProfileDataBase.create_profile(discord_id=did, steam_id=sid64)
+
     except Exception as e:
         logger.exception("create_profile failed: %s", e)
         _server_error(
