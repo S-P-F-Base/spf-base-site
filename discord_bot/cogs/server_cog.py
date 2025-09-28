@@ -24,13 +24,10 @@ class ServerControlCog(commands.Cog):
         if not isinstance(data, ProfileData):
             return None
 
-        return profile if data.access.get("server_control") else None
+        return profile if data.access.get("server_control", False) else None
 
     async def _do_action(self, ctx: commands.Context, action: str) -> None:
-        user_id = ctx.author.id
-        profile = await ctx.bot.loop.run_in_executor(
-            None, self._get_admin_profile, user_id
-        )
+        profile = self._get_admin_profile(ctx.author.id)
 
         if not profile:
             await ctx.reply("Ошибка доступа к команде")
