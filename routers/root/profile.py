@@ -4,19 +4,18 @@ import re
 from datetime import UTC, datetime
 from typing import Any, Optional
 
-import aiohttp
-import requests
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 import utils.jwt
+import utils.steam
 from data_class import ProfileData, ProfileDataBase
-from data_control import Config
 from discord_bot import bot
 from templates import templates
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+_URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 
 
 # Error helpers (uniform)
@@ -60,127 +59,6 @@ def _server_error(code: str, message: str, **extra) -> None:
     raise HTTPException(status_code=500, detail=payload)
 
 
-# Steam parsing
-_STEAMID64_BASE = 76561197960265728
-_URL_RE = re.compile(r"^https?://", re.IGNORECASE)
-_VANITY_RE = re.compile(
-    r"https?://steamcommunity\.com/(?:id|user)/(?P<vanity>[^/?#]+)", re.IGNORECASE
-)
-_PROFILES_RE = re.compile(
-    r"https?://steamcommunity\.com/profiles/(?P<sid64>\d{16,20})", re.IGNORECASE
-)
-_STEAM2_RE = re.compile(r"^STEAM_[0-5]:(?P<y>[01]):(?P<z>\d+)$", re.IGNORECASE)
-_STEAM3_RE = re.compile(r"^\[?U:1:(?P<acc>\d+)\]?$", re.IGNORECASE)
-
-
-def _steam64_from_account_id(account_id: int) -> int:
-    return _STEAMID64_BASE + account_id
-
-
-def _parse_steam2(s: str) -> Optional[int]:
-    m = _STEAM2_RE.match(s.strip())
-    if not m:
-        return None
-
-    y = int(m.group("y"))
-    z = int(m.group("z"))
-    return _steam64_from_account_id(z * 2 + y)
-
-
-def _parse_steam3(s: str) -> Optional[int]:
-    m = _STEAM3_RE.match(s.strip())
-    if not m:
-        return None
-
-    return _steam64_from_account_id(int(m.group("acc")))
-
-
-def _parse_profiles_url(s: str) -> Optional[int]:
-    m = _PROFILES_RE.match(s.strip())
-    if not m:
-        return None
-
-    return int(m.group("sid64"))
-
-
-def _parse_digits_as_sid64_or_acc(s: str) -> Optional[int]:
-    s = s.strip()
-    if not s.isdigit():
-        return None
-
-    val = int(s)
-    if val >= _STEAMID64_BASE:
-        return val
-
-    if val >= 1:
-        return _steam64_from_account_id(val)
-
-    return None
-
-
-async def _resolve_vanity_to_sid64(vanity: str) -> Optional[int]:
-    key = Config.steam_api()
-    api_key = key() if callable(key) else None
-    if not api_key:
-        return None
-
-    url = "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/"
-    params = {"key": api_key, "vanityurl": vanity}
-
-    def _do_request():
-        try:
-            r = requests.get(url, params=params, timeout=8)
-            r.raise_for_status()
-            js = r.json()
-            resp = js.get("response") if isinstance(js, dict) else None
-            if isinstance(resp, dict) and int(resp.get("success", 0)) == 1:
-                return resp.get("steamid")
-
-            return None
-
-        except Exception as e:
-            logger.exception("Steam vanity resolve failed: %s", e)
-            return None
-
-    return await asyncio.to_thread(_do_request)
-
-
-async def normalize_steam_input(raw: str) -> str:
-    if not raw:
-        _bad_request("steam_input_empty", "Empty Steam input provided")
-
-    s = raw.strip()
-
-    sid64 = _parse_profiles_url(s)
-    if sid64:
-        return str(sid64)
-
-    m = _VANITY_RE.match(s)
-    if m:
-        sid64 = await _resolve_vanity_to_sid64(m.group("vanity"))
-        if sid64:
-            return str(sid64)
-
-        _failed_dep(
-            "steam_vanity_resolve_failed",
-            "Failed to resolve Steam vanity URL",
-            vanity=m.group("vanity"),
-        )
-
-    sid64 = _parse_steam2(s) or _parse_steam3(s) or _parse_digits_as_sid64_or_acc(s)
-    if sid64:
-        return str(sid64)
-
-    if s.startswith("steam://"):
-        inner = s.split("steam://", 1)[1]
-        if "http" in inner:
-            inner = inner[inner.find("http") :]
-            return await normalize_steam_input(inner)
-
-    _bad_request("steam_input_unsupported", "Unsupported Steam input format", input=s)
-    return ""
-
-
 # Auth helpers
 def _get_admin_profile(request: Request):
     token = request.cookies.get("session")
@@ -200,7 +78,7 @@ def _get_admin_profile(request: Request):
     if not isinstance(raw, ProfileData):
         return None
 
-    return profile if raw.is_admin else None
+    return profile if raw.has_access("panel_access") else None
 
 
 def _require_admin(request: Request) -> dict:
@@ -211,6 +89,18 @@ def _require_admin(request: Request) -> dict:
         )
 
     return admin  # type: ignore
+
+
+def _require_access(request: Request, perm: str) -> dict:
+    admin = _require_admin(request)
+    raw = admin.get("data", ProfileData())
+    if not isinstance(raw, ProfileData):
+        _forbidden("admin_data_invalid", "Admin profile data is invalid")
+
+    if not raw.has_access(perm):
+        _forbidden(f"{perm}_required", f"Permission '{perm}' is required")
+
+    return admin
 
 
 # Public pages
@@ -267,10 +157,20 @@ async def profile_content(request: Request):
     return await render_profile_page(request, "profile/content.html")
 
 
-# Admin: list & view
+# Admin: main dashboard
 @router.get("/profile/admin")
-async def profile_admin(request: Request):
+async def profile_admin_home(request: Request):
     admin = _require_admin(request)
+    return templates.TemplateResponse(
+        "profile/admin/index.html",
+        {"request": request, "authenticated": True, "profile": admin},
+    )
+
+
+# Admin: list & view (moved to /profiles)
+@router.get("/profile/admin/profiles")
+async def profile_admin_profiles(request: Request):
+    _require_admin(request)
 
     q = (request.query_params.get("q") or "").strip().lower()
     profiles = ProfileDataBase.get_all_profiles()
@@ -296,23 +196,27 @@ async def profile_admin(request: Request):
             if did:
                 tasks.append(cog.get_user_info(did))  # type: ignore
                 index_map.append(i)
+
         if tasks:
             results = await asyncio.gather(*tasks, return_exceptions=True)
             for idx, res in zip(index_map, results):
-                extra_map[idx] = {} if isinstance(res, Exception) else (res or {}) # type: ignore
+                extra_map[idx] = {} if isinstance(res, Exception) else (res or {})  # type: ignore
 
     def as_float(x, d=0.0):
         try:
             return float(x)
+
         except Exception:
             return d
 
     def as_int(x, d=0):
         try:
             return int(x)
+
         except Exception:
             try:
                 return int(float(x))
+
             except Exception:
                 return d
 
@@ -326,7 +230,7 @@ async def profile_admin(request: Request):
             "steam_id": p.get("steam_id"),
             "username": username,
             "avatar_url": avatar_url,
-            "is_admin": data.is_admin,
+            "access": data.access,
             "has_blacklist": data.has_blacklist,
             "blacklist": {
                 "chars": data.blacklist.get("chars", False),
@@ -349,23 +253,26 @@ async def profile_admin(request: Request):
         view_pool = [u for u in view_pool if q in (u["username"] or "").lower()]
 
     return templates.TemplateResponse(
-        "profile/admin.html",
+        "profile/admin/profiles.html",
         {
             "request": request,
             "authenticated": True,
-            "profile": admin,
             "users": view_pool,
             "q": q,
         },
     )
 
 
-# Admin: update/delete
-@router.post("/profile/admin/update")
+# Admin: update/delete (permissions)
+@router.post("/profile/admin/profile/update")
 async def profile_admin_update(
     request: Request,
     uuid: str = Form(...),
-    is_admin: bool = Form(False),
+    access_panel: bool = Form(False),
+    access_edit_profiles: bool = Form(False),
+    access_edit_chars: bool = Form(False),
+    access_edit_notes: bool = Form(False),
+    access_full: bool = Form(False),
     blacklist_chars: bool = Form(False),
     blacklist_lore: bool = Form(False),
     blacklist_admin: bool = Form(False),
@@ -375,7 +282,7 @@ async def profile_admin_update(
     base_char: int = Form(0),
     donate_char: int = Form(0),
 ):
-    _require_admin(request)
+    _require_access(request, "edit_profiles")
 
     target = ProfileDataBase.get_profile_by_uuid(uuid)
     if not target:
@@ -387,11 +294,19 @@ async def profile_admin_update(
             "profile_data_invalid", "Profile data has invalid type", uuid=uuid
         )
 
-    data.is_admin = bool(is_admin)
+    # Access
+    data.access["full_access"] = bool(access_full)
+    data.access["panel_access"] = bool(access_panel)
+    data.access["edit_profiles"] = bool(access_edit_profiles)
+    data.access["edit_chars"] = bool(access_edit_chars)
+    data.access["edit_notes"] = bool(access_edit_notes)
+
+    # Blacklist
     data.blacklist["chars"] = bool(blacklist_chars)
     data.blacklist["lore_chars"] = bool(blacklist_lore)
     data.blacklist["admin"] = bool(blacklist_admin)
 
+    # Limits
     data.limits["base_limit"] = float(base_limit)
     data.limits["donate_limit"] = float(donate_limit)
     data.limits["used"] = float(used)
@@ -404,12 +319,12 @@ async def profile_admin_update(
         logger.exception("update_profile failed: %s", e)
         _server_error("profile_update_failed", "Failed to update profile", uuid=uuid)
 
-    return RedirectResponse(url="/profile/admin", status_code=303)
+    return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
-@router.post("/profile/admin/delete")
+@router.post("/profile/admin/profile/delete")
 async def profile_admin_delete(request: Request, uuid: str = Form(...)):
-    admin = _require_admin(request)
+    admin = _require_access(request, "edit_profiles")
 
     if admin.get("uuid") == uuid:
         _bad_request(
@@ -422,10 +337,10 @@ async def profile_admin_delete(request: Request, uuid: str = Form(...)):
         logger.exception("delete_profile failed: %s", e)
         _server_error("profile_delete_failed", "Failed to delete profile", uuid=uuid)
 
-    return RedirectResponse(url="/profile/admin", status_code=303)
+    return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
-# Admin: notes & chars
+# Admin: notes & chars (permissions)
 @router.post("/profile/admin/note/add")
 async def profile_admin_note_add(
     request: Request,
@@ -433,7 +348,7 @@ async def profile_admin_note_add(
     content: str = Form(...),
     status: str = Form("info"),
 ):
-    _require_admin(request)
+    _require_access(request, "edit_notes")
 
     target = ProfileDataBase.get_profile_by_uuid(uuid)
     if not target:
@@ -462,66 +377,14 @@ async def profile_admin_note_add(
 
     try:
         ProfileDataBase.update_profile(uuid, data=data)
+
     except Exception as e:
         logger.exception("update_profile (note) failed: %s", e)
         _server_error(
             "profile_update_failed", "Failed to update profile with note", uuid=uuid
         )
 
-    return RedirectResponse(url="/profile/admin", status_code=303)
-
-
-async def _fetch_workshop_sizes(ids: list[str]) -> dict[str, int]:
-    if not ids:
-        return {}
-
-    url = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/"
-
-    key = Config.steam_api()
-    key = key() if callable(key) else key
-    if not key:
-        logger.warning("Steam API key is not configured")
-        return {}
-
-    payload: dict[str, str] = {
-        "key": str(key),
-        "itemcount": str(len(ids)),
-    }
-    for i, fid in enumerate(ids):
-        payload[f"publishedfileids[{i}]"] = str(fid)
-
-    try:
-        async with aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=8)
-        ) as session:
-            async with session.post(
-                url,
-                data=payload,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-            ) as resp:
-                if resp.status != 200:
-                    logger.warning(
-                        "Steam API bad status %s for ids %s", resp.status, ids
-                    )
-                    return {}
-
-                js: dict[str, Any] = await resp.json(content_type=None)
-
-    except Exception as e:
-        logger.exception("Workshop size fetch failed: %s", e)
-        return {}
-
-    out: dict[str, int] = {}
-    details = (js.get("response") or {}).get("publishedfiledetails") or []
-    for it in details:
-        rid = it.get("publishedfileid")
-        result = it.get("result")
-        if result == 1 and rid:
-            out[rid] = int(it.get("file_size", 0))
-        else:
-            logger.warning("Steam API returned result=%s for id=%s", result, rid)
-
-    return out
+    return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
 @router.post("/profile/admin/char/add")
@@ -532,7 +395,7 @@ async def profile_admin_char_add(
     discord_url: str = Form(""),
     steam_urls: str = Form(""),
 ):
-    _require_admin(request)
+    _require_access(request, "edit_chars")
 
     target = ProfileDataBase.get_profile_by_uuid(uuid)
     if not target:
@@ -548,13 +411,13 @@ async def profile_admin_char_add(
     if not clean_name:
         _bad_request("char_name_empty", "Character name cannot be empty", uuid=uuid)
 
-    ids = []
+    ids: list[str] = []
     for part in re.split(r"[\s,]+", (steam_urls or "").strip()):
         m = re.search(r"[?&]id=(\d+)", part)
         if m:
             ids.append(m.group(1))
 
-    sizes = await _fetch_workshop_sizes(ids)
+    sizes = utils.steam.fetch_workshop_sizes(ids)
     total_size = sum(sizes.values())
     total_mb = round(total_size / 1024 / 1024, 2)
 
@@ -576,6 +439,7 @@ async def profile_admin_char_add(
 
     try:
         ProfileDataBase.update_profile(uuid, data=data)
+
     except Exception as e:
         logger.exception("update_profile (char) failed: %s", e)
         _server_error(
@@ -584,7 +448,7 @@ async def profile_admin_char_add(
             uuid=uuid,
         )
 
-    return RedirectResponse(url="/profile/admin", status_code=303)
+    return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
 @router.post("/profile/admin/char/delete")
@@ -593,7 +457,7 @@ async def profile_admin_char_delete(
     uuid: str = Form(...),
     index: int = Form(...),
 ):
-    _require_admin(request)
+    _require_access(request, "edit_chars")
 
     target = ProfileDataBase.get_profile_by_uuid(uuid)
     if not target:
@@ -616,21 +480,22 @@ async def profile_admin_char_delete(
 
     try:
         ProfileDataBase.update_profile(uuid, data=data)
+
     except Exception as e:
         logger.exception("delete_profile_char failed: %s", e)
         _server_error("profile_update_failed", "Failed to delete character", uuid=uuid)
 
-    return RedirectResponse(url="/profile/admin", status_code=303)
+    return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
 # Admin: create & role check
-@router.post("/profile/admin/create")
+@router.post("/profile/admin/profile/create")
 async def profile_admin_create(
     request: Request,
     discord_id: str = Form(...),
-    steam: str = Form(...),
+    steam_input: str = Form(...),
 ):
-    _require_admin(request)
+    _require_access(request, "edit_profiles")
 
     did = (discord_id or "").strip()
     if not did.isdigit():
@@ -639,17 +504,23 @@ async def profile_admin_create(
         )
 
     try:
-        sid64 = await normalize_steam_input(steam)
-
-    except HTTPException:
-        raise
+        sid64 = utils.steam.normalize_steam_input(steam_input)
 
     except Exception as e:
         logger.exception("normalize_steam_input failed: %s", e)
         _server_error(
-            "steam_normalize_failed", "Failed to normalize Steam input", input=steam
+            "steam_normalize_failed",
+            "Failed to normalize Steam input",
+            input=steam_input,
         )
         return
+
+    if not sid64:
+        _bad_request(
+            "steam_input_unsupported",
+            "Unsupported Steam input format",
+            input=steam_input,
+        )
 
     all_profiles = ProfileDataBase.get_all_profiles()
     if any(p.get("discord_id") == did for p in all_profiles):
@@ -670,12 +541,12 @@ async def profile_admin_create(
             steam_id=sid64,
         )
 
-    return RedirectResponse(url="/profile/admin", status_code=303)
+    return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
 @router.post("/profile/admin/recalc_roles")
 async def profile_admin_recalc_roles(request: Request):
-    _require_admin(request)
+    _require_access(request, "edit_profiles")
 
     cog = bot.get_cog("UserControlCog")
     if not cog or not hasattr(cog, "get_role_value"):
@@ -709,12 +580,12 @@ async def profile_admin_recalc_roles(request: Request):
         ProfileDataBase.update_profile(p["uuid"], data=data)
 
     await asyncio.gather(*(update_one(p) for p in profiles))
-    return RedirectResponse(url="/profile/admin", status_code=303)
+    return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
 @router.post("/profile/admin/recalc_weights")
 async def profile_admin_recalc_weights(request: Request):
-    _require_admin(request)
+    _require_access(request, "edit_chars")
 
     profiles = ProfileDataBase.get_all_profiles()
 
@@ -727,15 +598,17 @@ async def profile_admin_recalc_weights(request: Request):
         chars = data.chars
         total_bytes = 0
         for ch in chars:
-            ids = []
+            ids: list[str] = []
             for url in ch.get("steam_urls", []):
                 m = re.search(r"[?&]id=(\d+)", url)
                 if m:
                     ids.append(m.group(1))
+
             if not ids:
                 ch["weight_mb"] = 0
                 continue
-            sizes = await _fetch_workshop_sizes(ids)
+
+            sizes = utils.steam.fetch_workshop_sizes(ids)
             ch_weight = sum(sizes.values())
             ch["weight_mb"] = round(ch_weight / 1024 / 1024, 2)
             total_bytes += ch_weight
@@ -745,4 +618,4 @@ async def profile_admin_recalc_weights(request: Request):
         ProfileDataBase.update_profile(p["uuid"], data=data)
 
     await asyncio.gather(*(process_profile(p) for p in profiles))
-    return RedirectResponse(url="/profile/admin", status_code=303)
+    return RedirectResponse(url="/profile/admin/profiles", status_code=303)

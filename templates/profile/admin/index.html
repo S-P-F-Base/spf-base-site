@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Админ-панель</title>
+    <meta property="og:title" content="S.P.F. Base – Админ-панель">
+    <meta property="og:description" content="Управление сервером и игроками">
+
+    {% include 'partials/base_header.html' %}
+    <link rel="stylesheet" href="{{ 'profile.css' | ver }}">
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
+        <main class="content-tile" style="max-width:900px;">
+            <h1 class="welcome-title">Админ-панель</h1>
+            <p class="muted" style="margin-bottom:1.5rem;">
+                Здесь собраны основные инструменты управления проектом.
+            </p>
+
+            <div class="players-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));">
+                <a class="player-card" href="/profile/admin/profiles" style="text-decoration:none;">
+                    <div class="player-header">
+                        <img src="/static/images/icons/users.svg" alt="Profiles" style="width:48px;height:48px;">
+                        <div class="player-name">Профили игроков</div>
+                    </div>
+                    <p class="muted">Просмотр, редактирование и удаление профилей.</p>
+                </a>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

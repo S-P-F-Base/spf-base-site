@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Админ-панель: профили игроков</title>
+    <meta property="og:title" content="S.P.F. Base – Профили игроков">
+    <meta property="og:description" content="Просмотр и управление профилями">
+
+    {% include 'partials/base_header.html' %}
+    <link rel="stylesheet" href="{{ 'profile.css' | ver }}">
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+        <main class="content-tile" style="max-width:1100px;">
+            <h1 class="welcome-title">Профили игроков</h1>
+
+            <form method="get" action="/profile/admin/profiles">
+                <input type="text" name="q" placeholder="Поиск: Имя / UUID / Discord / Steam" value="{{ q or '' }}"
+                    style="width:min(520px,90%);padding:.55rem;border-radius:8px;border:1px solid #666;background:#111;color:#eee;">
+                <button class="btn" type="submit">Искать</button>
+            </form>
+
+            <section style="margin-top:1rem;">
+                <h2 class="welcome-title" style="margin-bottom:.4rem;">Добавить игрока</h2>
+                <form method="post" action="/profile/admin/profile/create" class="create-form">
+                    <input type="text" name="discord_id" placeholder="Discord ID" pattern="\d{5,}" required>
+                    <input type="text" name="steam_input" placeholder="Steam ссылка / ID" required>
+                    <button class="btn" type="submit">Создать профиль</button>
+                </form>
+            </section>
+
+            <section style="margin-top:1rem;">
+                <h2 class="welcome-title" style="margin-bottom:.4rem;">Массовые действия</h2>
+                <form method="post" action="/profile/admin/recalc_weights" style="margin-bottom:.5rem;">
+                    <button class="btn" type="submit"
+                        onclick="return confirm('Пересчитать вес контента у всех игроков? Это может занять время.');">
+                        Обновить вес по всему контенту
+                    </button>
+                </form>
+                <form method="post" action="/profile/admin/recalc_roles">
+                    <button class="btn" type="submit"
+                        onclick="return confirm('Обновить лимиты ролей Discord у всех игроков?');">
+                        Обновить роли у всех игроков
+                    </button>
+                </form>
+            </section>
+
+            {% if not users %}
+            <p>Пока пусто.</p>
+            {% else %}
+            <div class="players-grid" id="players">
+                {% for u in users %}
+                <div class="player-card" data-uuid="{{ u.uuid }}" data-username="{{ u.username|e }}"
+                    data-discord="{{ u.discord_id or '' }}" data-steam="{{ u.steam_id or '' }}"
+                    data-access='{{ u.access|tojson }}' data-bl-chars="{{ '1' if u.blacklist.chars else '0' }}"
+                    data-bl-lore="{{ '1' if u.blacklist.lore_chars else '0' }}"
+                    data-bl-admin="{{ '1' if u.blacklist.admin else '0' }}" data-lim-base="{{ u.limits.base_limit }}"
+                    data-lim-donate="{{ u.limits.donate_limit }}" data-lim-used="{{ u.limits.used or 0 }}"
+                    data-lim-basechar="{{ u.limits.base_char }}" data-lim-donatechar="{{ u.limits.donate_char }}"
+                    data-notes='{{ u.notes|tojson if u.notes else "[]" }}'
+                    data-chars='{{ u.chars|tojson if u.chars else "[]" }}'>
+                    <div class="player-header">
+                        <img src="{{ u.avatar_url or '/static/images/logo/discord.png' }}" alt="avatar">
+                        <div class="player-name">{{ u.username }}</div>
+                    </div>
+                    <div class="badges">
+                        {% if u.access.panel_access %}<span class="badge admin">Админ-панель</span>{% endif %}
+                        {% if u.access.full_access %}<span class="badge admin">Full</span>{% endif %}
+                        {% if u.has_blacklist %}<span class="badge blacklist">ЧС</span>{% endif %}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-edit" type="button">Изменить</button>
+                        <form method="post" action="/profile/admin/profile/delete"
+                            onsubmit="return confirm('Удалить профиль? Это необратимо.');" style="display:inline;">
+                            <input type="hidden" name="uuid" value="{{ u.uuid }}">
+                            <button class="btn danger" type="submit">Удалить</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <div class="modal-backdrop" id="modal-backdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-player-name">
+            <h2 id="modal-player-name">Игрок</h2>
+
+            <div class="id-block">
+                <div class="id-row">
+                    <div class="k muted">UUID</div>
+                    <div class="v"><span id="m_uuid" class="mono"></span></div>
+                </div>
+                <div class="id-row">
+                    <div class="k muted">Discord ID</div>
+                    <div class="v"><span id="m_discord" class="mono"></span></div>
+                </div>
+                <div class="id-row">
+                    <div class="k muted">Steam ID</div>
+                    <div class="v"><span id="m_steam" class="mono"></span></div>
+                </div>
+            </div>
+
+            <form id="edit-form" method="post" action="/profile/admin/profile/update">
+                <input type="hidden" name="uuid" id="f_uuid">
+
+                <fieldset class="fieldset">
+                    <legend>Права</legend>
+                    <div class="checkboxes">
+                        <label><input type="checkbox" name="access_panel" id="f_acc_panel"> Доступ в
+                            админ-панель</label>
+                        <label><input type="checkbox" name="access_edit_profiles" id="f_acc_edit_profiles">
+                            Редактировать профили</label>
+                        <label><input type="checkbox" name="access_edit_chars" id="f_acc_edit_chars"> Редактировать
+                            персонажей</label>
+                        <label><input type="checkbox" name="access_edit_notes" id="f_acc_edit_notes"> Редактировать
+                            заметки</label>
+                        <label><input type="checkbox" name="access_full" id="f_acc_full"> Полный доступ</label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="fieldset">
+                    <legend>Чёрные списки</legend>
+                    <label><input type="checkbox" name="blacklist_chars" id="f_bl_chars"> ЧС: новые персонажи</label>
+                    <label><input type="checkbox" name="blacklist_lore" id="f_bl_lore"> ЧС: лорные персонажи</label>
+                    <label><input type="checkbox" name="blacklist_admin" id="f_bl_admin"> ЧС: администрация</label>
+                </fieldset>
+
+                <fieldset class="fieldset">
+                    <legend>Лимиты</legend>
+                    <div class="form-grid">
+                        <label>Место (MB)<input type="number" name="base_limit" id="f_lim_base" min="0"
+                                step="0.01"></label>
+                        <label>Донат место (MB)<input type="number" name="donate_limit" id="f_lim_donate" min="0"
+                                step="0.01"></label>
+                        <label>Использовано (MB)<input type="number" name="used" id="f_lim_used" min="0"
+                                step="0.01"></label>
+                        <label>Базовые персонажи<input type="number" name="base_char" id="f_lim_basechar"
+                                min="0"></label>
+                        <label>Донат персонажи<input type="number" name="donate_char" id="f_lim_donatechar"
+                                min="0"></label>
+                    </div>
+                </fieldset>
+
+                <div class="modal-actions">
+                    <button class="btn" type="button" id="btn-cancel">Отмена</button>
+                    <button class="btn" type="submit">Сохранить</button>
+                </div>
+            </form>
+
+            <fieldset class="fieldset">
+                <legend>Персонажи</legend>
+                <ul class="read-list" id="char_list"></ul>
+                <form id="char-form" method="post" action="/profile/admin/char/add">
+                    <input type="hidden" name="uuid" id="c_uuid">
+                    <input type="text" name="name" placeholder="Имя персонажа" required>
+                    <input type="text" name="discord_url" placeholder="Ссылка на анкету (Discord)">
+                    <textarea name="steam_urls" placeholder="Ссылки на контент (Steam), по одной в строке"></textarea>
+                    <button class="btn" type="submit">Добавить</button>
+                </form>
+            </fieldset>
+
+            <fieldset class="fieldset">
+                <legend>Заметки</legend>
+                <ul class="read-list" id="note_list"></ul>
+                <form id="note-form" method="post" action="/profile/admin/note/add">
+                    <input type="hidden" name="uuid" id="n_uuid">
+                    <select name="status">
+                        <option value="info">info</option>
+                        <option value="warn">warn</option>
+                        <option value="ban">ban</option>
+                    </select>
+                    <textarea name="content" required placeholder="Текст заметки"></textarea>
+                    <button class="btn" type="submit">Добавить</button>
+                </form>
+            </fieldset>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const grid = document.getElementById('players');
+            const backdrop = document.getElementById('modal-backdrop');
+            const f_uuid = document.getElementById('f_uuid');
+            const c_uuid = document.getElementById('c_uuid');
+            const n_uuid = document.getElementById('n_uuid');
+            const modalName = document.getElementById('modal-player-name');
+            const m_uuid = document.getElementById('m_uuid');
+            const m_discord = document.getElementById('m_discord');
+            const m_steam = document.getElementById('m_steam');
+
+            const accessFields = {
+                panel: document.getElementById('f_acc_panel'),
+                edit_profiles: document.getElementById('f_acc_edit_profiles'),
+                edit_chars: document.getElementById('f_acc_edit_chars'),
+                edit_notes: document.getElementById('f_acc_edit_notes'),
+                full: document.getElementById('f_acc_full'),
+            };
+
+            const blFields = {
+                chars: document.getElementById('f_bl_chars'),
+                lore: document.getElementById('f_bl_lore'),
+                admin: document.getElementById('f_bl_admin'),
+            };
+
+            const limBase = document.getElementById('f_lim_base');
+            const limDonate = document.getElementById('f_lim_donate');
+            const limUsed = document.getElementById('f_lim_used');
+            const limBaseChar = document.getElementById('f_lim_basechar');
+            const limDonateChar = document.getElementById('f_lim_donatechar');
+
+            const charList = document.getElementById('char_list');
+            const noteList = document.getElementById('note_list');
+
+            function openModal(card) {
+                modalName.textContent = card.dataset.username;
+                m_uuid.textContent = card.dataset.uuid;
+                m_discord.textContent = card.dataset.discord || '-';
+                m_steam.textContent = card.dataset.steam || '-';
+
+                f_uuid.value = card.dataset.uuid;
+                c_uuid.value = card.dataset.uuid;
+                n_uuid.value = card.dataset.uuid;
+
+                const access = JSON.parse(card.dataset.access || '{}');
+                accessFields.panel.checked = !!access.panel_access;
+                accessFields.edit_profiles.checked = !!access.edit_profiles;
+                accessFields.edit_chars.checked = !!access.edit_chars;
+                accessFields.edit_notes.checked = !!access.edit_notes;
+                accessFields.full.checked = !!access.full_access;
+
+                blFields.chars.checked = card.dataset.blChars === '1';
+                blFields.lore.checked = card.dataset.blLore === '1';
+                blFields.admin.checked = card.dataset.blAdmin === '1';
+
+                limBase.value = card.dataset.limBase || 0;
+                limDonate.value = card.dataset.limDonate || 0;
+                limUsed.value = card.dataset.limUsed || 0;
+                limBaseChar.value = card.dataset.limBasechar || 0;
+                limDonateChar.value = card.dataset.limDonatechar || 0;
+
+                noteList.innerHTML = '';
+                JSON.parse(card.dataset.notes || '[]').forEach(n => {
+                    const li = document.createElement('li');
+                    li.textContent = `[${n.date}] (${n.status}) ${n.content}`;
+                    noteList.appendChild(li);
+                });
+
+                charList.innerHTML = '';
+                JSON.parse(card.dataset.chars || '[]').forEach((c, i) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${c.name}</strong>` +
+                        (c.discord_url ? ` - <a href="${c.discord_url}" target="_blank">анкета</a>` : '');
+                    if (Array.isArray(c.steam_urls) && c.steam_urls.length) {
+                        li.innerHTML += '<br>Контент: ' + c.steam_urls.map(s => `<a href="${s}" target="_blank">link</a>`).join(', ');
+                    }
+                    li.innerHTML += `<form method="post" action="/profile/admin/char/delete" onsubmit="return confirm('Удалить ${c.name}?');">
+                <input type="hidden" name="uuid" value="${card.dataset.uuid}">
+                <input type="hidden" name="index" value="${i}">
+                <button class="btn danger" type="submit">Удалить</button>
+            </form>`;
+                    charList.appendChild(li);
+                });
+
+                backdrop.style.display = 'flex';
+            }
+            function closeModal() { backdrop.style.display = 'none'; }
+
+            grid.addEventListener('click', e => {
+                const btn = e.target.closest('.btn-edit');
+                if (btn) openModal(btn.closest('.player-card'));
+            });
+            document.getElementById('btn-cancel').addEventListener('click', e => { e.preventDefault(); closeModal(); });
+            backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+        })();
+    </script>
+</body>
+
+</html>

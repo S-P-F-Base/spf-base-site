@@ -7,7 +7,7 @@ from .base_db import BaseDB
 
 class ProfileData:
     def __init__(self) -> None:
-        self.is_admin: bool = False
+        self.access: dict[str, bool] = self.default_access()
         self.blacklist: dict[str, bool] = self.default_blacklist()
         self.chars: list[dict[str, Any]] = []
         self.limits: dict[str, Any] = self.default_limits()
@@ -16,6 +16,22 @@ class ProfileData:
     @property
     def has_blacklist(self) -> bool:
         return any(self.blacklist.values())
+
+    def has_access(self, value: str) -> bool:
+        if self.access.get("full_access", False):
+            return True
+
+        return self.access.get(value, False)
+
+    @staticmethod
+    def default_access() -> dict[str, bool]:
+        return {
+            "full_access": False,
+            "panel_access": False,
+            "edit_profiles": False,
+            "edit_chars": False,
+            "edit_notes": False,
+        }
 
     @staticmethod
     def default_blacklist() -> dict[str, bool]:
@@ -37,7 +53,7 @@ class ProfileData:
 
     def as_dict(self) -> dict[str, Any]:
         return {
-            "is_admin": self.is_admin,
+            "access": self.access,
             "blacklist": self.blacklist,
             "chars": self.chars,
             "limits": self.limits,
@@ -52,16 +68,22 @@ class ProfileData:
         new_obj = cls()
         try:
             data = json.loads(value)
-            if data is None or not isinstance(data, dict):
+            if not isinstance(data, dict):
                 return new_obj
 
         except Exception:
             return new_obj
 
-        new_obj.is_admin = data.get("is_admin", False)
-        new_obj.blacklist = data.get("blacklist", cls.default_blacklist())
+        if "access" in data:
+            new_obj.access = {**cls.default_access(), **data.get("access", {})}
+        else:
+            new_obj.access = cls.default_access()
+            if data.get("is_admin", False):
+                new_obj.access["panel_access"] = True
+
+        new_obj.blacklist = {**cls.default_blacklist(), **data.get("blacklist", {})}
         new_obj.chars = data.get("chars", [])
-        new_obj.limits = data.get("limits", cls.default_limits())
+        new_obj.limits = {**cls.default_limits(), **data.get("limits", {})}
         new_obj.notes = data.get("notes", [])
 
         return new_obj
