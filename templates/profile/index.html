@@ -27,15 +27,15 @@
 
             <div class="profile-decor">
                 {% if profile.data.is_admin %}
-                <div class="decor-box star">
+                <a href="/profile/admin" class="decor-box star">
                     &#9733;
                     <div class="decor-popups">
                         <div class="decor-popup">
                             <h3>Администратор</h3>
-                            <p>Вы - администратор сервера.</p>
+                            <p>Вы – администратор сервера.</p>
                         </div>
                     </div>
-                </div>
+                </a>
                 {% endif %}
 
                 {% if profile.data.has_blacklist %}

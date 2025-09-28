@@ -1,11 +1,11 @@
-/* === Базовые состояния === */
+/* Базовые состояния */
 .not-auth {
     color: #ccc;
     font-size: 1.2rem;
     text-align: center;
 }
 
-/* === Верх профиля (аватар, имя, UUID, статус) === */
+/* Верх профиля (аватар, имя, UUID, статус) */
 .profile-top {
     display: flex;
     flex-direction: column;
@@ -17,8 +17,8 @@
 .avatar {
     width: 140px;
     height: 140px;
-    border-radius: 50%;
     border: 4px solid orange;
+    border-radius: 50%;
     box-shadow: 0 0 20px rgba(255, 140, 0, .4);
 }
 
@@ -30,7 +30,7 @@
     text-shadow: 0 0 8px rgba(255, 140, 0, .5);
 }
 
-/* === UUID === */
+/* UUID и копирование */
 .profile-uuid {
     display: flex;
     flex-direction: column;
@@ -60,17 +60,16 @@
     outline: none;
 }
 
-/* Уведомление (toast) при копировании */
 .copy-toast {
     position: fixed;
     bottom: 40px;
     left: 50%;
     transform: translateX(-50%) translateY(20px);
-    background: rgba(34, 34, 34, .9);
-    color: orange;
-    border: 2px solid orange;
     padding: 0.7rem 1.4rem;
+    background: rgba(34, 34, 34, .9);
+    border: 2px solid orange;
     border-radius: 10px;
+    color: orange;
     font-weight: 600;
     font-size: 1rem;
     opacity: 0;
@@ -84,20 +83,19 @@
     transform: translateX(-50%) translateY(0);
 }
 
-/* === Статус Discord / Steam === */
+/* Статусы Discord / Steam */
 .discord-status,
 .steam-status {
     display: flex;
     justify-content: center;
-    /* Центрирование */
     align-items: center;
     gap: 0.6rem;
-    font-size: 1.1rem;
-    padding: 0.5rem 1rem;
     margin: 1.2rem auto;
+    padding: 0.5rem 1rem;
+    font-size: 1.1rem;
+    background: rgba(34, 34, 34, .8);
     border: 1px solid rgba(255, 165, 0, .25);
     border-radius: 12px;
-    background: rgba(34, 34, 34, .8);
 }
 
 .discord-status img,
@@ -136,7 +134,7 @@
     outline: none;
 }
 
-/* === Сетка навигационных кнопок === */
+/* Сетка навигационных кнопок */
 .profile-links {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -166,7 +164,7 @@
     outline: none;
 }
 
-/* === Декоративные значки === */
+/* Декоративные значки и поп-апы */
 .profile-decor {
     position: absolute;
     top: 0.5rem;
@@ -189,6 +187,8 @@
     border-radius: 10px;
     box-shadow: 0 0 12px rgba(0, 0, 0, .4);
     cursor: pointer;
+    text-decoration: none;
+    color: inherit;
 }
 
 .decor-box.star {
@@ -201,7 +201,6 @@
     color: white;
 }
 
-/* === Поп-апы внутри значков === */
 .decor-popups {
     position: absolute;
     top: 110%;
@@ -214,11 +213,18 @@
     padding-right: 0.5rem;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .3s ease, transform .3s ease;
     transform-origin: top center;
+    transition: opacity .3s ease, transform .3s ease;
+}
+
+.decor-box:hover .decor-popups {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(4px);
 }
 
 .decor-popup {
+    position: relative;
     min-width: 260px;
     max-width: 320px;
     padding: 1rem 1.2rem;
@@ -232,8 +238,7 @@
 }
 
 .decor-popup h3 {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
+    margin: 0 0 0.5rem;
     font-size: 1.1rem;
     color: orange;
     text-shadow: 0 0 8px rgba(255, 140, 0, .4);
@@ -250,13 +255,6 @@
     filter: drop-shadow(0 -1px 1px rgba(255, 140, 0, .4));
 }
 
-.decor-box:hover .decor-popups {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateX(-50%) translateY(4px);
-}
-
-/* Красная версия поп-апов для warn */
 .decor-box.warn .decor-popup {
     border-color: #ff4d4d;
     box-shadow: 0 0 25px rgba(255, 77, 77, .4), 0 0 12px rgba(0, 0, 0, .6);
@@ -266,13 +264,19 @@
     color: #ff4d4d;
 }
 
+/* Заголовки и общие элементы */
 .welcome-title {
+    margin-top: 1rem;
     text-align: center;
     font-size: 2rem;
     color: orange;
-    margin-top: 1rem;
 }
 
+.muted {
+    color: #bdbdbd;
+}
+
+/* Круговые индикаторы */
 .circles-wrapper {
     display: flex;
     flex-wrap: wrap;
@@ -323,25 +327,25 @@
 
 /* Персонажи */
 .chars-section {
-    margin: 4rem auto 2rem;
     max-width: 900px;
+    margin: 4rem auto 2rem;
 }
 
 .chars-section h2 {
-    text-align: center;
-    color: orange;
     margin-bottom: 2.5rem;
+    text-align: center;
     font-size: 1.8rem;
+    color: orange;
     letter-spacing: 1px;
     text-transform: uppercase;
 }
 
 .char-card {
+    margin-bottom: 2rem;
+    padding: 2rem;
     background: linear-gradient(145deg, rgba(20, 20, 20, .95), rgba(30, 30, 30, .9));
     border: 1px solid rgba(255, 165, 0, .25);
     border-radius: 18px;
-    padding: 2rem;
-    margin-bottom: 2rem;
     box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
     transition: transform .25s ease, box-shadow .25s ease;
 }
@@ -365,7 +369,6 @@
     letter-spacing: .5px;
 }
 
-/* Кнопки ссылок */
 .char-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -380,18 +383,295 @@
     background: rgba(255, 165, 0, .08);
     border: 1px solid rgba(255, 165, 0, .3);
     border-radius: 10px;
-    text-decoration: none;
     color: orange;
     font-weight: 500;
+    text-decoration: none;
     transition: background .2s, transform .2s;
 }
 
 .char-buttons a img {
-    height: 20px;
     width: 20px;
+    height: 20px;
 }
 
 .char-buttons a:hover {
     background: rgba(255, 165, 0, .2);
     transform: translateY(-2px);
+}
+
+/* Админ-панель: список игроков */
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.player-card {
+    padding: 1rem;
+    background: rgba(17, 17, 17, .92);
+    border: 1px solid rgba(255, 165, 0, .35);
+    border-radius: 14px;
+    box-shadow: 0 0 14px rgba(255, 140, 0, .18);
+}
+
+.player-header {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: .6rem;
+}
+
+.player-header img {
+    width: 52px;
+    height: 52px;
+    border: 2px solid #7289da;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #000;
+}
+
+.player-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: orange;
+}
+
+.player-meta {
+    font-size: .95rem;
+    color: #ddd;
+    line-height: 1.45;
+    word-break: normal;
+}
+
+.mono {
+    display: inline-block;
+    max-width: 100%;
+    padding: .12rem .35rem;
+    background: #0b0b0b;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #eee;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kv {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: .25rem .6rem;
+    align-items: start;
+}
+
+.kv .k {
+    color: #bbb;
+}
+
+.kv .v {
+    color: #e6e6e6;
+}
+
+.badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .5rem;
+}
+
+.badge {
+    font-size: .8rem;
+    padding: .15rem .5rem;
+    background: #111;
+    border: 1px solid #555;
+    border-radius: 6px;
+}
+
+.badge.admin {
+    border-color: #ffd54f;
+}
+
+.badge.blacklist {
+    border-color: #ff6e6e;
+}
+
+.card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .8rem;
+}
+
+.btn {
+    padding: .45rem .75rem;
+    background: #222;
+    border: 1px solid #666;
+    border-radius: 8px;
+    color: #eee;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .3s ease;
+}
+
+.btn:hover {
+    background: #2b2b2b;
+}
+
+.btn.danger {
+    border-color: #a33;
+    color: #f55;
+}
+
+/* Модальное окно */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, .82);
+    z-index: 1000;
+}
+
+.modal {
+    width: min(900px, 96vw);
+    max-height: 92vh;
+    padding: 24px 24px 18px;
+    background: #101010;
+    border: 1px solid rgba(255, 165, 0, .35);
+    border-radius: 16px;
+    box-shadow: 0 0 28px rgba(255, 140, 0, .45);
+    overflow-y: auto;
+}
+
+.modal h2 {
+    margin: 0 0 1rem;
+    text-align: center;
+    font-size: 1.7rem;
+    color: orange;
+}
+
+.id-block {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    background: #161616;
+    border: 1px solid rgba(255, 165, 0, .28);
+    border-radius: 12px;
+}
+
+.id-row {
+    display: grid;
+    grid-template-columns: 140px 1fr auto;
+    gap: .4rem .6rem;
+    align-items: center;
+}
+
+.copy-btn {
+    margin-left: .4rem;
+    padding: .25rem .45rem;
+    font-size: .85rem;
+}
+
+.fieldset {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    background: rgba(40, 40, 40, .9);
+    border: 1px solid rgba(255, 165, 0, .4);
+    border-radius: 12px;
+}
+
+.fieldset legend {
+    padding: 0 .4rem;
+    font-weight: 700;
+    color: orange;
+}
+
+.fieldset label {
+    color: #eee;
+    font-weight: 500;
+}
+
+.checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .9rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .85rem 1rem;
+    margin-top: .35rem;
+}
+
+.form-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: .28rem;
+    font-size: 1rem;
+    color: #ddd;
+}
+
+.form-grid input[type="number"],
+.form-grid input[type="text"],
+.form-grid select,
+.form-grid textarea {
+    padding: .55rem .6rem;
+    background: #0e0e0e;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #f1f1f1;
+}
+
+.form-grid textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.read-list {
+    list-style: none;
+    margin: .4rem 0 0;
+    padding: 0;
+}
+
+.read-list li {
+    padding: .45rem 0;
+    color: #d0d0d0;
+    line-height: 1.45;
+    border-bottom: 1px solid rgba(255, 165, 0, .16);
+}
+
+.read-list a {
+    color: #bfbfbf;
+    text-decoration: none;
+}
+
+.read-list a:hover {
+    color: orange;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .75rem;
+    margin-top: .8rem;
+}
+
+/* Создание игрока */
+.create-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .75rem;
+}
+
+.create-form input[type="text"] {
+    min-width: 260px;
+    padding: .55rem .6rem;
+    background: #111;
+    border: 1px solid #666;
+    border-radius: 8px;
+    color: #eee;
 }
