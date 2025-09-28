@@ -35,7 +35,6 @@ class ForumBlockCog(commands.Cog):
             return
 
         data: ProfileData = profile.get("data", ProfileData())
-        logging.info(author_id, str(data.blacklist))
 
         # Проверка на блок администрации
         if thread.parent.id == 1398286514571448433 and data.blacklist.get(
