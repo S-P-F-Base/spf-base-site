@@ -20,7 +20,7 @@ class ServerControlCog(commands.Cog):
         if not profile:
             return None
 
-        data = profile.get("data")
+        data = profile.get("data", ProfileData())
         if not isinstance(data, ProfileData):
             return None
 
@@ -29,8 +29,8 @@ class ServerControlCog(commands.Cog):
     async def _do_action(self, ctx: commands.Context, action: str) -> None:
         profile = self._get_admin_profile(ctx.author.id)
 
-        if not profile:
-            await ctx.reply("Ошибка доступа к команде")
+        if profile is None:
+            await ctx.reply(f"Ошибка доступа к команде, {ctx.author.id}")
             return
 
         if action == "start":
