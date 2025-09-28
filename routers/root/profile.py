@@ -286,24 +286,13 @@ async def profile_admin_profiles(request: Request):
 
 # Admin: update/delete (permissions)
 @router.post("/profile/admin/profile/update")
-async def profile_admin_update(
-    request: Request,
-    uuid: str = Form(...),
-    access_panel: bool = Form(False),
-    access_edit_profiles: bool = Form(False),
-    access_edit_chars: bool = Form(False),
-    access_edit_notes: bool = Form(False),
-    access_full: bool = Form(False),
-    blacklist_chars: bool = Form(False),
-    blacklist_lore: bool = Form(False),
-    blacklist_admin: bool = Form(False),
-    base_limit: float = Form(0.0),
-    donate_limit: float = Form(0.0),
-    used: float = Form(0.0),
-    base_char: int = Form(0),
-    donate_char: int = Form(0),
-):
+async def profile_admin_update(request: Request):
     _require_access(request, "edit_profiles")
+
+    form = await request.form()
+    uuid = (form.get("uuid") or "").strip()  # type: ignore
+    if not uuid:
+        _bad_request("uuid_required", "Missing profile uuid")
 
     target = ProfileDataBase.get_profile_by_uuid(uuid)
     if not target:
@@ -315,27 +304,41 @@ async def profile_admin_update(
             "profile_data_invalid", "Profile data has invalid type", uuid=uuid
         )
 
-    # Access
-    data.access["full_access"] = bool(access_full)
-    data.access["panel_access"] = bool(access_panel)
-    data.access["edit_profiles"] = bool(access_edit_profiles)
-    data.access["edit_chars"] = bool(access_edit_chars)
-    data.access["edit_notes"] = bool(access_edit_notes)
+    access_checked = {
+        k[len("access_") :] for k in form.keys() if k.startswith("access_")
+    }
+    for key in ACCESS_FIELDS.keys():
+        data.access[key] = key in access_checked
 
-    # Blacklist
-    data.blacklist["chars"] = bool(blacklist_chars)
-    data.blacklist["lore_chars"] = bool(blacklist_lore)
-    data.blacklist["admin"] = bool(blacklist_admin)
+    bl_checked = {
+        k[len("blacklist_") :] for k in form.keys() if k.startswith("blacklist_")
+    }
+    for key in BLACKLIST_FIELDS.keys():
+        data.blacklist[key] = key in bl_checked
 
-    # Limits
-    data.limits["base_limit"] = float(base_limit)
-    data.limits["donate_limit"] = float(donate_limit)
-    data.limits["used"] = float(used)
-    data.limits["base_char"] = int(base_char)
-    data.limits["donate_char"] = int(donate_char)
+    def f(name: str, default: float = 0.0) -> float:
+        try:
+            return float(form.get(name, default))  # type: ignore
+
+        except Exception:
+            return float(default)
+
+    def i(name: str, default: int = 0) -> int:
+        try:
+            return int(float(form.get(name, default)))  # type: ignore
+
+        except Exception:
+            return int(default)
+
+    data.limits["base_limit"] = f("base_limit", 0.0)
+    data.limits["donate_limit"] = f("donate_limit", 0.0)
+    data.limits["used"] = f("used", 0.0)
+    data.limits["base_char"] = i("base_char", 0)
+    data.limits["donate_char"] = i("donate_char", 0)
 
     try:
         ProfileDataBase.update_profile(uuid, data=data)
+
     except Exception as e:
         logger.exception("update_profile failed: %s", e)
         _server_error("profile_update_failed", "Failed to update profile", uuid=uuid)

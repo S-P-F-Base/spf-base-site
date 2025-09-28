@@ -52,15 +52,18 @@
             {% else %}
             <div class="players-grid" id="players">
                 {% for u in users %}
-                <div class="player-card" data-uuid="{{ u.uuid }}" data-username="{{ u.username|e }}"
-                    data-discord="{{ u.discord_id or '' }}" data-steam="{{ u.steam_id or '' }}"
-                    data-access='{{ u.access|tojson }}' data-bl-chars="{{ '1' if u.blacklist.chars else '0' }}"
-                    data-bl-lore="{{ '1' if u.blacklist.lore_chars else '0' }}"
-                    data-bl-admin="{{ '1' if u.blacklist.admin else '0' }}" data-lim-base="{{ u.limits.base_limit }}"
-                    data-lim-donate="{{ u.limits.donate_limit }}" data-lim-used="{{ u.limits.used or 0 }}"
-                    data-lim-basechar="{{ u.limits.base_char }}" data-lim-donatechar="{{ u.limits.donate_char }}"
-                    data-notes='{{ u.notes|tojson if u.notes else "[]" }}'
-                    data-chars='{{ u.chars|tojson if u.chars else "[]" }}'>
+                <div class="player-card" data-profile='{{ {
+                     "uuid": u.uuid,
+                     "username": u.username,
+                     "discord": u.discord_id,
+                     "steam": u.steam_id,
+                     "avatar_url": u.avatar_url or "/static/images/logo/discord.png",
+                     "access": u.access,
+                     "blacklist": u.blacklist,
+                     "limits": u.limits,
+                     "notes": u.notes or [],
+                     "chars": u.chars or []
+                 } | tojson }}'>
                     <div class="player-header">
                         <img src="{{ u.avatar_url or '/static/images/logo/discord.png' }}" alt="avatar">
                         <div class="player-name">{{ u.username }}</div>
@@ -111,10 +114,7 @@
                     <legend>Права</legend>
                     <div class="checkboxes">
                         {% for key, label in ACCESS_FIELDS.items() %}
-                        <label>
-                            <input type="checkbox" name="access_{{ key }}" id="f_acc_{{ key }}">
-                            {{ label }}
-                        </label>
+                        <label><input type="checkbox" name="access_{{ key }}" id="f_acc_{{ key }}">{{ label }}</label>
                         {% endfor %}
                     </div>
                 </fieldset>
@@ -123,10 +123,7 @@
                     <legend>Чёрные списки</legend>
                     <div class="checkboxes">
                         {% for key, label in BLACKLIST_FIELDS.items() %}
-                        <label>
-                            <input type="checkbox" name="blacklist_{{ key }}" id="f_bl_{{ key }}">
-                            {{ label }}
-                        </label>
+                        <label><input type="checkbox" name="blacklist_{{ key }}" id="f_bl_{{ key }}">{{ label }}</label>
                         {% endfor %}
                     </div>
                 </fieldset>
@@ -213,45 +210,43 @@
             }
 
             function openModal(card) {
-                modalName.textContent = card.dataset.username || '—';
-                m_uuid.textContent = card.dataset.uuid;
-                m_discord.textContent = card.dataset.discord || '-';
-                m_steam.textContent = card.dataset.steam || '-';
+                const p = JSON.parse(card.dataset.profile);
 
-                f_uuid.value = card.dataset.uuid;
-                c_uuid.value = card.dataset.uuid;
-                n_uuid.value = card.dataset.uuid;
+                modalName.textContent = p.username || '—';
+                m_uuid.textContent = p.uuid;
+                m_discord.textContent = p.discord || '-';
+                m_steam.textContent = p.steam || '-';
 
-                const access = JSON.parse(card.dataset.access || '{}');
-                setCheckboxes('f_acc_', access);
+                f_uuid.value = p.uuid;
+                c_uuid.value = p.uuid;
+                n_uuid.value = p.uuid;
 
-                const bl = JSON.parse(card.dataset.blacklist || '{}');
-                setCheckboxes('f_bl_', bl);
+                setCheckboxes('f_acc_', p.access || {});
+                setCheckboxes('f_bl_', p.blacklist || {});
 
-                limBase.value = card.dataset.limBase || 0;
-                limDonate.value = card.dataset.limDonate || 0;
-                limUsed.value = card.dataset.limUsed || 0;
-                limBaseChar.value = card.dataset.limBasechar || 0;
-                limDonateChar.value = card.dataset.limDonatechar || 0;
+                limBase.value = p.limits.base_limit || 0;
+                limDonate.value = p.limits.donate_limit || 0;
+                limUsed.value = p.limits.used || 0;
+                limBaseChar.value = p.limits.base_char || 0;
+                limDonateChar.value = p.limits.donate_char || 0;
 
                 noteList.innerHTML = '';
-                JSON.parse(card.dataset.notes || '[]').forEach(n => {
+                (p.notes || []).forEach(n => {
                     const li = document.createElement('li');
                     li.textContent = `[${n.date}] (${n.status}) ${n.content}`;
                     noteList.appendChild(li);
                 });
 
                 charList.innerHTML = '';
-                JSON.parse(card.dataset.chars || '[]').forEach((c, i) => {
+                (p.chars || []).forEach((c, i) => {
                     const li = document.createElement('li');
                     li.innerHTML = `<strong>${c.name}</strong>` +
                         (c.discord_url ? ` – <a href="${c.discord_url}" target="_blank">анкета</a>` : '');
                     if (Array.isArray(c.steam_urls) && c.steam_urls.length) {
-                        li.innerHTML += '<br>Контент: ' +
-                            c.steam_urls.map(s => `<a href="${s}" target="_blank">link</a>`).join(', ');
+                        li.innerHTML += '<br>Контент: ' + c.steam_urls.map(s => `<a href="${s}" target="_blank">link</a>`).join(', ');
                     }
                     li.innerHTML += `<form method="post" action="/profile/admin/char/delete" onsubmit="return confirm('Удалить ${c.name}?');">
-                <input type="hidden" name="uuid" value="${card.dataset.uuid}">
+                <input type="hidden" name="uuid" value="${p.uuid}">
                 <input type="hidden" name="index" value="${i}">
                 <button class="btn danger" type="submit">Удалить</button>
             </form>`;
@@ -267,18 +262,9 @@
                 const btn = e.target.closest('.btn-edit');
                 if (btn) openModal(btn.closest('.player-card'));
             });
-
-            document.getElementById('btn-cancel').addEventListener('click', e => {
-                e.preventDefault(); closeModal();
-            });
-
-            backdrop.addEventListener('click', e => {
-                if (e.target === backdrop) closeModal();
-            });
-
-            document.addEventListener('keydown', e => {
-                if (e.key === 'Escape') closeModal();
-            });
+            document.getElementById('btn-cancel').addEventListener('click', e => { e.preventDefault(); closeModal(); });
+            backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
         })();
     </script>
 </body>
