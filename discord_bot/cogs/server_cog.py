@@ -24,7 +24,7 @@ class ServerControlCog(commands.Cog):
         if not isinstance(data, ProfileData):
             return None
 
-        return profile if data.is_admin else None
+        return profile if data.access.get("server_control") else None
 
     async def _do_action(self, ctx: commands.Context, action: str) -> None:
         user_id = ctx.author.id

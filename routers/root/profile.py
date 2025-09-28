@@ -168,6 +168,25 @@ async def profile_admin_home(request: Request):
 
 
 # Admin: list & view (moved to /profiles)
+ACCESS_FIELDS = {
+    "full_access": "Полный доступ",
+    #
+    "panel_access": "Доступ в админ-панель",
+    #
+    "edit_profiles": "Редактировать профили",
+    "edit_chars": "Редактировать персонажей",
+    "edit_notes": "Редактировать заметки",
+    #
+    "server_control": "Управление игровым сервером",
+}
+
+BLACKLIST_FIELDS = {
+    "chars": "ЧС: новые персонажи",
+    "lore_chars": "ЧС: лорные персонажи",
+    "admin": "ЧС: администрация",
+}
+
+
 @router.get("/profile/admin/profiles")
 async def profile_admin_profiles(request: Request):
     _require_admin(request)
@@ -259,6 +278,8 @@ async def profile_admin_profiles(request: Request):
             "authenticated": True,
             "users": view_pool,
             "q": q,
+            "ACCESS_FIELDS": ACCESS_FIELDS,
+            "BLACKLIST_FIELDS": BLACKLIST_FIELDS,
         },
     )
 

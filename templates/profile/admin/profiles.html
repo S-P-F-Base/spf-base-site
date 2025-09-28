@@ -110,23 +110,25 @@
                 <fieldset class="fieldset">
                     <legend>Права</legend>
                     <div class="checkboxes">
-                        <label><input type="checkbox" name="access_panel" id="f_acc_panel"> Доступ в
-                            админ-панель</label>
-                        <label><input type="checkbox" name="access_edit_profiles" id="f_acc_edit_profiles">
-                            Редактировать профили</label>
-                        <label><input type="checkbox" name="access_edit_chars" id="f_acc_edit_chars"> Редактировать
-                            персонажей</label>
-                        <label><input type="checkbox" name="access_edit_notes" id="f_acc_edit_notes"> Редактировать
-                            заметки</label>
-                        <label><input type="checkbox" name="access_full" id="f_acc_full"> Полный доступ</label>
+                        {% for key, label in ACCESS_FIELDS.items() %}
+                        <label>
+                            <input type="checkbox" name="access_{{ key }}" id="f_acc_{{ key }}">
+                            {{ label }}
+                        </label>
+                        {% endfor %}
                     </div>
                 </fieldset>
 
                 <fieldset class="fieldset">
                     <legend>Чёрные списки</legend>
-                    <label><input type="checkbox" name="blacklist_chars" id="f_bl_chars"> ЧС: новые персонажи</label>
-                    <label><input type="checkbox" name="blacklist_lore" id="f_bl_lore"> ЧС: лорные персонажи</label>
-                    <label><input type="checkbox" name="blacklist_admin" id="f_bl_admin"> ЧС: администрация</label>
+                    <div class="checkboxes">
+                        {% for key, label in BLACKLIST_FIELDS.items() %}
+                        <label>
+                            <input type="checkbox" name="blacklist_{{ key }}" id="f_bl_{{ key }}">
+                            {{ label }}
+                        </label>
+                        {% endfor %}
+                    </div>
                 </fieldset>
 
                 <fieldset class="fieldset">
@@ -184,27 +186,15 @@
         (function () {
             const grid = document.getElementById('players');
             const backdrop = document.getElementById('modal-backdrop');
-            const f_uuid = document.getElementById('f_uuid');
-            const c_uuid = document.getElementById('c_uuid');
-            const n_uuid = document.getElementById('n_uuid');
+
             const modalName = document.getElementById('modal-player-name');
             const m_uuid = document.getElementById('m_uuid');
             const m_discord = document.getElementById('m_discord');
             const m_steam = document.getElementById('m_steam');
 
-            const accessFields = {
-                panel: document.getElementById('f_acc_panel'),
-                edit_profiles: document.getElementById('f_acc_edit_profiles'),
-                edit_chars: document.getElementById('f_acc_edit_chars'),
-                edit_notes: document.getElementById('f_acc_edit_notes'),
-                full: document.getElementById('f_acc_full'),
-            };
-
-            const blFields = {
-                chars: document.getElementById('f_bl_chars'),
-                lore: document.getElementById('f_bl_lore'),
-                admin: document.getElementById('f_bl_admin'),
-            };
+            const f_uuid = document.getElementById('f_uuid');
+            const c_uuid = document.getElementById('c_uuid');
+            const n_uuid = document.getElementById('n_uuid');
 
             const limBase = document.getElementById('f_lim_base');
             const limDonate = document.getElementById('f_lim_donate');
@@ -215,8 +205,15 @@
             const charList = document.getElementById('char_list');
             const noteList = document.getElementById('note_list');
 
+            function setCheckboxes(prefix, data) {
+                Object.entries(data || {}).forEach(([key, value]) => {
+                    const el = document.getElementById(prefix + key);
+                    if (el) el.checked = !!value;
+                });
+            }
+
             function openModal(card) {
-                modalName.textContent = card.dataset.username;
+                modalName.textContent = card.dataset.username || '—';
                 m_uuid.textContent = card.dataset.uuid;
                 m_discord.textContent = card.dataset.discord || '-';
                 m_steam.textContent = card.dataset.steam || '-';
@@ -226,15 +223,10 @@
                 n_uuid.value = card.dataset.uuid;
 
                 const access = JSON.parse(card.dataset.access || '{}');
-                accessFields.panel.checked = !!access.panel_access;
-                accessFields.edit_profiles.checked = !!access.edit_profiles;
-                accessFields.edit_chars.checked = !!access.edit_chars;
-                accessFields.edit_notes.checked = !!access.edit_notes;
-                accessFields.full.checked = !!access.full_access;
+                setCheckboxes('f_acc_', access);
 
-                blFields.chars.checked = card.dataset.blChars === '1';
-                blFields.lore.checked = card.dataset.blLore === '1';
-                blFields.admin.checked = card.dataset.blAdmin === '1';
+                const bl = JSON.parse(card.dataset.blacklist || '{}');
+                setCheckboxes('f_bl_', bl);
 
                 limBase.value = card.dataset.limBase || 0;
                 limDonate.value = card.dataset.limDonate || 0;
@@ -253,9 +245,10 @@
                 JSON.parse(card.dataset.chars || '[]').forEach((c, i) => {
                     const li = document.createElement('li');
                     li.innerHTML = `<strong>${c.name}</strong>` +
-                        (c.discord_url ? ` - <a href="${c.discord_url}" target="_blank">анкета</a>` : '');
+                        (c.discord_url ? ` – <a href="${c.discord_url}" target="_blank">анкета</a>` : '');
                     if (Array.isArray(c.steam_urls) && c.steam_urls.length) {
-                        li.innerHTML += '<br>Контент: ' + c.steam_urls.map(s => `<a href="${s}" target="_blank">link</a>`).join(', ');
+                        li.innerHTML += '<br>Контент: ' +
+                            c.steam_urls.map(s => `<a href="${s}" target="_blank">link</a>`).join(', ');
                     }
                     li.innerHTML += `<form method="post" action="/profile/admin/char/delete" onsubmit="return confirm('Удалить ${c.name}?');">
                 <input type="hidden" name="uuid" value="${card.dataset.uuid}">
@@ -267,15 +260,25 @@
 
                 backdrop.style.display = 'flex';
             }
+
             function closeModal() { backdrop.style.display = 'none'; }
 
             grid.addEventListener('click', e => {
                 const btn = e.target.closest('.btn-edit');
                 if (btn) openModal(btn.closest('.player-card'));
             });
-            document.getElementById('btn-cancel').addEventListener('click', e => { e.preventDefault(); closeModal(); });
-            backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
-            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+            document.getElementById('btn-cancel').addEventListener('click', e => {
+                e.preventDefault(); closeModal();
+            });
+
+            backdrop.addEventListener('click', e => {
+                if (e.target === backdrop) closeModal();
+            });
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') closeModal();
+            });
         })();
     </script>
 </body>

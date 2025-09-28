@@ -27,10 +27,14 @@ class ProfileData:
     def default_access() -> dict[str, bool]:
         return {
             "full_access": False,
+            #
             "panel_access": False,
+            #
             "edit_profiles": False,
             "edit_chars": False,
             "edit_notes": False,
+            #
+            "server_control": False,
         }
 
     @staticmethod
@@ -76,6 +80,7 @@ class ProfileData:
 
         if "access" in data:
             new_obj.access = {**cls.default_access(), **data.get("access", {})}
+
         else:
             new_obj.access = cls.default_access()
             if data.get("is_admin", False):
