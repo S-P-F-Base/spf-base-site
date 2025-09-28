@@ -82,7 +82,7 @@
     width: 24px;
     height: 24px;
     flex: 0 0 24px;
-    background: url("/static/images/icons/lock.png") no-repeat center / contain;
+    background: url("/static/images/icons/lock.svg") no-repeat center / contain;
     opacity: 0.9;
 }
 
