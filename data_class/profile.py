@@ -79,7 +79,7 @@ class ProfileData:
         else:
             new_obj.access = cls.default_access()
             if data.get("is_admin", False):
-                new_obj.access["full_access"] = True
+                new_obj.access["panel_access"] = True
 
         new_obj.blacklist = {**cls.default_blacklist(), **data.get("blacklist", {})}
         new_obj.chars = data.get("chars", [])
