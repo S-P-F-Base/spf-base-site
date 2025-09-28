@@ -17,7 +17,7 @@
             <h1 class="welcome-title">Список игроков</h1>
 
             <form method="get" action="/profile/admin">
-                <input type="text" name="q" placeholder="Поиск: имя / UUID / Discord / Steam" value="{{ q or '' }}"
+                <input type="text" name="q" placeholder="Поиск: Имя / UUID / Discord / Steam" value="{{ q or '' }}"
                     style="width:min(520px,90%);padding:.55rem;border-radius:8px;border:1px solid #666;background:#111;color:#eee;">
                 <button class="btn" type="submit">Искать</button>
             </form>
@@ -25,8 +25,8 @@
             <section style="margin-top:1rem;">
                 <h2 class="welcome-title" style="margin-bottom:.4rem;">Добавить игрока</h2>
                 <form method="post" action="/profile/admin/create" class="create-form">
-                    <input type="text" name="discord_id" placeholder="Discord ID (числа)" pattern="\d{5,}" required>
-                    <input type="text" name="steam" placeholder="Steam: ссылка / vanity / SteamID / SteamID64" required>
+                    <input type="text" name="discord_id" placeholder="Discord ID" pattern="\d{5,}" required>
+                    <input type="text" name="steam" placeholder="Steam" required>
                     <button class="btn" type="submit">Создать профиль</button>
                 </form>
             </section>
@@ -152,7 +152,7 @@
             <fieldset class="fieldset">
                 <legend>Персонажи</legend>
                 <ul class="read-list" id="f_char_list"></ul>
-                <div class="muted">Список текущих персонажей. Добавление возможно, редактирование и удаление отключены.
+                <div class="muted">Список текущих персонажей.
                 </div>
 
                 <form id="char-form" method="post" action="/profile/admin/char/add">
