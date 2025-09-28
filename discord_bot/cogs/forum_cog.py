@@ -10,7 +10,10 @@ WATCHED_FORUM_IDS = {
     1398286514571448433,  # Заявки на администрацию
 }
 
-APPEAL_STR = "Для апелляции или уточнения создайте тикет: https://discord.com/channels/1321306723423883284/1358046882059780136/1408426647820046378."
+APPEAL_STR = (
+    "Для апелляции или уточнения создайте тикет: "
+    "https://discord.com/channels/1321306723423883284/1358046882059780136/1408426647820046378."
+)
 
 
 class ForumBlockCog(commands.Cog):
@@ -36,55 +39,46 @@ class ForumBlockCog(commands.Cog):
 
         data: ProfileData = profile.get("data", ProfileData())
 
-        # Проверка на блок администрации
+        async def send_dm_and_delete(reason: str):
+            user = self.bot.get_user(author_id) or await self.bot.fetch_user(author_id)
+            if user:
+                try:
+                    await user.send(
+                        f"Ваша анкета была удалена.\nПричина: {reason}\n{APPEAL_STR}"
+                    )
+
+                except discord.Forbidden:
+                    logging.warning(f"Не удалось отправить ЛС пользователю {author_id}")
+
+            try:
+                await thread.delete(reason=reason)
+
+            except discord.Forbidden:
+                logging.error(f"Нет прав на удаление темы {thread.id}")
+
+            except discord.HTTPException as e:
+                logging.error(f"Ошибка при удалении темы {thread.id}: {e}")
+
+        # Проверка на блок для заявок в админы
         if thread.parent.id == 1398286514571448433 and data.blacklist.get(
             "admin", False
         ):
-            no_tag = thread.parent.get_tag(1410593837189038091)
-            if not no_tag:
-                logging.error("Проёбан айди тега отказа для анкет на администрацию")
-                return
+            await send_dm_and_delete("ЧС администрации с БД spf-base.ru")
+            return
 
-            await thread.send(
-                f"<@{author_id}>, вы находитесь в чёрном списке для подачи на пост администратора. {APPEAL_STR}"
-            )
-            await thread.edit(
-                reason="ЧС администрации с БД spf-base.ru",
-                applied_tags=thread.applied_tags + [no_tag],
-                locked=True,
-            )
-
-        else:
+        # Для анкет персонажей
+        is_lore = False
+        try:
             lore_tag = thread.parent.get_tag(1404795974706135152)
-            if not lore_tag:
-                logging.error(
-                    "Проёбан айди тега лорового персонажа для анкет персонажа"
-                )
-                return
+            if lore_tag and lore_tag in thread.applied_tags:
+                is_lore = True
 
-            no_tag = thread.parent.get_tag(1355814835169919052)
-            if not no_tag:
-                logging.error("Проёбан айди тега отказа для анкет персонажа")
-                return
+        except Exception:
+            logging.warning("Не найден или не прочитан тег лорного персонажа")
 
-            if lore_tag in thread.applied_tags:  # На лорного персонажа
-                if data.blacklist.get("lore_chars", False):
-                    await thread.send(
-                        f"<@{author_id}>, вы находитесь в чёрном списке для подачи на лорного персонажа. {APPEAL_STR}"
-                    )
-                    await thread.edit(
-                        reason="ЧС лорных с БД spf-base.ru",
-                        applied_tags=thread.applied_tags + [no_tag],
-                        locked=True,
-                    )
-
-            else:  # На обычного персонажа
-                if data.blacklist.get("chars", False):
-                    await thread.send(
-                        f"<@{author_id}>, вы находитесь в чёрном списке для подачи обычных персонажей. {APPEAL_STR}"
-                    )
-                    await thread.edit(
-                        reason="ЧС обычных с БД spf-base.ru",
-                        applied_tags=thread.applied_tags + [no_tag],
-                        locked=True,
-                    )
+        if is_lore:
+            if data.blacklist.get("lore_chars", False):
+                await send_dm_and_delete("ЧС лорных персонажей с БД spf-base.ru")
+        else:
+            if data.blacklist.get("chars", False):
+                await send_dm_and_delete("ЧС обычных персонажей с БД spf-base.ru")
