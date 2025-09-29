@@ -504,3 +504,32 @@ body::-webkit-scrollbar-thumb {
     color: orange;
     cursor: pointer;
 }
+
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem 2rem;
+    margin-top: 1rem;
+}
+
+.link-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .7rem 0;
+    color: #e0e0e0;
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(255, 165, 0, .35);
+    transition: color .2s ease, border-color .2s ease;
+}
+
+.link-item:hover {
+    color: orange;
+    border-bottom-color: orange;
+}
+
+.icon-png {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}

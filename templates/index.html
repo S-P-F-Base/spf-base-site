@@ -17,60 +17,65 @@
         <main class="hero-wrap">
             <section class="hero content-tile" aria-labelledby="hero-title">
                 <h1 id="hero-title">RP Garry's Mod сервер по вселенной Girls’ Frontline</h1>
-                <p class="subtitle">
-                    Сервер с уклоном в ролевую составляющую, с целью сделать мир в котором "игроки влияют на мир".
-                </p>
-
+                <p class="subtitle">RP-сервер, где основной упор сделан на ролевое взаимодействие. Здесь игроки своими
+                    действиями формируют и изменяют мир.</p>
                 {% if server_status %}
-                <div class="status-strip" aria-label="Server status">
+                <div class="status-strip">
                     <span class="badge">Статус: {{ server_status }}</span>
                     <span class="badge">Запуски: ВТ, ЧТ, ВС</span>
+                    <span class="badge">Время запуска: 15:00 МСК</span>
                 </div>
                 {% endif %}
             </section>
 
-            <section class="quick-cards" aria-labelledby="quick-links-title">
-                <h2 id="quick-links-title" class="visually-hidden" style="position:absolute;left:-9999px;">Быстрые
-                    ссылки</h2>
-
-                <article class="card" aria-labelledby="card-start">
-                    <h3 id="card-start">Начать</h3>
-                    <ul>
-                        <li><a href="/wiki/docs/server_rules/rules">Правила проекта</a></li>
-                        <li><a href="/wiki/docs/questionnaire">Правила оформления анкет</a></li>
-                        <li><a href="/wiki/docs/termins">Термины и расшифровки</a></li>
-                        <li><a href="/wiki/guides/commands">Список команд сервера</a></li>
-                    </ul>
-                </article>
-
-                <article class="card" aria-labelledby="card-lore">
-                    <h3 id="card-lore">Лор</h3>
-                    <ul>
-                        <li><a href="/wiki">Wiki по серверу</a></li>
-                        <li><a href="/lore_char">Доступные лор-персонажи</a></li>
-                    </ul>
-                </article>
-
-                <article class="card" aria-labelledby="card-community">
-                    <h3 id="card-community">Сообщество и поддержка</h3>
-                    <ul>
-                        <li><a href="/discord">Зайти в Discord</a></li>
-                        <li><a href="/profile">Панель игрока</a></li>
-                        <li><a href="/store">Магазин</a></li>
-                        <li><a href="/donate">Донат</a></li>
-                        <li><a href="https://github.com/S-P-F-Base" rel="noopener">GitHub</a></li>
-                    </ul>
-                </article>
+            <section class="content-tile" style="max-width:1100px; margin-top:1rem;">
+                <h2>Быстрые ссылки</h2>
+                <div class="links-grid">
+                    <a class="link-item" href="/wiki/docs/server_rules/rules">
+                        <img src="/static/images/icons/rules.png" alt="" class="icon-png">
+                        <span>Правила проекта</span>
+                    </a>
+                    <a class="link-item" href="/wiki/docs/questionnaire">
+                        <img src="/static/images/icons/questionnaire.png" alt="" class="icon-png">
+                        <span>Правила анкет</span>
+                    </a>
+                    <a class="link-item" href="/wiki/guides/commands">
+                        <img src="/static/images/icons/commands.png" alt="" class="icon-png">
+                        <span>Список команд</span>
+                    </a>
+                    <a class="link-item" href="/wiki">
+                        <img src="/static/images/icons/wiki.png" alt="" class="icon-png">
+                        <span>Wiki по серверу</span>
+                    </a>
+                    <a class="link-item" href="/lore_char">
+                        <img src="/static/images/icons/lore_chars.png" alt="" class="icon-png">
+                        <span>Лор-персонажи</span>
+                    </a>
+                    <a class="link-item" href="/map_edit">
+                        <img src="/static/images/icons/world.png" alt="" class="icon-png">
+                        <span>Карта мира</span>
+                    </a>
+                    <a class="link-item" href="/store">
+                        <img src="/static/images/icons/store.png" alt="" class="icon-png">
+                        <span>Магазин</span>
+                    </a>
+                    <a class="link-item" href="/donate">
+                        <img src="/static/images/icons/donate.png" alt="" class="icon-png">
+                        <span>Донат</span>
+                    </a>
+                    <a class="link-item" href="https://github.com/S-P-F-Base" rel="noopener">
+                        <img src="/static/images/icons/github.png" alt="" class="icon-png">
+                        <span>GitHub</span>
+                    </a>
+                </div>
             </section>
 
-            <section class="updates content-tile" style="max-width:1100px;" aria-labelledby="news-title">
-                <h2 id="news-title">
-                    <a href="/wiki/docs/news" style="color: orange; text-decoration: none;">Последние новости</a>
-                </h2>
+            <section class="updates content-tile" style="max-width:1100px;">
+                <h2><a href="/wiki/docs/news" style="color: orange; text-decoration: none;">Последние новости</a></h2>
                 <ul class="updates-list">
                     {% for n in news %}
                     <li>
-                        <span class="dot" aria-hidden="true"></span>
+                        <span class="dot"></span>
                         <time datetime="{{ n.date.strftime('%Y-%m-%d') }}">{{ n.date.strftime("%d.%m.%Y") }}</time>
                         <a href="{{ n.href }}">{{ n.title }}</a>
                     </li>
