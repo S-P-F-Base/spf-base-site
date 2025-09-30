@@ -82,3 +82,8 @@ class ForumBlockCog(commands.Cog):
         else:
             if data.blacklist.get("chars", False):
                 await send_dm_and_delete("ЧС обычных персонажей с БД spf-base.ru")
+
+        # Если же ничего не нашли просто пишем сколько лимита осталось
+        await thread.send(
+            f"Лимиты:\nМесто: `{data.limits.get('base_limit', 0) + data.limits.get('donate_limit', 0)}` / `{data.limits.get('used', 0)}` МБ\nКоличество персонажей: `{data.limits.get('base_char', 0) + data.limits.get('donate_char', 0)}` / `{len(data.chars)}` шт."
+        )
