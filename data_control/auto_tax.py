@@ -14,6 +14,7 @@ from data_bases.payment_db import PaymentServiceDB
 
 from .config import Config
 
+logger = logging.getLogger(__name__)
 TWOPLACES = Decimal("0.01")
 
 DATA_DIR = Path(os.getenv("DATA_DIR", "./data"))
@@ -52,13 +53,13 @@ class AutoTax:
     @classmethod
     def _request_with_retry(cls, method: str, path: str, **kwargs) -> Response:
         if cls._is_token_expired():
-            logging.info("AutoTax: token expired → refresh()")
+            logger.info("AutoTax: token expired → refresh()")
             cls._refresh()
 
         url = cls._base_url(path)
         resp = cls._tax_session.request(method, url, **kwargs)
         if resp.status_code == 401:
-            logging.warning("AutoTax: got 401 → re-login and retry once")
+            logger.warning("AutoTax: got 401 → re-login and retry once")
             cls._login()
             resp = cls._tax_session.request(method, url, **kwargs)
 
@@ -87,7 +88,7 @@ class AutoTax:
             return _now_utc() >= dt
 
         except Exception as e:
-            logging.warning(
+            logger.warning(
                 f"AutoTax: invalid tokenExpireIn format: {cls._token_expire} ({e})"
             )
             return True
@@ -139,7 +140,7 @@ class AutoTax:
         )
 
         if not resp.ok:
-            logging.error(f"AutoTax: login error {resp.status_code}: {resp.text}")
+            logger.error(f"AutoTax: login error {resp.status_code}: {resp.text}")
             return
 
         cls._update_data(resp.json())
@@ -159,7 +160,7 @@ class AutoTax:
             },
         )
         if not resp.ok:
-            logging.error(f"AutoTax: refresh error {resp.status_code}: {resp.text}")
+            logger.error(f"AutoTax: refresh error {resp.status_code}: {resp.text}")
             return
         cls._update_data(resp.json())
 
@@ -274,7 +275,7 @@ class AutoTax:
             cls._save_queue(queue)
 
         except Exception as e:
-            logging.error(f"AutoTax.enqueue_income error: {e}")
+            logger.error(f"AutoTax.enqueue_income error: {e}")
 
     @classmethod
     def _load_queue(cls) -> list[dict]:
@@ -286,7 +287,7 @@ class AutoTax:
             return json.loads(QUEUE_FILE.read_text(encoding="utf-8") or "[]")
 
         except Exception as e:
-            logging.error(f"AutoTax._load_queue error: {e}")
+            logger.error(f"AutoTax._load_queue error: {e}")
             return []
 
     @classmethod
@@ -299,13 +300,13 @@ class AutoTax:
             tmp.replace(QUEUE_FILE)
 
         except Exception as e:
-            logging.error(f"AutoTax._save_queue error: {e}")
+            logger.error(f"AutoTax._save_queue error: {e}")
 
     @classmethod
     async def run_queue_worker(
         cls, interval_sec: int = 60, batch_size: int = 10
     ) -> None:
-        logging.info("AutoTax queue worker started")
+        logger.info("AutoTax queue worker started")
         while True:
             try:
                 queue = cls._load_queue()
@@ -354,6 +355,6 @@ class AutoTax:
                 cls._save_queue(remaining)
 
             except Exception as e:
-                logging.error(f"AutoTax worker loop error: {e}")
+                logger.error(f"AutoTax worker loop error: {e}")
 
             await asyncio.sleep(interval_sec)
