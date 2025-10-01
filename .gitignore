@@ -81,3 +81,6 @@ venv.bak/
 # Data
 MAINTENANCE
 [Dd]ata/
+
+# Some fun
+secrets
