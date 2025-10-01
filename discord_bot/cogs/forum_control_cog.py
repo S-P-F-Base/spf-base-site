@@ -16,9 +16,62 @@ APPEAL_STR = (
 )
 
 
-class ForumBlockCog(commands.Cog):
+class ForumControlCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    @commands.command(name="cleanup_ankets")
+    @commands.has_permissions(manage_threads=True)
+    async def purge_bad_forms(self, ctx: commands.Context):
+        forum_id = 1321317936756953119
+        target_tag_id = 1355814835169919052
+
+        forum = ctx.guild.get_channel(forum_id)  # type: ignore
+        if not isinstance(forum, discord.ForumChannel):
+            await ctx.send("Форум не найден или указан неверный ID.")
+            return
+
+        deleted = 0
+        failed = 0
+
+        target_tag = forum.get_tag(target_tag_id)
+        if not target_tag:
+            await ctx.send("Тег не найден.")
+            return
+
+        for thread in forum.threads:
+            try:
+                if target_tag in thread.applied_tags:
+                    await thread.delete(
+                        reason=f"Удаление анкет с тегом 'отклонено' юзером {ctx.author.id}"
+                    )
+                    deleted += 1
+
+            except discord.Forbidden:
+                logging.warning(f"Нет прав на удаление темы {thread.id}")
+                failed += 1
+
+            except discord.HTTPException as e:
+                logging.error(f"Ошибка при удалении темы {thread.id}: {e}")
+                failed += 1
+
+        async for thread in forum.archived_threads(limit=None):
+            try:
+                if target_tag in thread.applied_tags:
+                    await thread.delete(
+                        reason=f"Удаление анкет с тегом 'отклонено' юзером {ctx.author.id}"
+                    )
+                    deleted += 1
+
+            except discord.Forbidden:
+                logging.warning(f"Нет прав на удаление архивного треда {thread.id}")
+                failed += 1
+
+            except discord.HTTPException as e:
+                logging.error(f"Ошибка при удалении архивного треда {thread.id}: {e}")
+                failed += 1
+
+        await ctx.send(f"Удалено {deleted} тредов, не удалось удалить {failed}.")
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: discord.Thread):
@@ -79,9 +132,11 @@ class ForumBlockCog(commands.Cog):
         if is_lore:
             if data.blacklist.get("lore_chars", False):
                 await send_dm_and_delete("ЧС лорных персонажей с БД spf-base.ru")
+                return
         else:
             if data.blacklist.get("chars", False):
                 await send_dm_and_delete("ЧС обычных персонажей с БД spf-base.ru")
+                return
 
         # Если же ничего не нашли просто пишем сколько лимита осталось
         await thread.send(

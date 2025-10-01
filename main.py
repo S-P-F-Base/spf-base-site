@@ -12,8 +12,6 @@ import discord_bot
 from data_bases import PaymentServiceDB
 from data_class import ProfileDataBase
 from data_control import AutoTax, Config, ServerControl
-from routers.api.payment_control import router as api_payment_control
-from routers.api.service_control import router as api_service_control
 from routers.api.yoomoney import router as api_yoomoney
 from routers.api_v2.oauth2 import router as api_v2_oauth2
 from routers.root import router as root
@@ -44,6 +42,7 @@ async def lifespan(app: FastAPI):
 
         ServerControl.setup()
 
+        asyncio.create_task(ServerControl.server_status_updater())
         asyncio.create_task(AutoTax.run_queue_worker(interval_sec=60))
         asyncio.create_task(discord_bot.start())
 
@@ -131,8 +130,6 @@ def custom_http_exception_handler(request: Request, exc: StarletteHTTPException)
     return HTMLResponse(content=exc.detail, status_code=exc.status_code)
 
 
-app.include_router(api_payment_control, prefix="/api/payment_control")
-app.include_router(api_service_control, prefix="/api/service_control")
 app.include_router(api_yoomoney, prefix="/api/yoomoney")
 
 app.include_router(api_v2_oauth2, prefix="/api_v2/oauth2")

@@ -277,13 +277,17 @@ class PaymentServiceDB(BaseDB):
     def decrement_service_left(cls, service_u_id: str, qty: int = 1) -> bool:
         if qty <= 0:
             return True
+
         svc = cls.get_service(service_u_id)
         if not svc:
             return False
+
         if svc.left is None:
             return True
+
         if svc.left < qty:
             return False
+
         svc.left -= qty
         cls.upsert_service(service_u_id, svc)
         return True
@@ -292,11 +296,14 @@ class PaymentServiceDB(BaseDB):
     def increment_service_left(cls, service_u_id: str, qty: int = 1) -> bool:
         if qty <= 0:
             return True
+
         svc = cls.get_service(service_u_id)
         if not svc:
             return False
+
         if svc.left is None:
             return True
+
         svc.left += qty
         cls.upsert_service(service_u_id, svc)
         return True

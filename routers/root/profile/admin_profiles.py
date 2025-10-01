@@ -2,12 +2,13 @@ import asyncio
 import logging
 import re
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Form, HTTPException, Request
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 
-import utils.jwt
+import utils.admin
+import utils.error
 import utils.steam
 from data_class import ProfileData, ProfileDataBase
 from discord_bot import bot
@@ -16,155 +17,6 @@ from templates import templates
 logger = logging.getLogger(__name__)
 router = APIRouter()
 _URL_RE = re.compile(r"^https?://", re.IGNORECASE)
-
-
-# Error helpers (uniform)
-def _bad_request(code: str, message: str, **extra) -> None:
-    payload: dict[str, Any] = {"code": code, "message": message}
-    if extra:
-        payload["context"] = extra
-
-    raise HTTPException(status_code=400, detail=payload)
-
-
-def _forbidden(code: str, message: str, **extra) -> None:
-    payload: dict[str, Any] = {"code": code, "message": message}
-    if extra:
-        payload["context"] = extra
-
-    raise HTTPException(status_code=403, detail=payload)
-
-
-def _not_found(code: str, message: str, **extra) -> None:
-    payload: dict[str, Any] = {"code": code, "message": message}
-    if extra:
-        payload["context"] = extra
-
-    raise HTTPException(status_code=404, detail=payload)
-
-
-def _failed_dep(code: str, message: str, **extra) -> None:
-    payload: dict[str, Any] = {"code": code, "message": message}
-    if extra:
-        payload["context"] = extra
-
-    raise HTTPException(status_code=424, detail=payload)
-
-
-def _server_error(code: str, message: str, **extra) -> None:
-    payload: dict[str, Any] = {"code": code, "message": message}
-    if extra:
-        payload["context"] = extra
-
-    raise HTTPException(status_code=500, detail=payload)
-
-
-# Auth helpers
-def _get_admin_profile(request: Request):
-    token = request.cookies.get("session")
-    decoded = utils.jwt.decode(token) if token else None
-    if not decoded:
-        return None
-
-    uuid = decoded.get("uuid")
-    if not uuid:
-        return None
-
-    profile = ProfileDataBase.get_profile_by_uuid(uuid)
-    if not profile:
-        return None
-
-    raw = profile.get("data", ProfileData())
-    if not isinstance(raw, ProfileData):
-        return None
-
-    return profile if raw.has_access("panel_access") else None
-
-
-def _require_admin(request: Request) -> dict:
-    admin = _get_admin_profile(request)
-    if admin is None:
-        _forbidden(
-            "admin_required", "Admin privileges required to access this endpoint"
-        )
-
-    return admin  # type: ignore
-
-
-def _require_access(request: Request, perm: str) -> dict:
-    admin = _require_admin(request)
-    raw = admin.get("data", ProfileData())
-    if not isinstance(raw, ProfileData):
-        _forbidden("admin_data_invalid", "Admin profile data is invalid")
-
-    if not raw.has_access(perm):
-        _forbidden(f"{perm}_required", f"Permission '{perm}' is required")
-
-    return admin
-
-
-# Public pages
-async def render_profile_page(request: Request, template_name: str):
-    token = request.cookies.get("session")
-    decoded = utils.jwt.decode(token) if token else None
-    if not decoded:
-        if template_name == "profile/index.html":
-            return templates.TemplateResponse(
-                template_name,
-                {"request": request, "authenticated": False, "profile": {}},
-            )
-
-        return RedirectResponse("/profile")
-
-    uuid = decoded.get("uuid")
-    if not uuid:
-        resp = RedirectResponse("/profile")
-        resp.delete_cookie("session")
-        return resp
-
-    profile = ProfileDataBase.get_profile_by_uuid(uuid)
-    if not profile:
-        resp = RedirectResponse("/profile")
-        resp.delete_cookie("session")
-        return resp
-
-    discord_id = profile.get("discord_id")
-    if discord_id:
-        cog = bot.get_cog("UserControlCog")
-        if cog:
-            try:
-                extra = await cog.get_user_info(discord_id)  # type: ignore
-                if isinstance(extra, dict):
-                    profile.update(extra)
-
-            except Exception:
-                pass
-
-    profile.pop("notes", None)
-    return templates.TemplateResponse(
-        template_name,
-        {"request": request, "authenticated": True, "profile": profile},
-    )
-
-
-@router.get("/profile")
-async def profile(request: Request):
-    return await render_profile_page(request, "profile/index.html")
-
-
-@router.get("/profile/content")
-async def profile_content(request: Request):
-    return await render_profile_page(request, "profile/content.html")
-
-
-# Admin: main dashboard
-@router.get("/profile/admin")
-async def profile_admin_home(request: Request):
-    admin = _require_admin(request)
-    return templates.TemplateResponse(
-        "profile/admin/index.html",
-        {"request": request, "authenticated": True, "profile": admin},
-    )
 
 
 # Admin: list & view (moved to /profiles)
@@ -176,6 +28,12 @@ ACCESS_FIELDS = {
     "edit_profiles": "Редактировать профили",
     "edit_chars": "Редактировать персонажей",
     "edit_notes": "Редактировать заметки",
+    #
+    "edit_lore_chars": "Редактировать лрорных персонажей",
+    #
+    "edit_services": "Управлять услугами",
+    #
+    "edit_payments": "Управлять оплатой",
     #
     "server_control": "Управление игровым сервером",
 }
@@ -189,7 +47,7 @@ BLACKLIST_FIELDS = {
 
 @router.get("/profile/admin/profiles")
 async def profile_admin_profiles(request: Request):
-    _require_admin(request)
+    utils.admin.require_admin(request)
 
     q = (request.query_params.get("q") or "").strip().lower()
     profiles = ProfileDataBase.get_all_profiles()
@@ -287,28 +145,41 @@ async def profile_admin_profiles(request: Request):
 # Admin: update/delete (permissions)
 @router.post("/profile/admin/profile/update")
 async def profile_admin_update(request: Request):
-    _require_access(request, "edit_profiles")
+    admin = utils.admin.require_access(request, "edit_profiles")
 
     form = await request.form()
     uuid = (form.get("uuid") or "").strip()  # type: ignore
     if not uuid:
-        _bad_request("uuid_required", "Missing profile uuid")
+        utils.error.bad_request("uuid_required", "Missing profile uuid")
 
     target = ProfileDataBase.get_profile_by_uuid(uuid)
     if not target:
-        _not_found("profile_not_found", "Profile not found", uuid=uuid)
+        utils.error.not_found(
+            "profile_utils.error.not_found", "Profile not found", uuid=uuid
+        )
 
     data: ProfileData = target.get("data", ProfileData())  # type: ignore
     if not isinstance(data, ProfileData):
-        _server_error(
+        utils.error.server_error(
             "profile_data_invalid", "Profile data has invalid type", uuid=uuid
         )
 
     access_checked = {
         k[len("access_") :] for k in form.keys() if k.startswith("access_")
     }
+
+    admin_data: ProfileData = admin.get("data", ProfileData())  # type: ignore
+    admin_access = admin_data.access if isinstance(admin_data, ProfileData) else {}
+
     for key in ACCESS_FIELDS.keys():
-        data.access[key] = key in access_checked
+        if key in access_checked:
+            if admin_access.get(key, False):
+                data.access[key] = True
+            else:
+                continue
+        else:
+            if admin_access.get(key, False):
+                data.access[key] = False
 
     bl_checked = {
         k[len("blacklist_") :] for k in form.keys() if k.startswith("blacklist_")
@@ -341,25 +212,29 @@ async def profile_admin_update(request: Request):
 
     except Exception as e:
         logger.exception("update_profile failed: %s", e)
-        _server_error("profile_update_failed", "Failed to update profile", uuid=uuid)
+        utils.error.server_error(
+            "profile_update_failed", "Failed to update profile", uuid=uuid
+        )
 
     return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
 @router.post("/profile/admin/profile/delete")
 async def profile_admin_delete(request: Request, uuid: str = Form(...)):
-    admin = _require_access(request, "edit_profiles")
-
-    if admin.get("uuid") == uuid:
-        _bad_request(
+    admin = utils.admin.require_access(request, "edit_profiles")
+    if admin.get("uuid") == uuid:  # type: ignore
+        utils.error.bad_request(
             "cannot_delete_self", "Admin cannot delete their own profile", uuid=uuid
         )
 
     try:
         ProfileDataBase.delete_profile(uuid)
+
     except Exception as e:
         logger.exception("delete_profile failed: %s", e)
-        _server_error("profile_delete_failed", "Failed to delete profile", uuid=uuid)
+        utils.error.server_error(
+            "profile_delete_failed", "Failed to delete profile", uuid=uuid
+        )
 
     return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
@@ -372,21 +247,23 @@ async def profile_admin_note_add(
     content: str = Form(...),
     status: str = Form("info"),
 ):
-    _require_access(request, "edit_notes")
+    utils.admin.require_access(request, "edit_notes")
 
     target = ProfileDataBase.get_profile_by_uuid(uuid)
     if not target:
-        _not_found("profile_not_found", "Profile not found", uuid=uuid)
+        utils.error.not_found(
+            "profile_utils.error.not_found", "Profile not found", uuid=uuid
+        )
 
     data: ProfileData = target.get("data", ProfileData())  # type: ignore
     if not isinstance(data, ProfileData):
-        _server_error(
+        utils.error.server_error(
             "profile_data_invalid", "Profile data has invalid type", uuid=uuid
         )
 
     content_clean = (content or "").strip()
     if not content_clean:
-        _bad_request("note_empty", "Note content cannot be empty", uuid=uuid)
+        utils.error.bad_request("note_empty", "Note content cannot be empty", uuid=uuid)
 
     notes = data.notes
     notes.insert(
@@ -404,7 +281,7 @@ async def profile_admin_note_add(
 
     except Exception as e:
         logger.exception("update_profile (note) failed: %s", e)
-        _server_error(
+        utils.error.server_error(
             "profile_update_failed", "Failed to update profile with note", uuid=uuid
         )
 
@@ -419,21 +296,25 @@ async def profile_admin_char_add(
     discord_url: str = Form(""),
     steam_urls: str = Form(""),
 ):
-    _require_access(request, "edit_chars")
+    utils.admin.require_access(request, "edit_chars")
 
     target = ProfileDataBase.get_profile_by_uuid(uuid)
     if not target:
-        _not_found("profile_not_found", "Profile not found", uuid=uuid)
+        utils.error.not_found(
+            "profile_utils.error.not_found", "Profile not found", uuid=uuid
+        )
 
     data = target.get("data", ProfileData())  # type: ignore
     if not isinstance(data, ProfileData):
-        _server_error(
+        utils.error.server_error(
             "profile_data_invalid", "Profile data has invalid type", uuid=uuid
         )
 
     clean_name = (name or "").strip()
     if not clean_name:
-        _bad_request("char_name_empty", "Character name cannot be empty", uuid=uuid)
+        utils.error.bad_request(
+            "char_name_empty", "Character name cannot be empty", uuid=uuid
+        )
 
     ids: list[str] = []
     for part in re.split(r"[\s,]+", (steam_urls or "").strip()):
@@ -466,7 +347,7 @@ async def profile_admin_char_add(
 
     except Exception as e:
         logger.exception("update_profile (char) failed: %s", e)
-        _server_error(
+        utils.error.server_error(
             "profile_update_failed",
             "Failed to update profile with character",
             uuid=uuid,
@@ -481,20 +362,22 @@ async def profile_admin_char_delete(
     uuid: str = Form(...),
     index: int = Form(...),
 ):
-    _require_access(request, "edit_chars")
+    utils.admin.require_access(request, "edit_chars")
 
     target = ProfileDataBase.get_profile_by_uuid(uuid)
     if not target:
-        _not_found("profile_not_found", "Profile not found", uuid=uuid)
+        utils.error.not_found(
+            "profile_utils.error.not_found", "Profile not found", uuid=uuid
+        )
 
     data = target.get("data", ProfileData())  # type: ignore
     if not isinstance(data, ProfileData):
-        _server_error(
+        utils.error.server_error(
             "profile_data_invalid", "Profile data has invalid type", uuid=uuid
         )
 
     if index < 0 or index >= len(data.chars):
-        _bad_request(
+        utils.error.bad_request(
             "char_index_invalid", "Invalid character index", uuid=uuid, index=index
         )
 
@@ -507,7 +390,9 @@ async def profile_admin_char_delete(
 
     except Exception as e:
         logger.exception("delete_profile_char failed: %s", e)
-        _server_error("profile_update_failed", "Failed to delete character", uuid=uuid)
+        utils.error.server_error(
+            "profile_update_failed", "Failed to delete character", uuid=uuid
+        )
 
     return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
@@ -519,11 +404,11 @@ async def profile_admin_create(
     discord_id: str = Form(...),
     steam_input: str = Form(...),
 ):
-    _require_access(request, "edit_profiles")
+    utils.admin.require_access(request, "edit_profiles")
 
     did = (discord_id or "").strip()
     if not did.isdigit():
-        _bad_request(
+        utils.error.bad_request(
             "discord_id_invalid", "discord_id must be a numeric string", value=did
         )
 
@@ -532,7 +417,7 @@ async def profile_admin_create(
 
     except Exception as e:
         logger.exception("normalize_steam_input failed: %s", e)
-        _server_error(
+        utils.error.server_error(
             "steam_normalize_failed",
             "Failed to normalize Steam input",
             input=steam_input,
@@ -540,7 +425,7 @@ async def profile_admin_create(
         return
 
     if not sid64:
-        _bad_request(
+        utils.error.bad_request(
             "steam_input_unsupported",
             "Unsupported Steam input format",
             input=steam_input,
@@ -548,17 +433,21 @@ async def profile_admin_create(
 
     all_profiles = ProfileDataBase.get_all_profiles()
     if any(p.get("discord_id") == did for p in all_profiles):
-        _bad_request("discord_id_conflict", "Discord ID already exists", discord_id=did)
+        utils.error.bad_request(
+            "discord_id_conflict", "Discord ID already exists", discord_id=did
+        )
 
     if any(p.get("steam_id") == sid64 for p in all_profiles):
-        _bad_request("steam_id_conflict", "Steam ID already exists", steam_id=sid64)
+        utils.error.bad_request(
+            "steam_id_conflict", "Steam ID already exists", steam_id=sid64
+        )
 
     try:
         ProfileDataBase.create_profile(discord_id=did, steam_id=sid64)
 
     except Exception as e:
         logger.exception("create_profile failed: %s", e)
-        _server_error(
+        utils.error.server_error(
             "profile_create_failed",
             "Failed to create profile",
             discord_id=did,
@@ -570,11 +459,13 @@ async def profile_admin_create(
 
 @router.post("/profile/admin/recalc_roles")
 async def profile_admin_recalc_roles(request: Request):
-    _require_access(request, "edit_profiles")
+    utils.admin.require_access(request, "edit_profiles")
 
     cog = bot.get_cog("UserControlCog")
     if not cog or not hasattr(cog, "get_role_value"):
-        _failed_dep("cog_unavailable", "UserControlCog.get_role_value is not available")
+        utils.error.failed_dep(
+            "cog_unavailable", "UserControlCog.get_role_value is not available"
+        )
 
     profiles = ProfileDataBase.get_all_profiles()
     sem = asyncio.Semaphore(8)
@@ -609,7 +500,7 @@ async def profile_admin_recalc_roles(request: Request):
 
 @router.post("/profile/admin/recalc_weights")
 async def profile_admin_recalc_weights(request: Request):
-    _require_access(request, "edit_chars")
+    utils.admin.require_access(request, "edit_chars")
 
     profiles = ProfileDataBase.get_all_profiles()
 

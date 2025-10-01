@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 from typing import Literal
@@ -95,3 +96,14 @@ class ServerControl:
 
         cls._last_status = None
         cls._get_status()
+
+    @classmethod
+    async def server_status_updater(cls):
+        while True:
+            try:
+                cls._get_status()
+
+            except Exception:
+                pass
+
+            await asyncio.sleep(15)

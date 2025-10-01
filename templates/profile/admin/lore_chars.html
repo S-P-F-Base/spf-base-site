@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Админ-панель: лорные персонажи</title>
+    <meta property="og:title" content="S.P.F. Base – Лорные персонажи">
+    <meta property="og:description" content="Просмотр и управление лорными персонажами">
+
+    {% include 'partials/base_header.html' %}
+    <link rel="stylesheet" href="{{ 'profile.css' | ver }}">
+    <style>
+        .badge.status-free {
+            border-color: rgba(60, 179, 113, .5);
+        }
+
+        .badge.status-taken {
+            border-color: rgba(255, 165, 0, .6);
+        }
+
+        .badge.status-blocked {
+            border-color: rgba(220, 20, 60, .6);
+        }
+
+        .chars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .char-card .card-actions {
+            display: flex;
+            gap: .5rem;
+            margin-top: .6rem;
+        }
+
+        .char-card .char-name {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .muted {
+            opacity: .8;
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            margin: .8rem 0 1.2rem;
+        }
+
+        .filters input[type="text"],
+        .filters select {
+            padding: .55rem;
+            border-radius: 8px;
+            border: 1px solid #666;
+            background: #111;
+            color: #eee;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: .5rem .6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
+        <main class="content-tile" style="max-width:1100px;">
+            <h1 class="welcome-title">Лорные персонажи</h1>
+            <p class="muted">Управляй аккуратно: изменения сразу пишутся в <code>data/lore_char.json</code>.</p>
+
+            <section>
+                <h2 class="welcome-title" style="margin-bottom:.4rem;">Добавить персонажа</h2>
+                <form method="post" action="/profile/admin/lore_char/create" class="create-form">
+                    <input type="text" name="name" placeholder="Имя персонажа" required>
+                    <input type="text" name="wiki" placeholder="Ссылка на вики (http/https)">
+                    <select name="status" aria-label="Статус">
+                        <option value="free">Свободен</option>
+                        <option value="taken">Занят</option>
+                        <option value="blocked">Заблокирован</option>
+                    </select>
+                    <button class="btn" type="submit">Добавить</button>
+                </form>
+            </section>
+
+            <section class="filters">
+                <input type="text" id="f_search" placeholder="Поиск по имени…">
+                <select id="f_status" aria-label="Фильтр по статусу">
+                    <option value="">Все статусы</option>
+                    <option value="free">Свободные</option>
+                    <option value="taken">Занятые</option>
+                    <option value="blocked">Заблокированные</option>
+                </select>
+                <select id="f_sort" aria-label="Сортировка">
+                    <option value="name_asc">Имя (А–Я)</option>
+                    <option value="name_desc">Имя (Я–А)</option>
+                    <option value="status">Сначала свободные</option>
+                </select>
+            </section>
+
+            {% if not chars %}
+            <p>Персонажей пока нет.</p>
+            {% else %}
+            <div class="chars-grid" id="chars">
+                {% for c in chars %}
+                <div class="player-card char-card" data-char='{{ c | tojson }}' data-name='{{ c.name | lower }}'
+                    data-status='{{ c.status }}'>
+                    <div class="player-header">
+                        <div class="player-name char-name">{{ c.name }}</div>
+                    </div>
+
+                    <div class="badges" style="margin-top:.35rem;">
+                        {% if c.status == 'free' %}
+                        <span class="badge status-free">свободен</span>
+                        {% elif c.status == 'taken' %}
+                        <span class="badge status-taken">занят</span>
+                        {% elif c.status == 'blocked' %}
+                        <span class="badge status-blocked">заблокирован</span>
+                        {% endif %}
+                    </div>
+
+                    <div style="margin-top:.45rem;">
+                        {% if c.wiki %}
+                        <a href="{{ c.wiki }}" target="_blank" rel="noopener">Страница вики</a>
+                        {% else %}
+                        <span class="muted">Вики: —</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn btn-edit" type="button">Изменить</button>
+                        <form method="post" action="/profile/admin/lore_char/delete"
+                            onsubmit="return confirm('Удалить персонажа {{ c.name }}?');" style="display:inline;">
+                            <input type="hidden" name="char_id" value="{{ c.id }}">
+                            <button class="btn danger" type="submit">Удалить</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <div class="modal-backdrop" id="modal-backdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <h2 id="modal-title">Редактировать персонажа</h2>
+
+            <form id="edit-form" method="post" action="/profile/admin/lore_char/update">
+                <input type="hidden" name="char_id" id="f_id">
+                <div class="form-grid" style="margin-top:.6rem;">
+                    <label>Имя<input type="text" name="name" id="f_name" required></label>
+                    <label>Wiki (http/https)<input type="text" name="wiki" id="f_wiki" placeholder="https://…"></label>
+                    <label>Статус
+                        <select name="status" id="f_status">
+                            <option value="free">Свободен</option>
+                            <option value="taken">Занят</option>
+                            <option value="blocked">Заблокирован</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn" type="button" id="btn-cancel">Отмена</button>
+                    <button class="btn" type="submit">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const grid = document.getElementById('chars');
+            const search = document.getElementById('f_search');
+            const selStatus = document.getElementById('f_status');
+            const selSort = document.getElementById('f_sort');
+
+            const backdrop = document.getElementById('modal-backdrop');
+            const f_id = document.getElementById('f_id');
+            const f_name = document.getElementById('f_name');
+            const f_wiki = document.getElementById('f_wiki');
+            const f_status = document.getElementById('f_status');
+
+            function openModal(card) {
+                const c = JSON.parse(card.dataset.char);
+                f_id.value = c.id || '';
+                f_name.value = c.name || '';
+                f_wiki.value = c.wiki || '';
+                f_status.value = (c.status || 'free');
+                backdrop.style.display = 'flex';
+            }
+            function closeModal() { backdrop.style.display = 'none'; }
+
+            function applyFilters() {
+                if (!grid) return;
+                const q = (search.value || '').toLowerCase().trim();
+                const stat = selStatus.value;
+
+                const items = Array.from(grid.children);
+                items.forEach(el => {
+                    const name = el.dataset.name || '';
+                    const s = el.dataset.status || '';
+                    const visible = (!q || name.includes(q)) && (!stat || s === stat);
+                    el.style.display = visible ? '' : 'none';
+                });
+
+                const visi = items.filter(el => el.style.display !== 'none');
+                const ord = selSort.value;
+                const pr = { free: 0, taken: 1, blocked: 2 };
+
+                visi.sort((a, b) => {
+                    const an = a.dataset.name, bn = b.dataset.name;
+                    const as = pr[a.dataset.status] ?? 9, bs = pr[b.dataset.status] ?? 9;
+                    switch (ord) {
+                        case 'name_asc': return an.localeCompare(bn, 'ru');
+                        case 'name_desc': return bn.localeCompare(an, 'ru');
+                        case 'status': return as !== bs ? (as - bs) : an.localeCompare(bn, 'ru');
+                        default: return 0;
+                    }
+                });
+                visi.forEach(el => grid.appendChild(el));
+            }
+
+            if (grid) {
+                grid.addEventListener('click', e => {
+                    const btn = e.target.closest('.btn-edit');
+                    if (btn) openModal(btn.closest('.char-card'));
+                });
+            }
+            document.getElementById('btn-cancel').addEventListener('click', e => { e.preventDefault(); closeModal(); });
+            backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+            if (search) search.addEventListener('input', applyFilters);
+            if (selStatus) selStatus.addEventListener('change', applyFilters);
+            if (selSort) selSort.addEventListener('change', applyFilters);
+            window.addEventListener('DOMContentLoaded', applyFilters);
+        })();
+    </script>
+</body>
+
+</html>

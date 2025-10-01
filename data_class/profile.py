@@ -34,6 +34,12 @@ class ProfileData:
             "edit_chars": False,
             "edit_notes": False,
             #
+            "edit_lore_chars": False,
+            #
+            "edit_services": False,
+            #
+            "edit_payments": False,
+            #
             "server_control": False,
         }
 

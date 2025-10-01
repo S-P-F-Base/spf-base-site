@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <title>Админ-панель: платежи</title>
+    <meta property="og:title" content="S.P.F. Base – Платежи">
+    <meta property="og:description" content="Управление платежами и корзинами">
+
+    {% include 'partials/base_header.html' %}
+    <link rel="stylesheet" href="{{ 'profile.css' | ver }}">
+    <style>
+        .payments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .snap-list {
+            margin: .4rem 0 0;
+            padding-left: 1.1rem;
+        }
+
+        .snap-list li {
+            margin: .15rem 0;
+        }
+
+        .row {
+            display: flex;
+            gap: .5rem;
+            align-items: center;
+        }
+
+        .row>* {
+            flex: 1 1 auto;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: .6rem 1rem;
+        }
+
+        .tiny {
+            font-size: .9rem;
+            opacity: .85;
+        }
+
+        .muted {
+            opacity: .8;
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        .hint {
+            font-size: .85rem;
+            opacity: .8;
+            margin-top: .25rem;
+        }
+
+        .uuid-toggle {
+            display: flex;
+            gap: .75rem;
+            align-items: center;
+            margin: .5rem 0 .75rem;
+        }
+
+        .uuid-input {
+            font-family: ui-monospace, monospace;
+        }
+
+        .preview {
+            font-size: .85rem;
+            opacity: .85;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
+        {% include 'partials/header.html' %}
+
+        <main class="content-tile" style="max-width:1100px;">
+            <h1 class="welcome-title">Платежи</h1>
+
+            <section>
+                <h2 class="welcome-title" style="margin-bottom:.4rem;">Создать платёж</h2>
+                {% if not services %}
+                <p class="muted">Нет активных сервисов — добавить позиции нельзя.</p>
+                {% else %}
+                <form id="create-form" method="post" action="/profile/admin/payment/create">
+                    <fieldset class="fieldset">
+                        <legend>Основное</legend>
+                        <div class="form-grid">
+                            <label>Player ID<input type="text" name="player_id" required></label>
+                            <label>Комиссия
+                                <select name="commission_key">
+                                    <option value="AC">AC</option>
+                                    <option value="PC">PC</option>
+                                </select>
+                            </label>
+                            <label>Статус
+                                <select name="status">
+                                    <option value="pending">pending</option>
+                                    <option value="done">done</option>
+                                    <option value="declined">declined</option>
+                                    <option value="cancelled">cancelled</option>
+                                </select>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="fieldset">
+                        <legend>Позиции</legend>
+
+                        <div class="uuid-toggle">
+                            <label class="muted"><input type="checkbox" id="uuid-mode"> Ввод по UUID (вместо
+                                списка)</label>
+                            <button class="btn" type="button" id="btn-add">Добавить позицию</button>
+                            <button class="btn" type="button" id="btn-bulk">Вставить список</button>
+                        </div>
+                        <div class="hint">В режиме UUID можно вставлять <span
+                                class="mono">299de16097e24e32b0e8db9e66afcf45 2</span> или по одному на строку. Лишние `
+                            и префикс <span class="mono">service_</span> будут удалены.</div>
+
+                        <div id="items"></div>
+
+                        <div class="tiny" style="margin-top:.5rem;">Итог: <strong id="total">0.00</strong></div>
+                    </fieldset>
+
+                    <div class="modal-actions">
+                        <button class="btn" type="submit">Создать платёж</button>
+                    </div>
+                </form>
+                {% endif %}
+            </section>
+
+            {% if not payments %}
+            <p style="margin-top:1rem;">Платежей пока нет.</p>
+            {% else %}
+            <section style="margin-top:1rem;">
+                <h2 class="welcome-title" style="margin-bottom:.4rem;">Список платежей</h2>
+                <div class="payments-grid" id="payments">
+                    {% for p in payments %}
+                    <div class="player-card" data-payment='{{ p | tojson }}'>
+                        <div class="player-header">
+                            <div class="player-name mono">{{ p.u_id }}</div>
+                        </div>
+
+                        <div class="badges" style="margin:.35rem 0;">
+                            <span class="badge">{{ p.status }}</span>
+                            <span class="badge">commission: {{ p.commission_key }}</span>
+                            <span class="badge">items: {{ p.snapshot_len }}</span>
+                        </div>
+
+                        <div class="muted">Player: <span class="mono">{{ p.player_id }}</span></div>
+                        <div class="muted">Total: <strong>{{ p.total }}</strong></div>
+
+                        {% if p.snapshot and p.snapshot|length %}
+                        <details style="margin-top:.35rem;">
+                            <summary class="tiny">Позиции</summary>
+                            <ul class="snap-list">
+                                {% for s in p.snapshot %}
+                                <li>{{ s.name }} — {{ s.price_main }} {% if s.discount_value %}(-{{ s.discount_value
+                                    }}%){% endif %}</li>
+                                {% endfor %}
+                            </ul>
+                        </details>
+                        {% endif %}
+
+                        <div class="card-actions">
+                            <button class="btn btn-edit" type="button">Изменить</button>
+                            <form method="post" action="/profile/admin/payment/delete"
+                                onsubmit="return confirm('Удалить платёж {{ p.u_id }}?');" style="display:inline;">
+                                <input type="hidden" name="u_id" value="{{ p.u_id }}">
+                                <button class="btn danger" type="submit">Удалить</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    <div class="modal-backdrop" id="modal-backdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <h2 id="modal-title">Редактировать платёж</h2>
+            <form id="edit-form" method="post" action="/profile/admin/payment/update">
+                <input type="hidden" name="u_id" id="f_id">
+
+                <fieldset class="fieldset">
+                    <legend>Поля</legend>
+                    <div class="form-grid">
+                        <label>Player ID<input type="text" name="player_id" id="f_player"></label>
+                        <label>Комиссия
+                            <select name="commission_key" id="f_comm">
+                                <option value="AC">AC</option>
+                                <option value="PC">PC</option>
+                            </select>
+                        </label>
+                        <label>Статус
+                            <select name="status" id="f_status">
+                                <option value="pending">pending</option>
+                                <option value="done">done</option>
+                                <option value="declined">declined</option>
+                                <option value="cancelled">cancelled</option>
+                            </select>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="fieldset">
+                    <legend>Состав</legend>
+                    <ul class="read-list" id="f_snapshot"></ul>
+                </fieldset>
+
+                <div class="modal-actions">
+                    <button class="btn" type="button" id="btn-cancel">Отмена</button>
+                    <button class="btn" type="submit">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script id="services-json" type="application/json">{{ services | tojson }}</script>
+
+    <script>
+        (function () {
+            const SERVICES = JSON.parse(document.getElementById('services-json').textContent);
+            const mapSvc = Object.fromEntries(SERVICES.map(s => [s.u_id, s]));
+
+            const itemsWrap = document.getElementById('items');
+            const btnAdd = document.getElementById('btn-add');
+            const btnBulk = document.getElementById('btn-bulk');
+            const totalEl = document.getElementById('total');
+            const uuidModeEl = document.getElementById('uuid-mode');
+
+            function normServiceId(s) {
+                let x = (s || '').trim().replace(/`+/g, '');
+                if (x.startsWith('service_')) x = x.slice(8);
+                return x;
+            }
+
+            function svcPreviewText(id) {
+                const s = mapSvc[id];
+                if (!s) return 'не найден в активных';
+                const left = (s.left != null) ? `, ост. ${s.left}` : '';
+                return `${s.name} — ${s.final_price}${left}`;
+            }
+
+            function rowTemplate(idx, uuidMode) {
+                if (uuidMode) {
+                    return `
+      <div class="row item" data-index="${idx}">
+        <input class="uuid-input mono" type="text" name="service_u_id" placeholder="299de16097e24e32b0e8db9e66afcf45" pattern="[0-9a-fA-F]{32}">
+        <input type="number" name="qty" min="1" step="1" value="1">
+        <button class="btn danger" type="button" data-del>×</button>
+        <div class="preview muted" data-preview>—</div>
+      </div>`;
+                } else {
+                    const opt = SERVICES.map(s =>
+                        `<option value="${s.u_id}">${s.name} — ${s.final_price}${s.left != null ? ` (ост. ${s.left})` : ''}</option>`
+                    ).join('');
+                    return `
+      <div class="row item" data-index="${idx}">
+        <select name="service_u_id">${opt}</select>
+        <input type="number" name="qty" min="1" step="1" value="1">
+        <button class="btn danger" type="button" data-del>×</button>
+      </div>`;
+                }
+            }
+
+            function recalcTotal() {
+                let sum = 0;
+                itemsWrap.querySelectorAll('.item').forEach(r => {
+                    const el = r.querySelector('[name="service_u_id"]');
+                    const svcId = normServiceId(el.value);
+                    const qty = parseInt(r.querySelector('input[name="qty"]').value || '1', 10);
+                    const svc = mapSvc[svcId];
+                    if (svc) sum += parseFloat(svc.final_price) * Math.max(1, qty);
+
+                    const prev = r.querySelector('[data-preview]');
+                    if (prev) prev.textContent = svcPreviewText(svcId);
+                });
+                totalEl.textContent = sum.toFixed(2);
+            }
+
+            function addRow() {
+                const idx = itemsWrap.querySelectorAll('.item').length;
+                itemsWrap.insertAdjacentHTML('beforeend', rowTemplate(idx, uuidModeEl.checked));
+                recalcTotal();
+            }
+
+            function rebuildRowsPreservingValues() {
+                const values = Array.from(itemsWrap.querySelectorAll('.item')).map(row => {
+                    const id = row.querySelector('[name="service_u_id"]').value;
+                    const q = row.querySelector('input[name="qty"]').value || '1';
+                    return { id, qty: q };
+                });
+                itemsWrap.innerHTML = '';
+                values.forEach(v => {
+                    addRow();
+                    const last = itemsWrap.querySelector('.item:last-child');
+                    last.querySelector('[name="service_u_id"]').value = v.id;
+                    last.querySelector('[name="qty"]').value = v.qty;
+                });
+                recalcTotal();
+            }
+
+            function bulkInsert() {
+                const text = prompt(
+                    'Вставьте позиции. Форматы:\n' +
+                    'uuid qty\n' +
+                    'uuid\n' +
+                    'Каждая пара на новой строке или через пробел/запятую. Пример:\n' +
+                    '299de16097e24e32b0e8db9e66afcf45 2\n2ac53044cd7b4f5aacf33d26bc18e497'
+                );
+                if (!text) return;
+
+                const parts = text.split(/\r?\n|[;,]+/g).map(s => s.trim()).filter(Boolean);
+                for (const line of parts) {
+                    const tokens = line.trim().split(/\s+/);
+                    if (!tokens.length) continue;
+                    let id = normServiceId(tokens[0]);
+                    if (!id) continue;
+                    let q = 1;
+                    if (tokens[1] && /^\d+$/.test(tokens[1])) q = Math.max(1, parseInt(tokens[1], 10));
+
+                    addRow();
+                    const last = itemsWrap.querySelector('.item:last-child');
+                    last.querySelector('[name="service_u_id"]').value = id;
+                    last.querySelector('[name="qty"]').value = q;
+                }
+                recalcTotal();
+            }
+
+            if (btnAdd) btnAdd.addEventListener('click', addRow);
+            if (btnBulk) btnBulk.addEventListener('click', () => {
+                if (!uuidModeEl.checked) {
+                    uuidModeEl.checked = true;
+                    rebuildRowsPreservingValues();
+                }
+                bulkInsert();
+            });
+
+            if (itemsWrap) {
+                itemsWrap.addEventListener('input', e => {
+                    if (e.target.matches('[name="service_u_id"], select[name="service_u_id"], input[name="qty"]')) {
+                        recalcTotal();
+                    }
+                });
+                itemsWrap.addEventListener('click', e => {
+                    const del = e.target.closest('[data-del]');
+                    if (del) { del.closest('.item')?.remove(); recalcTotal(); }
+                });
+            }
+
+            if (uuidModeEl) uuidModeEl.addEventListener('change', rebuildRowsPreservingValues);
+
+            if (SERVICES.length) addRow();
+
+            document.getElementById('create-form')?.addEventListener('submit', e => {
+                const rows = itemsWrap.querySelectorAll('.item');
+                if (!rows.length) {
+                    e.preventDefault();
+                    alert('Добавьте хотя бы одну позицию.');
+                    return;
+                }
+                rows.forEach(r => {
+                    const inp = r.querySelector('[name="service_u_id"]');
+                    inp.value = normServiceId(inp.value);
+                });
+            });
+
+            const grid = document.getElementById('payments');
+            const backdrop = document.getElementById('modal-backdrop');
+            const f_id = document.getElementById('f_id');
+            const f_player = document.getElementById('f_player');
+            const f_comm = document.getElementById('f_comm');
+            const f_status = document.getElementById('f_status');
+            const f_snapshot = document.getElementById('f_snapshot');
+
+            function openModal(card) {
+                const p = JSON.parse(card.dataset.payment);
+                f_id.value = p.u_id;
+                f_player.value = p.player_id || '';
+                f_comm.value = p.commission_key || 'AC';
+                f_status.value = p.status || 'pending';
+
+                f_snapshot.innerHTML = '';
+                (p.snapshot || []).forEach(s => {
+                    const li = document.createElement('li');
+                    li.textContent = `${s.name} — ${s.price_main}${s.discount_value ? ` (-${s.discount_value}%)` : ''}`;
+                    f_snapshot.appendChild(li);
+                });
+
+                backdrop.style.display = 'flex';
+            }
+            function closeModal() { backdrop.style.display = 'none'; }
+
+            if (grid) {
+                grid.addEventListener('click', e => {
+                    const btn = e.target.closest('.btn-edit');
+                    if (btn) openModal(btn.closest('.player-card'));
+                });
+            }
+            document.getElementById('btn-cancel')?.addEventListener('click', e => { e.preventDefault(); closeModal(); });
+            backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+        })();
+    </script>
+</body>
+
+</html>

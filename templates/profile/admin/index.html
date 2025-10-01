@@ -28,6 +28,36 @@
                     </div>
                     <p class="muted">Просмотр, редактирование и удаление профилей.</p>
                 </a>
+
+                {% if user.data.has_access("edit_lore_chars") %}
+                <a class="player-card" href="/profile/admin/lore_chars" style="text-decoration:none;">
+                    <div class="player-header">
+                        <img src="/static/images/icons/lore_chars.png" alt="Profiles" style="width:48px;height:48px;">
+                        <div class="player-name">Управление лорными персонажами</div>
+                    </div>
+                    <p class="muted">Просмотр, редактирование и удаление лорных персонажей.</p>
+                </a>
+                {% endif %}
+
+                {% if user.data.has_access("edit_services") %}
+                <a class="player-card" href="/profile/admin/services" style="text-decoration:none;">
+                    <div class="player-header">
+                        <img src="/static/images/icons/warehouse.png" alt="Profiles" style="width:48px;height:48px;">
+                        <div class="player-name">Управление услугами</div>
+                    </div>
+                    <p class="muted">Просмотр, редактирование и удаление услуг.</p>
+                </a>
+                {% endif %}
+
+                {% if user.data.has_access("edit_payments") %}
+                <a class="player-card" href="/profile/admin/payments" style="text-decoration:none;">
+                    <div class="player-header">
+                        <img src="/static/images/icons/store.png" alt="Profiles" style="width:48px;height:48px;">
+                        <div class="player-name">Управление оплатой</div>
+                    </div>
+                    <p class="muted">Просмотр, отзыв и выдача чеков.</p>
+                </a>
+                {% endif %}
             </div>
         </main>
     </div>
