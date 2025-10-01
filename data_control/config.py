@@ -27,6 +27,7 @@ class Config:
             "STEAM_API",
             "DISCORD_BOT",
             "DISCORD_APP",
+            "GAME_SERVER_FTP",
         ]:
             cls._cache[key] = os.getenv(key, None)
 
@@ -87,6 +88,12 @@ class Config:
     @classmethod
     def discord_app(cls) -> str:
         return cls._base_get_env("DISCORD_APP")
+
+    @classmethod
+    def game_server_ftp(cls) -> str:
+        data: str = cls._base_get_env("GAME_SERVER_FTP")
+        ip, user, password = data.split(" ")
+        return f"ftp://{user}:{password}@{ip}/garrysmod/sv.db"
 
     # endregion
 
