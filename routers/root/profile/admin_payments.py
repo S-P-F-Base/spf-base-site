@@ -89,7 +89,7 @@ def _build_snapshots(items: list[dict]) -> list[ServiceSnapshot]:
 
 @router.get("/profile/admin/payments")
 async def admin_payments(request: Request):
-    utils.admin.require_admin(request)
+    utils.admin.require_access(request, "edit_payments")
 
     rows = PaymentServiceDB.list_payments()
     payments = []

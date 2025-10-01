@@ -3,7 +3,7 @@ import sqlite3
 import urllib.request
 from pathlib import Path
 
-from data_control import Config
+# from data_control import Config
 
 
 class GameDBProcessor:
@@ -95,3 +95,37 @@ class GameDBProcessor:
     def delete_db(cls) -> None:
         if cls.DB_PATH.exists():
             cls.DB_PATH.unlink()
+
+
+conn = sqlite3.connect(GameDBProcessor.DB_PATH)
+cursor = conn.cursor()
+
+cursor.execute("""
+    SELECT char_id, json
+    FROM spf2_char_data
+    WHERE key = 'inventory' AND json LIKE '%"currency_subsidies"%'
+""")
+rows = cursor.fetchall()
+conn.close()
+
+result = []
+
+for char_id, json_str in rows:
+    try:
+        data = json.loads(json_str)
+    except Exception:
+        continue
+
+    for item in data.get("items", []):
+        if item.get("id") == "currency_subsidies":
+            count = item.get("count", 0)
+            try:
+                count = int(count)
+            except Exception:
+                count = 0
+            result.append((char_id, count))
+
+result.sort(key=lambda x: x[1], reverse=True)
+
+for char_id, count in result:
+    print(char_id, count)

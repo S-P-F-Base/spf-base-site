@@ -49,7 +49,7 @@ def next_id(chars: dict) -> str:
 
 @router.get("/profile/admin/lore_chars")
 async def admin_lore_chars(request: Request):
-    utils.admin.require_admin(request)
+    utils.admin.require_access(request, "edit_lore_chars")
     chars = load_chars()
 
     items = [

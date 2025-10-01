@@ -1,9 +1,13 @@
+import logging
+
 from fastapi import APIRouter, Request
 
 import utils.admin
 from templates import templates
 
 router = APIRouter()
+
+logging.basicConfig(level=logging.INFO)
 
 
 @router.get("/profile/admin")

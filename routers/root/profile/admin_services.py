@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("/profile/admin/services")
 async def admin_services(request: Request):
-    utils.admin.require_admin(request)
+    utils.admin.require_access(request, "edit_services")
     rows = PaymentServiceDB.list_services()
     items = []
     for u, svc in rows:

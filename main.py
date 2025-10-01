@@ -86,48 +86,40 @@ async def user_agent_blocker(request: Request, call_next):
 @app.exception_handler(StarletteHTTPException)
 def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
     accept = request.headers.get("accept", "")
+
     if "application/json" in accept:
+        content = exc.detail if isinstance(exc.detail, dict) else {"detail": exc.detail}
         return JSONResponse(
             status_code=exc.status_code,
-            content={"detail": exc.detail},
+            content=content,
         )
 
     if exc.status_code == 403:
         return templates.TemplateResponse(
-            "error_code/403.html",
-            {"request": request},
-            status_code=403,
+            "error_code/403.html", {"request": request}, status_code=403
         )
 
     elif exc.status_code == 404:
         return templates.TemplateResponse(
-            "error_code/404.html",
-            {"request": request},
-            status_code=404,
+            "error_code/404.html", {"request": request}, status_code=404
         )
 
     elif exc.status_code == 418:
         return templates.TemplateResponse(
-            "error_code/418.html",
-            {"request": request},
-            status_code=418,
+            "error_code/418.html", {"request": request}, status_code=418
         )
 
     elif exc.status_code == 500:
         return templates.TemplateResponse(
-            "error_code/500.html",
-            {"request": request},
-            status_code=500,
+            "error_code/500.html", {"request": request}, status_code=500
         )
 
     elif exc.status_code == 502:
         return templates.TemplateResponse(
-            "error_code/502.html",
-            {"request": request},
-            status_code=502,
+            "error_code/502.html", {"request": request}, status_code=502
         )
 
-    return HTMLResponse(content=exc.detail, status_code=exc.status_code)
+    return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
 
 
 app.include_router(api_yoomoney, prefix="/api/yoomoney")

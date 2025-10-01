@@ -29,7 +29,7 @@ ACCESS_FIELDS = {
     "edit_chars": "Редактировать персонажей",
     "edit_notes": "Редактировать заметки",
     #
-    "edit_lore_chars": "Редактировать лрорных персонажей",
+    "edit_lore_chars": "Редактировать лорных персонажей",
     #
     "edit_services": "Управлять услугами",
     #
@@ -48,17 +48,18 @@ BLACKLIST_FIELDS = {
 @router.get("/profile/admin/profiles")
 async def profile_admin_profiles(request: Request):
     utils.admin.require_admin(request)
-
     q = (request.query_params.get("q") or "").strip().lower()
     profiles = ProfileDataBase.get_all_profiles()
 
     def matches_rough(p: dict) -> bool:
         if not q:
             return True
+
         for key in ("uuid", "discord_id", "steam_id"):
             val = p.get(key) or ""
             if isinstance(val, str) and q in val.lower():
                 return True
+
         return False
 
     rough = [p for p in profiles if matches_rough(p)]
@@ -169,17 +170,10 @@ async def profile_admin_update(request: Request):
     }
 
     admin_data: ProfileData = admin.get("data", ProfileData())  # type: ignore
-    admin_access = admin_data.access if isinstance(admin_data, ProfileData) else {}
 
     for key in ACCESS_FIELDS.keys():
-        if key in access_checked:
-            if admin_access.get(key, False):
-                data.access[key] = True
-            else:
-                continue
-        else:
-            if admin_access.get(key, False):
-                data.access[key] = False
+        if admin_data.has_access(key):
+            data.access[key] = key in access_checked
 
     bl_checked = {
         k[len("blacklist_") :] for k in form.keys() if k.startswith("blacklist_")
