@@ -1,7 +1,7 @@
 Title: Пример страницы
 Author: Cain
 Date: 12 Сентября 2025 г.
-Background: /static/wiki/images/hehe.jpg
+Background: /static/secrets/hehe.jpg
 
 # Добро пожаловать
 Это пример страницы для **вики**. Ниже - демонстрация подключённых расширений.
@@ -19,14 +19,14 @@ Background: /static/wiki/images/hehe.jpg
 
 | Имя     | Класс       | Ранг |
 |:-------:|------------:|:----:|
-| !tblimg[/static/wiki/images/hehe.jpg|64px,auto,hard] | AR Team | A |
+| !tblimg[/static/secrets/hehe.jpg|64px,auto,hard] | AR Team | A |
 | UMP45   | 404 Squad   | B    |
 | G11     | Experimental| S    |
 
 | Имя   | Класс                                          | Ранг |
 |:------|-----------------------------------------------:|:----:|
 | M4A1  | AR Team                                        | A    |
-| UMP45 | !tblimg[/static/wiki/images/hehe.jpg|30%,auto,max] | B |
+| UMP45 | !tblimg[/static/secrets/hehe.jpg|30%,auto,max] | B |
 | G11   | Experimental                                   | S    |
 
 Крайне не советую юзать картинки без выравнивания по центру и не с указанными размерами пикселей. Сверху причина этого
@@ -35,25 +35,25 @@ Background: /static/wiki/images/hehe.jpg
 
 ## Картинки через !img
 
-!img[/static/wiki/images/hehe.jpg]
+!img[/static/secrets/base_grom.png]
 
-!img[/static/wiki/images/hehe.jpg|left|30%]
+!img[/static/secrets/hehe.jpg|left|30%]
 
-!img[/static/wiki/images/hehe.jpg|right|200px,auto,hard]
+!img[/static/secrets/hehe.jpg|right|200px,auto,hard]
 
 ---
 
 ## Блоки изображений
 
-!imgblock[/static/wiki/images/hehe.jpg|left|70%,auto]
+!imgblock[/static/secrets/hehe.jpg|left|70%,auto]
 Текст рядом с картинкой с `max` режимом
 !endimgblock
 
-!imgblock[/static/wiki/images/hehe.jpg|right|300px,200px,hard]
+!imgblock[/static/secrets/hehe.jpg|right|300px,200px,hard]
 А это `hard`, фиксированная ширина и высота
 !endimgblock
 
-!imgblock[/static/wiki/images/hehe.jpg|middle|100%,auto,hard]
+!imgblock[/static/secrets/hehe.jpg|middle|100%,auto,hard]
 Большая картинка по центру, высота автоматом
 !endimgblock
 
