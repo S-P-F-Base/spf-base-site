@@ -12,10 +12,6 @@ class EventCog(commands.Cog):
     async def on_ready(self):
         await self.update_status()
 
-        channel = self.bot.get_channel(1321317710222721054)
-        if channel and isinstance(channel, discord.TextChannel):
-            await channel.send("Setup done")
-
     @tasks.loop(minutes=5)
     async def update_status(self):
         status = ServerControl.get_status()
