@@ -122,4 +122,4 @@ class GameDBProcessor:
             except Exception:
                 pass
 
-            await asyncio.sleep(60 * 5)
+            await asyncio.sleep(60 * 15)
