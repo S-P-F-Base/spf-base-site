@@ -164,46 +164,13 @@ class Payment:
     payer_amount: Decimal | None = None
 
     def to_fns_struct(self) -> list[tuple[str, Decimal]]:
-        entries = [
+        return [
             (
                 f"{item.name} (от {item.creation_date.strftime('%d.%m.%Y')})",
                 item.price(),
             )
             for item in self.snapshot
         ]
-
-        received_total = self.received_amount
-        if received_total is None or not entries:
-            return entries
-
-        received_total = q2(received_total)
-        zero = Decimal("0.00")
-        if received_total <= zero:
-            return [(name, zero) for name, _ in entries]
-
-        positive_indices = [
-            idx for idx, (_, amount) in enumerate(entries) if amount > zero
-        ]
-        if not positive_indices:
-            return [(name, zero) for name, _ in entries]
-
-        total_discounted = sum(entries[idx][1] for idx in positive_indices)
-        if total_discounted <= zero:
-            return [(name, zero) for name, _ in entries]
-
-        allocations = [zero] * len(entries)
-        assigned = zero
-        for idx in positive_indices[:-1]:
-            amount = entries[idx][1]
-            share = amount / total_discounted
-            allocated = q2(received_total * share)
-            allocations[idx] = allocated
-            assigned += allocated
-
-        last_idx = positive_indices[-1]
-        allocations[last_idx] = q2(received_total - assigned)
-
-        return [(entries[i][0], q2(allocations[i])) for i in range(len(entries))]
 
     def total(self) -> Decimal:
         return q2(sum((p[1] for p in self.to_fns_struct()), Decimal("0.00")))
