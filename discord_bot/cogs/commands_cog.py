@@ -29,7 +29,17 @@ class CommandsCog(commands.Cog):
         data: ProfileData = profile.get("data", ProfileData())
 
         await ctx.send(
-            f"Лимиты:\nМесто: `{data.limits.get('base_limit', 0) + data.limits.get('donate_limit', 0)}` / `{data.limits.get('used', 0)}` МБ\nКоличество персонажей: `{data.limits.get('base_char', 0) + data.limits.get('donate_char', 0)}` / `{len(data.chars)}` шт."
+            f"""# Лимиты
+## Место
+Всего: `{data.limits.get("base_limit", 0) + data.limits.get("donate_limit", 0)}` МБ
+Доступно: `{data.limits.get("base_limit", 0) + data.limits.get("donate_limit", 0) - data.limits.get("used", 0)}` МБ
+Занято: `{data.limits.get("used", 0)}` МБ
+
+## Персонажи
+Всего: `{data.limits.get("base_char", 0) + data.limits.get("donate_char", 0)}` шт.
+Доступно `{data.limits.get("base_char", 0) + data.limits.get("donate_char", 0) - len(data.chars)}` шт.
+Занято `{len(data.chars)}` шт.
+"""
         )
 
     @commands.command(name="help")
