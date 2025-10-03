@@ -5,7 +5,7 @@
     <title>S.P.F. Base - Обратная связь</title>
 
     <meta property="og:title" content="S.P.F. Base - Обратная связь" />
-    <meta property="og:description" content="Анонимный отзыв при уходе с проекта" />
+    <meta property="og:description" content="Анонимный отзыв на проект" />
 
     {% include 'partials/base_header.html' %}
 </head>
@@ -16,11 +16,11 @@
 
         <main class="hero-wrap">
             <section class="content-tile" style="max-width:800px; margin-top:2rem;">
-                <h1>Нам жаль, что вы покидаете проект</h1>
+                <h1>Оставить отзыв</h1>
                 <p class="subtitle">Если несложно - оставьте отзыв. Это поможет нам стать лучше.
                     Можно указать имя, но это необязательно.</p>
 
-                <form method="post" action="/leave_feedback" style="margin-top:1rem;">
+                <form method="post" action="/feedback" style="margin-top:1rem;">
                     <div style="margin-bottom:1rem;">
                         <label for="name" style="display:block; margin-bottom:.4rem;">Имя (опционально)</label>
                         <input type="text" id="name" name="name" placeholder="Ваше имя или ник"
@@ -28,7 +28,7 @@
                     </div>
 
                     <div style="margin-bottom:1rem;">
-                        <label for="feedback" style="display:block; margin-bottom:.4rem;">Причина ухода</label>
+                        <label for="feedback" style="display:block; margin-bottom:.4rem;">Отзыв</label>
                         <textarea id="feedback" name="feedback" required placeholder="Напишите здесь..."
                             style="width:100%; min-height:150px; padding:.6rem; border-radius:.4rem; border:1px solid #444; background:#111; color:#eee; resize:vertical;"></textarea>
                     </div>
