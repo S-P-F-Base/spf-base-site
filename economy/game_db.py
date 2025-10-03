@@ -5,7 +5,7 @@ import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 
-from data_control import Config
+from data_control import Config, ServerControl
 
 
 class GameDBProcessor:
@@ -116,9 +116,10 @@ class GameDBProcessor:
     async def pull_db_data(cls):
         while True:
             try:
-                cls.create_json()
+                if ServerControl.get_status() == "Включён":
+                    cls.create_json()
 
             except Exception:
                 pass
 
-            await asyncio.sleep(60 * 15)
+            await asyncio.sleep(60 * 5)
