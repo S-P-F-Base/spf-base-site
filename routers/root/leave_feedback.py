@@ -3,10 +3,10 @@ from pathlib import Path
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
+
+from templates import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
 FEEDBACK_FILE = Path("data/leave_feedback.log")
 
