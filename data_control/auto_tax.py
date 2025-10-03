@@ -258,8 +258,9 @@ class AutoTax:
             now = _now_utc()
             if existing:
                 existing["services"] = ser
-                existing.setdefault("attempts", 0)
-                existing.setdefault("last_error", None)
+                existing["attempts"] = int(existing.get("attempts", 0))
+                existing["last_error"] = None
+                existing["next_try_ts"] = _iso(now)
 
             else:
                 queue.append(
@@ -303,6 +304,16 @@ class AutoTax:
             logger.error(f"AutoTax._save_queue error: {e}")
 
     @classmethod
+    def remove_from_queue(cls, payment_id: str) -> None:
+        try:
+            queue = cls._load_queue()
+            filtered = [item for item in queue if item.get("payment_id") != payment_id]
+            if len(filtered) != len(queue):
+                cls._save_queue(filtered)
+        except Exception as e:
+            logger.error(f"AutoTax.remove_from_queue error: {e}")
+
+    @classmethod
     async def run_queue_worker(
         cls, interval_sec: int = 60, batch_size: int = 10
     ) -> None:
@@ -311,8 +322,8 @@ class AutoTax:
             try:
                 queue = cls._load_queue()
                 now = _now_utc()
-                due = []
-                rest = []
+                due: list[dict] = []
+                rest: list[dict] = []
                 for item in queue:
                     ts = item.get("next_try_ts")
                     try_time = (
@@ -321,10 +332,15 @@ class AutoTax:
                     (due if try_time <= now else rest).append(item)
 
                 to_process = due[:batch_size]
+                rest.extend(due[batch_size:])
                 processed_ids: set[str] = set()
 
                 for item in to_process:
                     payment_id = item.get("payment_id")
+                    if not payment_id:
+                        logger.error("AutoTax queue item missing payment_id")
+                        continue
+
                     services = [
                         (name, Decimal(amount_str))
                         for name, amount_str in item.get("services", [])
@@ -332,11 +348,22 @@ class AutoTax:
                     attempts = int(item.get("attempts", 0))
 
                     try:
-                        tax_uuid = cls.post_income(services)
                         pay = PaymentServiceDB.get_payment(payment_id)
-                        if pay:
-                            pay.tax_check_id = tax_uuid
-                            PaymentServiceDB.upsert_payment(payment_id, pay)
+                        if pay and pay.tax_check_id:
+                            processed_ids.add(payment_id)
+                            continue
+
+                        if not pay:
+                            raise RuntimeError(f"payment {payment_id} not found")
+
+                        if getattr(pay, "status", None) != "done":
+                            raise RuntimeError(
+                                f"payment {payment_id} status is not 'done'"
+                            )
+
+                        tax_uuid = cls.post_income(services)
+                        pay.tax_check_id = tax_uuid
+                        PaymentServiceDB.upsert_payment(payment_id, pay)
 
                         processed_ids.add(payment_id)
 

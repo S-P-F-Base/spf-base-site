@@ -12,6 +12,8 @@ from data_control import AutoTax, Config
 
 router = APIRouter()
 
+logger = logging.getLogger(__name__)
+
 TWOPLACES = Decimal("0.01")
 EPS = Decimal("0.01")
 
@@ -82,7 +84,27 @@ def yoomoney_notification(
         else:
             payment.payer_amount = withdraw_dec
 
+    def ensure_tax_receipt() -> None:
+        if getattr(payment, "tax_check_id", None):
+            AutoTax.remove_from_queue(payment_id)
+            return
+
+        services = payment.to_fns_struct()
+        if not services:
+            logger.error("Payment %s has no services for tax receipt", payment_id)
+            return
+
+        try:
+            tax_uuid = AutoTax.post_income(services)
+            payment.tax_check_id = tax_uuid
+            AutoTax.remove_from_queue(payment_id)
+
+        except Exception as exc:
+            logger.error("AutoTax.post_income failed for %s: %s", payment_id, exc)
+            AutoTax.enqueue_income(payment_id, services)
+
     if payment.status == "done":
+        ensure_tax_receipt()
         PaymentServiceDB.upsert_payment(payment_id, payment)
         return PlainTextResponse("OK", status_code=200)
 
@@ -117,14 +139,7 @@ def yoomoney_notification(
 
     payment.status = "done"
 
-    try:
-        if not getattr(payment, "tax_check_id", None):
-            tax_uuid = AutoTax.post_income(payment.to_fns_struct())
-            payment.tax_check_id = tax_uuid
-
-    except Exception as e:
-        logging.error(e)
-
+    ensure_tax_receipt()
     PaymentServiceDB.upsert_payment(payment_id, payment)
 
     return PlainTextResponse("OK", status_code=200)
