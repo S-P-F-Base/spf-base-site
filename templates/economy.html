@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Динамика валют</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body style="background:#111;color:#eee;font-family:sans-serif;">
+    <h1>Динамика currency_* по снапшотам</h1>
+    <canvas id="chart" width="900" height="400"></canvas>
+    <script id="currency-data" type="application/json">{{ series | tojson }}</script>
+    <script>
+        const series = JSON.parse(
+            document.getElementById("currency-data").textContent
+        );
+
+        const labels = [...new Set(Object.values(series).flat().map(p => p[0]))].sort();
+
+        const datasets = Object.entries(series).map(([key, values], idx) => {
+            const valueMap = Object.fromEntries(values);
+            return {
+                label: key,
+                data: labels.map(l => valueMap[l] || 0),
+                borderColor: `hsl(${idx * 70},70%,60%)`,
+                fill: false
+            }
+        });
+
+        new Chart(document.getElementById('chart'), {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+</body>
+
+</html>

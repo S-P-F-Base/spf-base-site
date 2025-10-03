@@ -1,9 +1,11 @@
+import asyncio
 import json
 import sqlite3
 import urllib.request
+from datetime import UTC, datetime
 from pathlib import Path
 
-# from data_control import Config
+from data_control import Config
 
 
 class GameDBProcessor:
@@ -11,11 +13,11 @@ class GameDBProcessor:
     JSON_PATH = Path("data/game_server.json")
 
     @classmethod
-    def download_db(cls) -> None:
+    def _download_db(cls) -> None:
         urllib.request.urlretrieve(Config.game_server_ftp(), cls.DB_PATH)
 
     @classmethod
-    def cleanup_db(cls) -> None:
+    def _cleanup_db(cls) -> None:
         if not cls.DB_PATH.exists():
             raise FileNotFoundError("Database file not found. Download it first.")
 
@@ -37,7 +39,7 @@ class GameDBProcessor:
         conn.close()
 
     @classmethod
-    def drop_json(cls) -> Path:
+    def _drop_json(cls) -> Path:
         if not cls.DB_PATH.exists():
             raise FileNotFoundError("Database file not found. Download it first.")
 
@@ -92,40 +94,31 @@ class GameDBProcessor:
         return cls.JSON_PATH
 
     @classmethod
-    def delete_db(cls) -> None:
+    def _delete_db(cls) -> None:
         if cls.DB_PATH.exists():
             cls.DB_PATH.unlink()
 
+    @classmethod
+    def create_json(cls) -> Path:
+        cls._download_db()
+        cls._cleanup_db()
+        cls._drop_json()
+        cls._delete_db()
 
-conn = sqlite3.connect(GameDBProcessor.DB_PATH)
-cursor = conn.cursor()
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+        snap_path = cls.JSON_PATH.parent / "snapshots" / f"inv_{ts}.json"
+        snap_path.parent.mkdir(parents=True, exist_ok=True)
+        cls.JSON_PATH.rename(snap_path)
 
-cursor.execute("""
-    SELECT char_id, json
-    FROM spf2_char_data
-    WHERE key = 'inventory' AND json LIKE '%"currency_subsidies"%'
-""")
-rows = cursor.fetchall()
-conn.close()
+        return snap_path
 
-result = []
-
-for char_id, json_str in rows:
-    try:
-        data = json.loads(json_str)
-    except Exception:
-        continue
-
-    for item in data.get("items", []):
-        if item.get("id") == "currency_subsidies":
-            count = item.get("count", 0)
+    @classmethod
+    async def pull_db_data(cls):
+        while True:
             try:
-                count = int(count)
+                cls.create_json()
+
             except Exception:
-                count = 0
-            result.append((char_id, count))
+                pass
 
-result.sort(key=lambda x: x[1], reverse=True)
-
-for char_id, count in result:
-    print(char_id, count)
+            await asyncio.sleep(60 * 15)

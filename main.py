@@ -16,7 +16,7 @@ from routers.api.yoomoney import router as api_yoomoney
 from routers.api_v2.oauth2 import router as api_v2_oauth2
 from routers.root import router as root
 from templates import templates
-
+from economy import GameDBProcessor
 ALLOWED_PATHS = {
     "/api/yoomoney/notification",
     "/api/discord/login",
@@ -43,6 +43,7 @@ async def lifespan(app: FastAPI):
         ServerControl.setup()
 
         asyncio.create_task(ServerControl.server_status_updater())
+        asyncio.create_task(GameDBProcessor.pull_db_data())
         asyncio.create_task(AutoTax.run_queue_worker(interval_sec=60))
         asyncio.create_task(discord_bot.start())
 
