@@ -139,6 +139,38 @@ class ForumControlCog(commands.Cog):
                 return
 
         # Если же ничего не нашли просто пишем сколько лимита осталось
-        await thread.send(
-            f"Лимиты:\nМесто: `{data.limits.get('base_limit', 0) + data.limits.get('donate_limit', 0)}` / `{data.limits.get('used', 0)}` МБ\nКоличество персонажей: `{data.limits.get('base_char', 0) + data.limits.get('donate_char', 0)}` / `{len(data.chars)}` шт."
+        embed = discord.Embed(title="Лимиты", color=discord.Color.orange())
+
+        total_space = data.limits.get("base_limit", 0) + data.limits.get(
+            "donate_limit", 0
         )
+        used_space = data.limits.get("used", 0)
+        free_space = total_space - used_space
+
+        embed.add_field(
+            name="Место",
+            value=(
+                f"Всего: `{total_space}` МБ\n"
+                f"Доступно: `{free_space}` МБ\n"
+                f"Занято: `{used_space}` МБ"
+            ),
+            inline=False,
+        )
+
+        total_chars = data.limits.get("base_char", 0) + data.limits.get(
+            "donate_char", 0
+        )
+        used_chars = len(data.chars)
+        free_chars = total_chars - used_chars
+
+        embed.add_field(
+            name="Персонажи",
+            value=(
+                f"Всего: `{total_chars}` шт.\n"
+                f"Доступно: `{free_chars}` шт.\n"
+                f"Занято: `{used_chars}` шт."
+            ),
+            inline=False,
+        )
+
+        await thread.send(embed=embed)

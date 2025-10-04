@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 
 from data_class import ProfileData, ProfileDataBase
@@ -28,19 +29,41 @@ class CommandsCog(commands.Cog):
 
         data: ProfileData = profile.get("data", ProfileData())
 
-        await ctx.send(
-            f"""# Лимиты
-## Место
-Всего: `{data.limits.get("base_limit", 0) + data.limits.get("donate_limit", 0)}` МБ
-Доступно: `{data.limits.get("base_limit", 0) + data.limits.get("donate_limit", 0) - data.limits.get("used", 0)}` МБ
-Занято: `{data.limits.get("used", 0)}` МБ
+        embed = discord.Embed(title="Лимиты", color=discord.Color.orange())
 
-## Персонажи
-Всего: `{data.limits.get("base_char", 0) + data.limits.get("donate_char", 0)}` шт.
-Доступно `{data.limits.get("base_char", 0) + data.limits.get("donate_char", 0) - len(data.chars)}` шт.
-Занято `{len(data.chars)}` шт.
-"""
+        total_space = data.limits.get("base_limit", 0) + data.limits.get(
+            "donate_limit", 0
         )
+        used_space = data.limits.get("used", 0)
+        free_space = total_space - used_space
+
+        embed.add_field(
+            name="Место",
+            value=(
+                f"Всего: `{total_space}` МБ\n"
+                f"Доступно: `{free_space}` МБ\n"
+                f"Занято: `{used_space}` МБ"
+            ),
+            inline=False,
+        )
+
+        total_chars = data.limits.get("base_char", 0) + data.limits.get(
+            "donate_char", 0
+        )
+        used_chars = len(data.chars)
+        free_chars = total_chars - used_chars
+
+        embed.add_field(
+            name="Персонажи",
+            value=(
+                f"Всего: `{total_chars}` шт.\n"
+                f"Доступно: `{free_chars}` шт.\n"
+                f"Занято: `{used_chars}` шт."
+            ),
+            inline=False,
+        )
+
+        await ctx.send(embed=embed)
 
     @commands.command(name="help")
     async def help_cmd(self, ctx: commands.Context):
