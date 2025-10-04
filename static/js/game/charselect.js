@@ -190,6 +190,7 @@ btnCreate.onclick = () => {
     }
     const finalName = state.hasNameGenerator ? "" : (state.name || "");
     gmod.createCharacter(finalName, String(state.gender), state.backstoryId);
+    showScreen("list");
 };
 
 /* header primary */
