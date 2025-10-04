@@ -116,7 +116,7 @@ class GameDBProcessor:
     async def pull_db_data(cls):
         while True:
             try:
-                if ServerControl.get_status() == "Включён":
+                if ServerControl.get_status() == "Включен":
                     cls.create_json()
 
             except Exception:
