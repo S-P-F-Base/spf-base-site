@@ -1,12 +1,16 @@
+import re
+
 import discord
 from discord.ext import commands
 
+import utils.steam
 from data_class import ProfileData, ProfileDataBase
 
 HELP_STR: str = """
 Список доступных команд:
 - `!help` - Показать справку по командам
 - `!limits` - Показать свои лимиты
+- `!size <url>` - Показать занимаемое место аддона
 """
 
 
@@ -64,6 +68,19 @@ class CommandsCog(commands.Cog):
         )
 
         await ctx.send(embed=embed)
+
+    @commands.command(name="size")
+    async def size_cmd(self, ctx: commands.Context, url: str):
+        ids: list[str] = []
+        for part in re.split(r"[\s,]+", (url or "").strip()):
+            m = re.search(r"[?&]id=(\d+)", part)
+            if m:
+                ids.append(m.group(1))
+
+        sizes = utils.steam.fetch_workshop_sizes(ids)
+        total_size = sum(sizes.values())
+        total_mb = round(total_size / 1024 / 1024, 2)
+        await ctx.send(f"{total_mb} МБ")
 
     @commands.command(name="help")
     async def help_cmd(self, ctx: commands.Context):
