@@ -1,6 +1,6 @@
 Title: Scarlet Dawn
 Author: Cain
-Date: 3 Сентября 2025 г.
+Date: 6 Октября 2025 г.
 
 !warn[rpk_info]
 
