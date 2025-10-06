@@ -101,7 +101,7 @@ class ForumControlCog(commands.Cog):
                     )
 
                 except discord.Forbidden:
-                    logging.warning(f"Не удалось отправить ЛС пользователю {author_id}")
+                    pass
 
             try:
                 await thread.delete(reason=reason)
