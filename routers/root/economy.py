@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request
 
+import utils.admin
 from templates import templates
 
 router = APIRouter()
@@ -18,7 +19,7 @@ def load_currency_series() -> dict[str, list[tuple[str, int]]]:
             data = json.load(f)
 
         for item in data.get("inventory", []):
-            iid, cnt = item.get("id"), item.get("count", 0)
+            iid, cnt = item.get("id"), int(item.get("count", 0))
             if not iid:
                 continue
 
@@ -27,11 +28,16 @@ def load_currency_series() -> dict[str, list[tuple[str, int]]]:
 
             series.setdefault(iid, []).append((ts, cnt))
 
+    for iid in series:
+        series[iid].sort(key=lambda p: p[0])
+
     return series
 
 
 @router.get("/economy")
 def economy(request: Request):
+    utils.admin.require_access(request, "panel_access")
+
     series = load_currency_series()
     return templates.TemplateResponse(
         "economy.html", {"request": request, "series": series}
