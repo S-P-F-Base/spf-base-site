@@ -19,10 +19,8 @@ def load_currency_series() -> dict[str, list[tuple[str, int]]]:
 
         for item in data.get("inventory", []):
             iid, cnt = item.get("id"), item.get("count", 0)
-            if (
-                not iid
-                or not iid.startswith("currency_")
-                or not iid.startswith("ammo_")
+            if not iid and (
+                not iid.startswith("currency_") and not iid.startswith("ammo_")
             ):
                 continue
 
