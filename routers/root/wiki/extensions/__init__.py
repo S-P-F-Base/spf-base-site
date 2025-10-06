@@ -11,4 +11,5 @@ from .strikethrough_extension import StrikethroughExtension
 from .strip_comments_extension import StripCommentsExtension
 from .table_img_extension import TableImgExtension
 from .toc_tree_extension import TocTreeExtension
+from .warn_include_extension import WarnIncludeExtension
 from .wiki_link_extension import WikiLinkExtension

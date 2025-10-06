@@ -22,6 +22,7 @@ from .extensions import (
     StripCommentsExtension,
     TableImgExtension,
     TocTreeExtension,
+    WarnIncludeExtension,
     WikiLinkExtension,
 )
 
@@ -87,6 +88,7 @@ def wiki_page(request: Request, page: Path):
             SmallTextExtension(),  # Маленький текст
             StrikethroughExtension(),  # Зачёркнутый текст
             LobotomyExtension(),  # Немного красоты в вики
+            WarnIncludeExtension(),  # Подстановка теплейтов
         ],
     )
 

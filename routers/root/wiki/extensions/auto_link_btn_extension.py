@@ -108,6 +108,7 @@ class AutoLinkButtonsTreeprocessor(Treeprocessor):
         self, folder: Path, exclude: List[str], current_path: Path
     ) -> List[Dict[str, str]]:
         out: List[Dict[str, str]] = []
+
         for md_file in sorted(folder.glob("*.md")):
             if md_file.resolve() == current_path:
                 continue
@@ -119,15 +120,27 @@ class AutoLinkButtonsTreeprocessor(Treeprocessor):
             meta = self._read_meta(md_file)
             title = meta.get("title") or md_file.stem
             date = self._parse_date(meta.get("date"), md_file.stat().st_mtime)
-
             href = self._href_from(md_file)
-            out.append(
-                {
-                    "title": title,
-                    "href": href,
-                    "date": date.isoformat(),
-                }
-            )
+            out.append({"title": title, "href": href, "date": date.isoformat()})
+
+        for subdir in sorted(folder.iterdir()):
+            if not subdir.is_dir():
+                continue
+
+            index_file = subdir / "index.md"
+            if not index_file.exists():
+                continue
+
+            name_no_ext = subdir.name.lower()
+            if name_no_ext in exclude:
+                continue
+
+            meta = self._read_meta(index_file)
+            title = meta.get("title") or subdir.name
+            date = self._parse_date(meta.get("date"), index_file.stat().st_mtime)
+            href = self._href_from(index_file)
+            out.append({"title": title, "href": href, "date": date.isoformat()})
+
         return out
 
     def _href_from(self, md_path: Path) -> str:
