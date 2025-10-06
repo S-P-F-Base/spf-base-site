@@ -2,192 +2,38 @@
 <html lang="ru">
 
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <title>Динамика валют</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            background: #111;
-            color: #eee;
-            font-family: sans-serif;
-        }
-
-        #wrap {
-            max-width: 1100px;
-            margin: 24px auto;
-            padding: 0 12px;
-        }
-
-        h1 {
-            margin: 0 0 12px;
-            font-size: 22px;
-        }
-
-        .hint {
-            opacity: .75;
-            font-size: 13px;
-            margin-bottom: 10px;
-        }
-    </style>
 </head>
 
-<body>
-    <div id="wrap">
-        <h1>Динамика currency_*/ammo_* по снапшотам</h1>
-        <div class="hint">Сплошные линии — фактические значения, пунктир — прогноз на 5 следующих снапшотов.
-            Плоские участки детектируются: если последние точки не меняются, прогноз — константа.</div>
-        <canvas id="chart" width="1000" height="420"></canvas>
-
-        <script id="currency-data" type="application/json">{{ series | tojson }}</script>
-    </div>
-
+<body style="background:#111;color:#eee;font-family:sans-serif;">
+    <h1>Динамика по снапшотам</h1>
+    <canvas id="chart" width="900" height="400"></canvas>
+    <script id="currency-data" type="application/json">{{ series | tojson }}</script>
     <script>
-        function uniqueSorted(arr) {
-            return Array.from(new Set(arr)).sort();
-        }
-
-        function forwardFill(labels, valueMap) {
-            const out = [];
-            let last = 0;
-            for (const l of labels) {
-                if (Object.prototype.hasOwnProperty.call(valueMap, l)) {
-                    last = valueMap[l];
-                }
-                out.push(last);
-            }
-            return out;
-        }
-
-        function linreg(y) {
-            const n = y.length;
-            if (n === 0) return { slope: 0, intercept: 0 };
-            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-            for (let i = 0; i < n; i++) {
-                sumX += i;
-                sumY += y[i];
-                sumXY += i * y[i];
-                sumXX += i * i;
-            }
-            const denom = n * sumXX - sumX * sumX;
-            if (denom === 0) return { slope: 0, intercept: y[n - 1] };
-            const slope = (n * sumXY - sumX * sumY) / denom;
-            const intercept = (sumY - slope * sumX) / n;
-            return { slope, intercept };
-        }
-
-        function isPlateau(y, k = 3) {
-            if (y.length <= k) return false;
-            let flat = true;
-            for (let i = y.length - k; i < y.length; i++) {
-                const d = y[i] - y[i - 1];
-                if (Math.abs(d) > 1e-9) { flat = false; break; }
-            }
-            return flat;
-        }
-
-        function forecastNext(yFull, H = 5, W = 8) {
-            if (yFull.length === 0) return Array(H).fill(0);
-            const y = yFull.slice(Math.max(0, yFull.length - W));
-            const last = y[y.length - 1];
-
-            if (y.length < 3 || isPlateau(y, Math.min(3, y.length - 1))) {
-                return Array.from({ length: H }, () => last);
-            }
-
-            const { slope, intercept } = linreg(y);
-            const preds = [];
-            for (let h = 1; h <= H; h++) {
-                const idx = (y.length - 1) + h;
-                let v = intercept + slope * idx;
-
-                if (!Number.isFinite(v)) v = last;
-                if (v < 0) v = 0;
-
-                preds.push(v);
-            }
-            return preds;
-        }
-
-        const raw = JSON.parse(document.getElementById("currency-data").textContent);
-
-        const labels = uniqueSorted(
-            Object.values(raw).flat().map(p => p[0])
+        const series = JSON.parse(
+            document.getElementById("currency-data").textContent
         );
 
-        const seriesMaps = {};
-        const ffData = {};
-        for (const [key, pairs] of Object.entries(raw)) {
-            const valueMap = Object.fromEntries(pairs);
-            seriesMaps[key] = valueMap;
-            ffData[key] = forwardFill(labels, valueMap);
-        }
+        const labels = [...new Set(Object.values(series).flat().map(p => p[0]))].sort();
 
-        const HORIZON = 5;
-        const lastLabel = labels.length ? labels[labels.length - 1] : "t";
-        const futureLabels = Array.from({ length: HORIZON }, (_, i) => `${lastLabel} +${i + 1}`);
-        const labelsFull = labels.concat(futureLabels);
-
-        const datasets = [];
-        let colorIdx = 0;
-
-        function colorFor(i) { return `hsl(${(i * 70) % 360},70%,60%)`; }
-
-        for (const [key, dataArr] of Object.entries(ffData)) {
-            const color = colorFor(colorIdx++);
-
-            const actual = dataArr.concat(Array(HORIZON).fill(null));
-
-            const preds = forecastNext(dataArr, HORIZON, 8);
-            const forecast = Array(labels.length).fill(null).concat(preds);
-
-            datasets.push({
+        const datasets = Object.entries(series).map(([key, values], idx) => {
+            const valueMap = Object.fromEntries(values);
+            return {
                 label: key,
-                data: actual,
-                borderColor: color,
-                fill: false,
-                tension: 0.15,
-                pointRadius: 0
-            });
-
-            datasets.push({
-                label: key + " (forecast)",
-                data: forecast,
-                borderColor: color,
-                borderDash: [6, 4],
-                fill: false,
-                tension: 0.15,
-                pointRadius: 0
-            });
-        }
+                data: labels.map(l => valueMap[l] || 0),
+                borderColor: `hsl(${idx * 70},70%,60%)`,
+                fill: false
+            }
+        });
 
         new Chart(document.getElementById('chart'), {
             type: 'line',
-            data: { labels: labelsFull, datasets },
+            data: { labels, datasets },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: {
-                            filter: (item) => {
-                                return !/\(forecast\)$/.test(item.text);
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => {
-                                const v = ctx.parsed.y;
-                                const isForecast = /\(forecast\)$/.test(ctx.dataset.label || "");
-                                return (isForecast ? "[forecast] " : "") + (ctx.dataset.label.replace(" (forecast)", "")) + ": " + (v ?? "—");
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true, ticks: { precision: 0 } },
-                    x: { ticks: { autoSkip: true, maxRotation: 0 } }
-                }
+                scales: { y: { beginAtZero: true } }
             }
         });
     </script>
