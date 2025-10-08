@@ -1,9 +1,9 @@
-Title: AK-Alpha
+Title: AK-Alfa
 Author: Cha1n5aww
 Date: 3 Сентября 2025 г.
 Background: /static/wiki/images/lore/nrp_wiki/t_doll_index/AK-Alpha/backgorund.jpg
 
-# AK-Alpha.
+# AK-Alfa.
 ```
 "Я АК-Альфа, а не Омега... Извините, а в какой стороне находится ваш планетарий?"
 ```
