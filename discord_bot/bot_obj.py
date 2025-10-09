@@ -8,6 +8,7 @@ from .cogs import (
     DebugCog,
     EventCog,
     ForumControlCog,
+    PlayerCog,
     ServerControlCog,
     UserControlCog,
 )
@@ -23,6 +24,7 @@ async def start():
         DebugCog,
         EventCog,
         ForumControlCog,
+        PlayerCog,
         ServerControlCog,
         UserControlCog,
     ]:
