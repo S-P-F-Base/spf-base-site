@@ -88,7 +88,7 @@ Background: /static/wiki/images/lore/nrp_wiki/organisations/SPF/background.png
 
 ## Досье на глав ЧВК S.P.F.
 
-!btn[/wiki/world_lore/etc_info/Koshel|Кошель]
-!btn[/wiki/world_lore/etc_info/Yasik|Язык]
-!btn[/wiki/world_lore/etc_info/Kaban|Кабан]
-!btn[/wiki/world_lore/etc_info/Toriy|Торий]
+!btn[/wiki/lore/etc_info/Koshel|Кошель]
+!btn[/wiki/lore/etc_info/Yasik|Язык]
+!btn[/wiki/lore/etc_info/Kaban|Кабан]
+!btn[/wiki/lore/etc_info/Toriy|Торий]
