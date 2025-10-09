@@ -35,7 +35,9 @@ class PlayerCog(commands.Cog):
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
 
-            cursor.execute("SELECT name, last_played_at, steamid FROM spf2_characters")
+            cursor.execute(
+                "SELECT name, last_played_at, steamid, id FROM spf2_characters"
+            )
             rows = cursor.fetchall()
             conn.close()
 
@@ -43,14 +45,14 @@ class PlayerCog(commands.Cog):
             month_ago = now - 30 * 24 * 60 * 60
 
             inactive = []
-            for name, ts, steamid in rows:
+            for name, ts, steamid, id in rows:
                 try:
                     if steamid == "STORAGE":
                         continue
 
                     ts = int(ts)
                     if ts and ts < month_ago:
-                        inactive.append((name, ts, steamid))
+                        inactive.append((name, ts, steamid, id))
 
                 except (ValueError, TypeError):
                     continue
@@ -61,8 +63,8 @@ class PlayerCog(commands.Cog):
 
             header = "# Персонажи, не заходившие более месяца:\n"
             message = header
-            for name, ts, steamid in inactive:
-                line = f"`{steamid}` `{name}` - <t:{ts}:R> (<t:{ts}:f>)\n"
+            for name, ts, steamid, id in inactive:
+                line = f"`{id}` `{steamid}` `{name}` - <t:{ts}:R> (<t:{ts}:f>)\n"
                 if len(message) + len(line) >= 2000:
                     await ctx.send(message)
                     message = line
