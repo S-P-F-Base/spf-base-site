@@ -50,7 +50,7 @@ class PlayerCog(commands.Cog):
 
                     ts = int(ts)
                     if ts and ts < month_ago:
-                        inactive.append((name, ts))
+                        inactive.append((name, ts, steamid))
 
                 except (ValueError, TypeError):
                     continue
@@ -61,8 +61,8 @@ class PlayerCog(commands.Cog):
 
             header = "# Персонажи, не заходившие более месяца:\n"
             message = header
-            for name, ts in inactive:
-                line = f"`{name}` - <t:{ts}:R> (<t:{ts}:f>)\n"
+            for name, ts, steamid in inactive:
+                line = f"`{steamid}` `{name}` - <t:{ts}:R> (<t:{ts}:f>)\n"
                 if len(message) + len(line) >= 2000:
                     await ctx.send(message)
                     message = line
