@@ -39,37 +39,40 @@ class ForumControlCog(commands.Cog):
             await ctx.send("Тег не найден.")
             return
 
-        for thread in forum.threads:
-            try:
-                if target_tag in thread.applied_tags:
-                    await thread.delete(
-                        reason=f"Удаление анкет с тегом 'отклонено' юзером {ctx.author.id}"
+        async with ctx.typing():
+            for thread in forum.threads:
+                try:
+                    if target_tag in thread.applied_tags:
+                        await thread.delete(
+                            reason=f"Удаление анкет с тегом 'отклонено' юзером {ctx.author.id}"
+                        )
+                        deleted += 1
+
+                except discord.Forbidden:
+                    logging.warning(f"Нет прав на удаление темы {thread.id}")
+                    failed += 1
+
+                except discord.HTTPException as e:
+                    logging.error(f"Ошибка при удалении темы {thread.id}: {e}")
+                    failed += 1
+
+            async for thread in forum.archived_threads(limit=None):
+                try:
+                    if target_tag in thread.applied_tags:
+                        await thread.delete(
+                            reason=f"Удаление анкет с тегом 'отклонено' юзером {ctx.author.id}"
+                        )
+                        deleted += 1
+
+                except discord.Forbidden:
+                    logging.warning(f"Нет прав на удаление архивного треда {thread.id}")
+                    failed += 1
+
+                except discord.HTTPException as e:
+                    logging.error(
+                        f"Ошибка при удалении архивного треда {thread.id}: {e}"
                     )
-                    deleted += 1
-
-            except discord.Forbidden:
-                logging.warning(f"Нет прав на удаление темы {thread.id}")
-                failed += 1
-
-            except discord.HTTPException as e:
-                logging.error(f"Ошибка при удалении темы {thread.id}: {e}")
-                failed += 1
-
-        async for thread in forum.archived_threads(limit=None):
-            try:
-                if target_tag in thread.applied_tags:
-                    await thread.delete(
-                        reason=f"Удаление анкет с тегом 'отклонено' юзером {ctx.author.id}"
-                    )
-                    deleted += 1
-
-            except discord.Forbidden:
-                logging.warning(f"Нет прав на удаление архивного треда {thread.id}")
-                failed += 1
-
-            except discord.HTTPException as e:
-                logging.error(f"Ошибка при удалении архивного треда {thread.id}: {e}")
-                failed += 1
+                    failed += 1
 
         await ctx.send(f"Удалено {deleted} тредов, не удалось удалить {failed}.")
 
@@ -85,6 +88,8 @@ class ForumControlCog(commands.Cog):
         author_id = thread.owner_id
         if not author_id:
             return
+
+        await thread.send("<@&1355456288716488854>")
 
         profile = ProfileDataBase.get_profile_by_discord(str(author_id))
         if not profile:
