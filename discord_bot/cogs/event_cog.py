@@ -87,7 +87,7 @@ class EventCog(commands.Cog):
     @tasks.loop(minutes=5)
     async def update_status(self):
         status = ServerControl.get_status()
-        if status == "Включён":
+        if status == "Включен":
             activity = discord.Game(name="Garry's mod, server spf-base.ru")
             status = discord.Status.online
 
