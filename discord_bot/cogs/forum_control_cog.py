@@ -155,9 +155,9 @@ class ForumControlCog(commands.Cog):
         embed.add_field(
             name="Место",
             value=(
-                f"Всего: `{total_space}` МБ\n"
-                f"Доступно: `{free_space}` МБ\n"
-                f"Занято: `{used_space}` МБ"
+                f"Всего: `{total_space.round()}` МБ\n"
+                f"Доступно: `{free_space.round()}` МБ\n"
+                f"Занято: `{used_space.round()}` МБ"
             ),
             inline=False,
         )

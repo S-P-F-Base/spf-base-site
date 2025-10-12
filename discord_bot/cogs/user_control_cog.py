@@ -17,11 +17,9 @@ class UserControlCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-        # --- кэш user_info --- #
         self._user_cache: dict[int, tuple[float, dict]] = {}
-        self._cache_ttl = 15 * 60  # 15 минут
+        self._cache_ttl = 3 * 60 * 60  # 3 часа
 
-        # --- мягкий rate-limit для REST --- #
         self._rl_lock = asyncio.Lock()
         self._rl_calls = deque()  # timestamps
         self._rl_per = 45  # запросов
@@ -91,6 +89,7 @@ class UserControlCog(commands.Cog):
 
         if data is not None:
             self._cache_set(user_id, data)
+
         return data
 
     async def get_role_value(self, user_id: int) -> tuple[int, int]:
@@ -115,6 +114,7 @@ class UserControlCog(commands.Cog):
             value = ROLE_VALUES.get(role.id)
             if value and value > max_value:
                 max_value = value
+
         return max_value
 
     # для теста командой в Discord
