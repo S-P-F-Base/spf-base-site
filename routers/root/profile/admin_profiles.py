@@ -1,11 +1,13 @@
 import asyncio
+import json
 import logging
 import re
 from datetime import UTC, datetime
+from html import escape
 from typing import Optional
 
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 
 import utils.admin
 import utils.error
@@ -54,6 +56,87 @@ async def profile_admin_profiles(request: Request):
     def matches_rough(p: dict) -> bool:
         if not q:
             return True
+        for key in ("uuid", "discord_id", "steam_id"):
+            val = p.get(key) or ""
+            if isinstance(val, str) and q in val.lower():
+                return True
+        return False
+
+    rough = [p for p in profiles if matches_rough(p)]
+    use_for_names = rough if rough else profiles
+
+    def as_float(x, d=0.0):
+        try:
+            return float(x)
+
+        except Exception:
+            return d
+
+    def as_int(x, d=0):
+        try:
+            return int(x)
+
+        except Exception:
+            try:
+                return int(float(x))
+
+            except Exception:
+                return d
+
+    def build_light_view(p: dict) -> dict:
+        data: ProfileData = p.get("data", ProfileData())
+        username = p.get("username") or "Загрузка..."
+        avatar_url = p.get("avatar_url") or "/static/images/logo/discord.png"
+        return {
+            "uuid": p.get("uuid"),
+            "discord_id": p.get("discord_id"),
+            "steam_id": p.get("steam_id"),
+            "username": username,
+            "avatar_url": avatar_url,
+            "access": data.access,
+            "has_blacklist": data.has_blacklist,
+            "blacklist": {
+                "chars": data.blacklist.get("chars", False),
+                "lore_chars": data.blacklist.get("lore_chars", False),
+                "admin": data.blacklist.get("admin", False),
+            },
+            "limits": {
+                "base_limit": as_float(data.limits.get("base_limit", 0)),
+                "donate_limit": as_float(data.limits.get("donate_limit", 0)),
+                "used": as_float(data.limits.get("used", 0)),
+                "base_char": as_int(data.limits.get("base_char", 0)),
+                "donate_char": as_int(data.limits.get("donate_char", 0)),
+            },
+            "notes": data.notes,
+            "chars": data.chars,
+        }
+
+    view_pool = [build_light_view(p) for p in use_for_names]
+    if q and not rough:
+        view_pool = [u for u in view_pool if q in (u["username"] or "").lower()]
+
+    return templates.TemplateResponse(
+        "profile/admin/profiles.html",
+        {
+            "request": request,
+            "authenticated": True,
+            "users": view_pool,
+            "q": q,
+            "ACCESS_FIELDS": ACCESS_FIELDS,
+            "BLACKLIST_FIELDS": BLACKLIST_FIELDS,
+        },
+    )
+
+
+@router.get("/profile/admin/profiles/stream")
+async def profile_admin_profiles_stream(request: Request):
+    utils.admin.require_admin(request)
+    q = (request.query_params.get("q") or "").strip().lower()
+    profiles = ProfileDataBase.get_all_profiles()
+
+    def matches_rough(p: dict) -> bool:
+        if not q:
+            return True
 
         for key in ("uuid", "discord_id", "steam_id"):
             val = p.get(key) or ""
@@ -66,19 +149,7 @@ async def profile_admin_profiles(request: Request):
     use_for_names = rough if rough else profiles
 
     cog = bot.get_cog("UserControlCog")
-    extra_map: dict[int, dict] = {}
-    if cog:
-        tasks, index_map = [], []
-        for i, p in enumerate(use_for_names):
-            did = p.get("discord_id")
-            if did:
-                tasks.append(cog.get_user_info(did))  # type: ignore
-                index_map.append(i)
-
-        if tasks:
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            for idx, res in zip(index_map, results):
-                extra_map[idx] = {} if isinstance(res, Exception) else (res or {})  # type: ignore
+    sem = asyncio.Semaphore(8)
 
     def as_float(x, d=0.0):
         try:
@@ -126,21 +197,39 @@ async def profile_admin_profiles(request: Request):
             "chars": data.chars,
         }
 
-    view_pool = [build_view(p, extra_map.get(i)) for i, p in enumerate(use_for_names)]
-    if q and not rough:
-        view_pool = [u for u in view_pool if q in (u["username"] or "").lower()]
+    async def fetch_one(p: dict, idx: int):
+        extra = {}
+        did = p.get("discord_id")
+        if did and cog:
+            try:
+                async with sem:
+                    info = await cog.get_user_info(int(did))  # type: ignore
+                    extra = info or {}
 
-    return templates.TemplateResponse(
-        "profile/admin/profiles.html",
-        {
-            "request": request,
-            "authenticated": True,
-            "users": view_pool,
-            "q": q,
-            "ACCESS_FIELDS": ACCESS_FIELDS,
-            "BLACKLIST_FIELDS": BLACKLIST_FIELDS,
-        },
-    )
+            except Exception:
+                extra = {}
+
+        return build_view(p, extra)
+
+    tasks = [asyncio.create_task(fetch_one(p, i)) for i, p in enumerate(use_for_names)]
+
+    async def gen():
+        for coro in asyncio.as_completed(tasks):
+            try:
+                view = await coro
+
+            except Exception:
+                view = {
+                    "uuid": None,
+                    "username": "???",
+                    "avatar_url": "",
+                    "discord_id": None,
+                }
+
+            line = json.dumps(view, ensure_ascii=False)
+            yield (line + "\n").encode("utf-8")
+
+    return StreamingResponse(gen(), media_type="application/x-ndjson")
 
 
 # Admin: update/delete (permissions)

@@ -181,90 +181,118 @@
 
     <script>
         (function () {
-            const grid = document.getElementById('players');
-            const backdrop = document.getElementById('modal-backdrop');
-
-            const modalName = document.getElementById('modal-player-name');
-            const m_uuid = document.getElementById('m_uuid');
-            const m_discord = document.getElementById('m_discord');
-            const m_steam = document.getElementById('m_steam');
-
-            const f_uuid = document.getElementById('f_uuid');
-            const c_uuid = document.getElementById('c_uuid');
-            const n_uuid = document.getElementById('n_uuid');
-
-            const limBase = document.getElementById('f_lim_base');
-            const limDonate = document.getElementById('f_lim_donate');
-            const limUsed = document.getElementById('f_lim_used');
-            const limBaseChar = document.getElementById('f_lim_basechar');
-            const limDonateChar = document.getElementById('f_lim_donatechar');
-
-            const charList = document.getElementById('char_list');
-            const noteList = document.getElementById('note_list');
-
-            function setCheckboxes(prefix, data) {
-                Object.entries(data || {}).forEach(([key, value]) => {
-                    const el = document.getElementById(prefix + key);
-                    if (el) el.checked = !!value;
+            function createCardNode(view) {
+                const div = document.createElement('div');
+                div.className = 'player-card';
+                div.dataset.profile = JSON.stringify({
+                    uuid: view.uuid,
+                    username: view.username,
+                    discord: view.discord_id,
+                    steam: view.steam_id,
+                    avatar_url: view.avatar_url || '/static/images/logo/discord.png',
+                    access: view.access || {},
+                    blacklist: view.blacklist || {},
+                    limits: view.limits || {},
+                    notes: view.notes || [],
+                    chars: view.chars || []
                 });
+
+                div.innerHTML = `
+            <div class="player-header">
+                <img src="${escapeHtml(view.avatar_url || '/static/images/logo/discord.png')}" alt="avatar">
+                <div class="player-name">${escapeHtml(view.username || 'Без имени')}</div>
+            </div>
+            <div class="badges">
+                ${view.access && view.access.panel_access ? '<span class="badge admin">Админ-панель</span>' : ''}
+                ${view.access && view.access.full_access ? '<span class="badge admin">Full</span>' : ''}
+                ${view.has_blacklist ? '<span class="badge blacklist">ЧС</span>' : ''}
+            </div>
+            <div class="card-actions">
+                <button class="btn btn-edit" type="button">Изменить</button>
+                <form method="post" action="/profile/admin/profile/delete" onsubmit="return confirm('Удалить профиль? Это необратимо.');" style="display:inline;">
+                    <input type="hidden" name="uuid" value="${escapeHtml(view.uuid || '')}">
+                    <button class="btn danger" type="submit">Удалить</button>
+                </form>
+            </div>
+        `;
+                return div;
             }
 
-            function openModal(card) {
-                const p = JSON.parse(card.dataset.profile);
+            function escapeHtml(s) {
+                if (s == null) return '';
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
 
-                modalName.textContent = p.username || '—';
-                m_uuid.textContent = p.uuid;
-                m_discord.textContent = p.discord || '-';
-                m_steam.textContent = p.steam || '-';
+            async function consumeStream() {
+                const players = document.getElementById('players');
+                if (!players) return;
 
-                f_uuid.value = p.uuid;
-                c_uuid.value = p.uuid;
-                n_uuid.value = p.uuid;
+                const params = new URLSearchParams(window.location.search);
+                const q = params.get('q');
+                const url = '/profile/admin/profiles/stream' + (q ? '?q=' + encodeURIComponent(q) : '');
 
-                setCheckboxes('f_acc_', p.access || {});
-                setCheckboxes('f_bl_', p.blacklist || {});
+                try {
+                    const res = await fetch(url);
+                    if (!res.body) return;
+                    const reader = res.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let buf = '';
 
-                limBase.value = p.limits.base_limit || 0;
-                limDonate.value = p.limits.donate_limit || 0;
-                limUsed.value = p.limits.used || 0;
-                limBaseChar.value = p.limits.base_char || 0;
-                limDonateChar.value = p.limits.donate_char || 0;
-
-                noteList.innerHTML = '';
-                (p.notes || []).forEach(n => {
-                    const li = document.createElement('li');
-                    li.textContent = `[${n.date}] (${n.status}) ${n.content}`;
-                    noteList.appendChild(li);
-                });
-
-                charList.innerHTML = '';
-                (p.chars || []).forEach((c, i) => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<strong>${c.name}</strong>` +
-                        (c.discord_url ? ` – <a href="${c.discord_url}" target="_blank">анкета</a>` : '');
-                    if (Array.isArray(c.steam_urls) && c.steam_urls.length) {
-                        li.innerHTML += '<br>Контент: ' + c.steam_urls.map(s => `<a href="${s}" target="_blank">link</a>`).join(', ');
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        buf += decoder.decode(value, { stream: true });
+                        let idx;
+                        while ((idx = buf.indexOf('\n')) >= 0) {
+                            const line = buf.slice(0, idx).trim();
+                            buf = buf.slice(idx + 1);
+                            if (!line) continue;
+                            try {
+                                const obj = JSON.parse(line);
+                                const existing = Array.from(players.children).find(
+                                    c => c.dataset.profile && JSON.parse(c.dataset.profile).uuid === obj.uuid
+                                );
+                                if (existing) {
+                                    const img = existing.querySelector('.player-header img');
+                                    const name = existing.querySelector('.player-name');
+                                    if (img && obj.avatar_url) img.src = obj.avatar_url;
+                                    if (name && obj.username) name.textContent = obj.username;
+                                    existing.dataset.profile = JSON.stringify({
+                                        uuid: obj.uuid,
+                                        username: obj.username,
+                                        discord: obj.discord_id,
+                                        steam: obj.steam_id,
+                                        avatar_url: obj.avatar_url || '/static/images/logo/discord.png',
+                                        access: obj.access || {},
+                                        blacklist: obj.blacklist || {},
+                                        limits: obj.limits || {},
+                                        notes: obj.notes || [],
+                                        chars: obj.chars || []
+                                    });
+                                } else {
+                                    const node = createCardNode(obj);
+                                    players.appendChild(node);
+                                }
+                            } catch (e) {
+                                console.warn('Malformed stream line', e);
+                            }
+                        }
                     }
-                    li.innerHTML += `<form method="post" action="/profile/admin/char/delete" onsubmit="return confirm('Удалить ${c.name}?');">
-                <input type="hidden" name="uuid" value="${p.uuid}">
-                <input type="hidden" name="index" value="${i}">
-                <button class="btn danger" type="submit">Удалить</button>
-            </form>`;
-                    charList.appendChild(li);
-                });
-
-                backdrop.style.display = 'flex';
+                } catch (e) {
+                    console.warn('Profile stream failed', e);
+                }
             }
 
-            function closeModal() { backdrop.style.display = 'none'; }
-
-            grid.addEventListener('click', e => {
-                const btn = e.target.closest('.btn-edit');
-                if (btn) openModal(btn.closest('.player-card'));
-            });
-            document.getElementById('btn-cancel').addEventListener('click', e => { e.preventDefault(); closeModal(); });
-            backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
-            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', consumeStream);
+            } else {
+                consumeStream();
+            }
         })();
     </script>
 </body>

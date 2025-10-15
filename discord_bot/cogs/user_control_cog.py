@@ -44,8 +44,10 @@ class UserControlCog(commands.Cog):
             now = time.monotonic()
             while self._rl_calls and now - self._rl_calls[0] > self._rl_window:
                 self._rl_calls.popleft()
+
             if len(self._rl_calls) >= self._rl_per:
                 await asyncio.sleep(self._rl_window - (now - self._rl_calls[0]))
+
             self._rl_calls.append(time.monotonic())
 
     # ---------------- public API ----------------
