@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 
+from data_class.profile import ProfileData, ProfileDataBase
 from data_control import ServerControl
 
 CHANNEL_ID = 1321307463550767154
@@ -29,6 +30,7 @@ class EventCog(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         await self.update_status()
+        self.update_status.start()
 
     async def send_to_dm(
         self,
@@ -61,6 +63,7 @@ class EventCog(commands.Cog):
         embed.set_thumbnail(url=member.display_avatar.url)
         embed.add_field(name="Имя", value=str(member), inline=True)
         embed.add_field(name="ID", value=str(member.id), inline=True)
+        embed.add_field(name="Mention", value=member.mention, inline=True)
 
         await channel.send(embed=embed)
 
@@ -96,3 +99,25 @@ class EventCog(commands.Cog):
             status = discord.Status.idle
 
         await self.bot.change_presence(activity=activity, status=status)
+
+    def _get_admin_profile(self, discord_id: int) -> dict | None:
+        profile = ProfileDataBase.get_profile_by_discord(str(discord_id))
+        if not profile:
+            return None
+
+        data = profile.get("data", ProfileData())
+        if not isinstance(data, ProfileData):
+            return None
+
+        return profile if data.has_access("full_access") else None
+
+    @commands.command(name="update_status")
+    async def update_status_cmd(self, ctx: commands.Context):
+        profile = self._get_admin_profile(ctx.author.id)
+
+        if profile is None:
+            await ctx.message.add_reaction("\U0000274c")
+            return
+
+        await self.update_status()
+        await ctx.message.add_reaction("\U00002705")

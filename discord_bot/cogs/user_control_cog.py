@@ -116,9 +116,3 @@ class UserControlCog(commands.Cog):
                 max_value = value
 
         return max_value
-
-    # для теста командой в Discord
-    @commands.command(name="userinfo")
-    async def userinfo(self, ctx: commands.Context, user_id: int):
-        data = await self.get_user_info(user_id)
-        await ctx.send(str(data))

@@ -11,6 +11,11 @@ HELP_STR: str = """
 - `!help` - Показать справку по командам
 - `!limits` - Показать свои лимиты
 - `!size <url>` - Показать занимаемое место аддона
+
+Для администрации:
+- `!server <start|stop>` - Остановить / запустить сервер
+- `!update_status` - Обновить статус бота
+- `!user_time` - Расстрельный список
 """
 
 
@@ -44,9 +49,9 @@ class CommandsCog(commands.Cog):
         embed.add_field(
             name="Место",
             value=(
-                f"Всего: `{total_space.round()}` МБ\n"
-                f"Доступно: `{free_space.round()}` МБ\n"
-                f"Занято: `{used_space.round()}` МБ"
+                f"Всего: `{round(total_space, 2)}` МБ\n"
+                f"Доступно: `{round(free_space, 2)}` МБ\n"
+                f"Занято: `{round(used_space, 2)}` МБ"
             ),
             inline=False,
         )

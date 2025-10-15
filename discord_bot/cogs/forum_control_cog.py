@@ -78,10 +78,11 @@ class ForumControlCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: discord.Thread):
+        tr_parent = thread.parent
         if (
-            not thread.parent
-            or not isinstance(thread.parent, discord.ForumChannel)
-            or thread.parent.id not in WATCHED_FORUM_IDS
+            not tr_parent
+            or not isinstance(tr_parent, discord.ForumChannel)
+            or tr_parent.id not in WATCHED_FORUM_IDS
         ):
             return
 
@@ -118,16 +119,14 @@ class ForumControlCog(commands.Cog):
                 logging.error(f"Ошибка при удалении темы {thread.id}: {e}")
 
         # Проверка на блок для заявок в админы
-        if thread.parent.id == 1398286514571448433 and data.blacklist.get(
-            "admin", False
-        ):
+        if tr_parent.id == 1398286514571448433 and data.blacklist.get("admin", False):
             await send_dm_and_delete("ЧС администрации с БД spf-base.ru")
             return
 
         # Для анкет персонажей
         is_lore = False
         try:
-            lore_tag = thread.parent.get_tag(1404795974706135152)
+            lore_tag = tr_parent.get_tag(1404795974706135152)
             if lore_tag and lore_tag in thread.applied_tags:
                 is_lore = True
 
@@ -138,12 +137,16 @@ class ForumControlCog(commands.Cog):
             if data.blacklist.get("lore_chars", False):
                 await send_dm_and_delete("ЧС лорных персонажей с БД spf-base.ru")
                 return
+
         else:
             if data.blacklist.get("chars", False):
                 await send_dm_and_delete("ЧС обычных персонажей с БД spf-base.ru")
                 return
 
         # Если же ничего не нашли просто пишем сколько лимита осталось
+        if tr_parent.id == 1398286514571448433:
+            return
+
         embed = discord.Embed(title="Лимиты", color=discord.Color.orange())
 
         total_space = data.limits.get("base_limit", 0) + data.limits.get(
@@ -155,9 +158,9 @@ class ForumControlCog(commands.Cog):
         embed.add_field(
             name="Место",
             value=(
-                f"Всего: `{total_space.round()}` МБ\n"
-                f"Доступно: `{free_space.round()}` МБ\n"
-                f"Занято: `{used_space.round()}` МБ"
+                f"Всего: `{round(total_space, 2)}` МБ\n"
+                f"Доступно: `{round(free_space, 2)}` МБ\n"
+                f"Занято: `{round(used_space, 2)}` МБ"
             ),
             inline=False,
         )
