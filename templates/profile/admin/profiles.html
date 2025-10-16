@@ -181,6 +181,16 @@
 
     <script>
         (function () {
+            function escapeHtml(s) {
+                if (s == null) return '';
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
             function createCardNode(view) {
                 const div = document.createElement('div');
                 div.className = 'player-card';
@@ -218,15 +228,126 @@
                 return div;
             }
 
-            function escapeHtml(s) {
-                if (s == null) return '';
-                return String(s)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
+            const grid = document.getElementById('players');
+            const backdrop = document.getElementById('modal-backdrop');
+
+            const modalName = document.getElementById('modal-player-name');
+            const m_uuid = document.getElementById('m_uuid');
+            const m_discord = document.getElementById('m_discord');
+            const m_steam = document.getElementById('m_steam');
+
+            const f_uuid = document.getElementById('f_uuid');
+            const c_uuid = document.getElementById('c_uuid');
+            const n_uuid = document.getElementById('n_uuid');
+
+            const limBase = document.getElementById('f_lim_base');
+            const limDonate = document.getElementById('f_lim_donate');
+            const limUsed = document.getElementById('f_lim_used');
+            const limBaseChar = document.getElementById('f_lim_basechar');
+            const limDonateChar = document.getElementById('f_lim_donatechar');
+
+            const charList = document.getElementById('char_list');
+            const noteList = document.getElementById('note_list');
+
+            function setCheckboxes(prefix, data) {
+                Object.entries(data || {}).forEach(([key, value]) => {
+                    const el = document.getElementById(prefix + key);
+                    if (el) el.checked = !!value;
+                });
             }
+
+            function openModal(card) {
+                try {
+                    const p = JSON.parse(card.dataset.profile || '{}');
+
+                    modalName.textContent = p.username || '—';
+                    m_uuid.textContent = p.uuid || '';
+                    m_discord.textContent = p.discord || '-';
+                    m_steam.textContent = p.steam || '-';
+
+                    if (f_uuid) f_uuid.value = p.uuid || '';
+                    if (c_uuid) c_uuid.value = p.uuid || '';
+                    if (n_uuid) n_uuid.value = p.uuid || '';
+
+                    setCheckboxes('f_acc_', p.access || {});
+                    setCheckboxes('f_bl_', p.blacklist || {});
+
+                    if (limBase) limBase.value = (p.limits && p.limits.base_limit) != null ? p.limits.base_limit : 0;
+                    if (limDonate) limDonate.value = (p.limits && p.limits.donate_limit) != null ? p.limits.donate_limit : 0;
+                    if (limUsed) limUsed.value = (p.limits && p.limits.used) != null ? p.limits.used : 0;
+                    if (limBaseChar) limBaseChar.value = (p.limits && p.limits.base_char) != null ? p.limits.base_char : 0;
+                    if (limDonateChar) limDonateChar.value = (p.limits && p.limits.donate_char) != null ? p.limits.donate_char : 0;
+
+                    if (noteList) {
+                        noteList.innerHTML = '';
+                        (p.notes || []).forEach(n => {
+                            const li = document.createElement('li');
+                            li.textContent = `[${n.date || '-'}] (${n.status || 'info'}) ${n.content || ''}`;
+                            noteList.appendChild(li);
+                        });
+                    }
+
+                    if (charList) {
+                        charList.innerHTML = '';
+                        (p.chars || []).forEach((c, i) => {
+                            const li = document.createElement('li');
+
+                            let html = `<strong>${escapeHtml(c.name || 'Без имени')}</strong>`;
+                            if (c.discord_url) {
+                                html += ` – <a href="${escapeHtml(c.discord_url)}" target="_blank">анкета</a>`;
+                            }
+                            if (Array.isArray(c.steam_urls) && c.steam_urls.length) {
+                                html += '<br>Контент: ' + c.steam_urls.map(s => `<a href="${escapeHtml(s)}" target="_blank">link</a>`).join(', ');
+                            }
+
+                            html += `<form method="post" action="/profile/admin/char/delete" onsubmit="return confirm('Удалить ${escapeHtml(c.name || '')}?');">
+                        <input type="hidden" name="uuid" value="${escapeHtml(p.uuid || '')}">
+                        <input type="hidden" name="index" value="${i}">
+                        <button class="btn danger" type="submit">Удалить</button>
+                    </form>`;
+
+                            li.innerHTML = html;
+                            charList.appendChild(li);
+                        });
+                    }
+
+                    if (backdrop) backdrop.style.display = 'flex';
+                } catch (e) {
+                    console.warn('Failed to open modal for card', e);
+                }
+            }
+
+            function closeModal() {
+                if (backdrop) backdrop.style.display = 'none';
+            }
+
+            if (grid) {
+                grid.addEventListener('click', e => {
+                    const btn = e.target.closest('.btn-edit');
+                    if (btn) {
+                        const card = btn.closest('.player-card');
+                        if (card) openModal(card);
+                    }
+                });
+            }
+
+            const btnCancel = document.getElementById('btn-cancel');
+            if (btnCancel) {
+                btnCancel.addEventListener('click', e => {
+                    e.preventDefault();
+                    closeModal();
+                });
+            }
+
+            if (backdrop) {
+                backdrop.addEventListener('click', e => {
+                    if (e.target === backdrop) closeModal();
+                });
+            }
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') closeModal();
+            });
 
             async function consumeStream() {
                 const players = document.getElementById('players');
