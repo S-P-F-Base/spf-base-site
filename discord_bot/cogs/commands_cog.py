@@ -1,27 +1,12 @@
 import re
 
+from discord import Colour, Embed
 from discord.ext import commands
 
 import utils.steam
 from data_class import ProfileData, ProfileDataBase
 
 from .etc import build_limits_embeds
-
-HELP_STR: str = """
-Список доступных команд:
-```
-!help       - Показать справку по командам
-!limits     - Показать свои лимиты
-!size <url> - Показать занимаемое место аддона
-```
-
-Для администрации:
-```
-!server <start|stop>  - Остановить / запустить сервер
-!update_status        - Обновить статус бота
-!user_time            - Расстрельный список
-```
-"""
 
 
 class CommandsCog(commands.Cog):
@@ -59,4 +44,30 @@ class CommandsCog(commands.Cog):
 
     @commands.command(name="help")
     async def help_cmd(self, ctx: commands.Context):
-        await ctx.send(HELP_STR)
+        user_embed = Embed(title="Команды для игроков", colour=Colour.orange())
+        user_embed.add_field(
+            name="",
+            value="\n".join(
+                [
+                    "`!help` - Показать справку по командам",
+                    "`!limits` - Показать свои лимиты",
+                    "`!size <url>` - Показать занимаемое место аддона",
+                ]
+            ),
+            inline=False,
+        )
+
+        admin_embed = Embed(title="Команды для администрации", colour=Colour.red())
+        admin_embed.add_field(
+            name="",
+            value="\n".join(
+                [
+                    "`!server <start|stop>` - Остановить / запустить сервер",
+                    "`!update_status` - Обновить статус бота",
+                    "`!user_time` - Расстрельный список",
+                ]
+            ),
+            inline=False,
+        )
+
+        await ctx.send(embeds=[user_embed, admin_embed])
