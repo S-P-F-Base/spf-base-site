@@ -1,21 +1,25 @@
 import re
 
-import discord
 from discord.ext import commands
 
 import utils.steam
 from data_class import ProfileData, ProfileDataBase
 
+from .etc import build_limits_embeds
+
 HELP_STR: str = """
 Список доступных команд:
-- `!help` - Показать справку по командам
-- `!limits` - Показать свои лимиты
-- `!size <url>` - Показать занимаемое место аддона
+```
+!help       - Показать справку по командам
+!limits     - Показать свои лимиты
+!size <url> - Показать занимаемое место аддона
+```
 
 Для администрации:
-- `!server <start|stop>` - Остановить / запустить сервер
-- `!update_status` - Обновить статус бота
-- `!user_time` - Расстрельный список
+```
+!server <start|stop>  - Остановить / запустить сервер
+!update_status        - Обновить статус бота
+!user_time            - Расстрельный список
 """
 
 
@@ -37,42 +41,7 @@ class CommandsCog(commands.Cog):
             return
 
         data: ProfileData = profile.get("data", ProfileData())
-
-        embed = discord.Embed(title="Лимиты", color=discord.Color.orange())
-
-        total_space = data.limits.get("base_limit", 0) + data.limits.get(
-            "donate_limit", 0
-        )
-        used_space = data.limits.get("used", 0)
-        free_space = total_space - used_space
-
-        embed.add_field(
-            name="Место",
-            value=(
-                f"Всего: `{round(total_space, 2)}` МБ\n"
-                f"Доступно: `{round(free_space, 2)}` МБ\n"
-                f"Занято: `{round(used_space, 2)}` МБ"
-            ),
-            inline=False,
-        )
-
-        total_chars = data.limits.get("base_char", 0) + data.limits.get(
-            "donate_char", 0
-        )
-        used_chars = len(data.chars)
-        free_chars = total_chars - used_chars
-
-        embed.add_field(
-            name="Персонажи",
-            value=(
-                f"Всего: `{total_chars}` шт.\n"
-                f"Доступно: `{free_chars}` шт.\n"
-                f"Занято: `{used_chars}` шт."
-            ),
-            inline=False,
-        )
-
-        await ctx.send(embed=embed)
+        await ctx.send(embeds=build_limits_embeds(data))
 
     @commands.command(name="size")
     async def size_cmd(self, ctx: commands.Context, url: str):

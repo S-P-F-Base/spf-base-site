@@ -5,6 +5,8 @@ from discord.ext import commands
 
 from data_class import ProfileData, ProfileDataBase
 
+from .etc import build_limits_embeds
+
 WATCHED_FORUM_IDS = {
     1321317936756953119,  # Анкеты и персонажи
     1398286514571448433,  # Заявки на администрацию
@@ -147,38 +149,4 @@ class ForumControlCog(commands.Cog):
         if tr_parent.id == 1398286514571448433:
             return
 
-        embed = discord.Embed(title="Лимиты", color=discord.Color.orange())
-
-        total_space = data.limits.get("base_limit", 0) + data.limits.get(
-            "donate_limit", 0
-        )
-        used_space = data.limits.get("used", 0)
-        free_space = total_space - used_space
-
-        embed.add_field(
-            name="Место",
-            value=(
-                f"Всего: `{round(total_space, 2)}` МБ\n"
-                f"Доступно: `{round(free_space, 2)}` МБ\n"
-                f"Занято: `{round(used_space, 2)}` МБ"
-            ),
-            inline=False,
-        )
-
-        total_chars = data.limits.get("base_char", 0) + data.limits.get(
-            "donate_char", 0
-        )
-        used_chars = len(data.chars)
-        free_chars = total_chars - used_chars
-
-        embed.add_field(
-            name="Персонажи",
-            value=(
-                f"Всего: `{total_chars}` шт.\n"
-                f"Доступно: `{free_chars}` шт.\n"
-                f"Занято: `{used_chars}` шт."
-            ),
-            inline=False,
-        )
-
-        await thread.send(embed=embed)
+        await thread.send(embeds=build_limits_embeds(data))
