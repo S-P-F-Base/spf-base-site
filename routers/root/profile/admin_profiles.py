@@ -148,9 +148,18 @@ async def profile_admin_profiles_stream(request: Request):
     q = (request.query_params.get("q") or "").strip()
 
     profiles = ProfileDataBase.get_all_profiles()
-    use_for_names: Iterable[dict] = [p for p in profiles if _matches_rough(p, q)]
+    use_for_names = [p for p in profiles if _matches_rough(p, q)]
     if q and not use_for_names:
         use_for_names = profiles
+
+    use_for_names = sorted(
+        use_for_names,
+        key=lambda p: (
+            (p.get("username") or "").lower(),
+            p.get("discord_id") or "",
+            p.get("uuid") or "",
+        ),
+    )
 
     cog = bot.get_cog("UserControlCog")
     sem = asyncio.Semaphore(8)
