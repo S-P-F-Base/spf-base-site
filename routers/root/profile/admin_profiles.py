@@ -3,8 +3,7 @@ import json
 import logging
 import re
 from datetime import UTC, datetime
-from html import escape
-from typing import Optional
+from typing import Iterable, Optional
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse, StreamingResponse
@@ -20,23 +19,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 _URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 
-
-# Admin: list & view (moved to /profiles)
+# Admin: labels
 ACCESS_FIELDS = {
     "full_access": "Полный доступ",
-    #
     "panel_access": "Доступ в админ-панель",
-    #
     "edit_profiles": "Редактировать профили",
     "edit_chars": "Редактировать персонажей",
     "edit_notes": "Редактировать заметки",
-    #
     "edit_lore_chars": "Редактировать лорных персонажей",
-    #
     "edit_services": "Управлять услугами",
-    #
     "edit_payments": "Управлять оплатой",
-    #
     "server_control": "Управление игровым сервером",
 }
 
@@ -47,80 +39,102 @@ BLACKLIST_FIELDS = {
 }
 
 
+def _as_float(x, d=0.0) -> float:
+    try:
+        return float(x)
+    except Exception:
+        return float(d)
+
+
+def _as_int(x, d=0) -> int:
+    try:
+        return int(x)
+    except Exception:
+        try:
+            return int(float(x))
+        except Exception:
+            return int(d)
+
+
+def _build_view_for_profile(p: dict, extra: Optional[dict]) -> dict:
+    data: ProfileData = p.get("data", ProfileData())
+    if not isinstance(data, ProfileData):
+        data = ProfileData()  # fail-safe
+
+    username = (extra or {}).get("username") or p.get("username") or "Без имени"
+    avatar_url = (
+        (extra or {}).get("avatar_url")
+        or p.get("avatar_url")
+        or "/static/images/logo/discord.png"
+    )
+
+    return {
+        "uuid": p.get("uuid"),
+        "discord_id": p.get("discord_id"),
+        "steam_id": p.get("steam_id"),
+        "username": username,
+        "avatar_url": avatar_url,
+        "access": dict(getattr(data, "access", {}) or {}),
+        "has_blacklist": bool(getattr(data, "has_blacklist", False)),
+        "blacklist": {
+            "chars": bool(data.blacklist.get("chars", False)),
+            "lore_chars": bool(data.blacklist.get("lore_chars", False)),
+            "admin": bool(data.blacklist.get("admin", False)),
+        },
+        "limits": {
+            "base_limit": _as_float(data.limits.get("base_limit", 0)),
+            "donate_limit": _as_float(data.limits.get("donate_limit", 0)),
+            "used": _as_float(data.limits.get("used", 0)),
+            "base_char": _as_int(data.limits.get("base_char", 0)),
+            "donate_char": _as_int(data.limits.get("donate_char", 0)),
+        },
+        "notes": list(data.notes or []),
+        "chars": list(data.chars or []),
+    }
+
+
+def _matches_rough(p: dict, q: str) -> bool:
+    if not q:
+        return True
+
+    ql = q.lower()
+    for key in ("uuid", "discord_id", "steam_id"):
+        val = p.get(key) or ""
+        if isinstance(val, str) and ql in val.lower():
+            return True
+
+    uname = (p.get("username") or "").lower()
+    if uname and ql in uname:
+        return True
+
+    return False
+
+
 @router.get("/profile/admin/profiles")
 async def profile_admin_profiles(request: Request):
     utils.admin.require_admin(request)
-    q = (request.query_params.get("q") or "").strip().lower()
+    q = (request.query_params.get("q") or "").strip()
+
     profiles = ProfileDataBase.get_all_profiles()
+    prefiltered = [p for p in profiles if _matches_rough(p, q)]
 
-    def matches_rough(p: dict) -> bool:
-        if not q:
-            return True
-        for key in ("uuid", "discord_id", "steam_id"):
-            val = p.get(key) or ""
-            if isinstance(val, str) and q in val.lower():
-                return True
-        return False
-
-    rough = [p for p in profiles if matches_rough(p)]
-    use_for_names = rough if rough else profiles
-
-    def as_float(x, d=0.0):
-        try:
-            return float(x)
-
-        except Exception:
-            return d
-
-    def as_int(x, d=0):
-        try:
-            return int(x)
-
-        except Exception:
-            try:
-                return int(float(x))
-
-            except Exception:
-                return d
-
-    def build_light_view(p: dict) -> dict:
-        data: ProfileData = p.get("data", ProfileData())
-        username = p.get("username") or "Загрузка..."
-        avatar_url = p.get("avatar_url") or "/static/images/logo/discord.png"
-        return {
-            "uuid": p.get("uuid"),
-            "discord_id": p.get("discord_id"),
-            "steam_id": p.get("steam_id"),
-            "username": username,
-            "avatar_url": avatar_url,
-            "access": data.access,
-            "has_blacklist": data.has_blacklist,
-            "blacklist": {
-                "chars": data.blacklist.get("chars", False),
-                "lore_chars": data.blacklist.get("lore_chars", False),
-                "admin": data.blacklist.get("admin", False),
+    light = [
+        _build_view_for_profile(
+            p,
+            extra={
+                "username": p.get("username") or "Загрузка...",
+                "avatar_url": p.get("avatar_url") or "/static/images/logo/discord.png",
             },
-            "limits": {
-                "base_limit": as_float(data.limits.get("base_limit", 0)),
-                "donate_limit": as_float(data.limits.get("donate_limit", 0)),
-                "used": as_float(data.limits.get("used", 0)),
-                "base_char": as_int(data.limits.get("base_char", 0)),
-                "donate_char": as_int(data.limits.get("donate_char", 0)),
-            },
-            "notes": data.notes,
-            "chars": data.chars,
-        }
-
-    view_pool = [build_light_view(p) for p in use_for_names]
-    if q and not rough:
-        view_pool = [u for u in view_pool if q in (u["username"] or "").lower()]
+        )
+        for p in (prefiltered if q else profiles)
+    ]
 
     return templates.TemplateResponse(
         "profile/admin/profiles.html",
         {
             "request": request,
             "authenticated": True,
-            "users": view_pool,
+            "users": light,
             "q": q,
             "ACCESS_FIELDS": ACCESS_FIELDS,
             "BLACKLIST_FIELDS": BLACKLIST_FIELDS,
@@ -131,73 +145,17 @@ async def profile_admin_profiles(request: Request):
 @router.get("/profile/admin/profiles/stream")
 async def profile_admin_profiles_stream(request: Request):
     utils.admin.require_admin(request)
-    q = (request.query_params.get("q") or "").strip().lower()
+    q = (request.query_params.get("q") or "").strip()
+
     profiles = ProfileDataBase.get_all_profiles()
-
-    def matches_rough(p: dict) -> bool:
-        if not q:
-            return True
-
-        for key in ("uuid", "discord_id", "steam_id"):
-            val = p.get(key) or ""
-            if isinstance(val, str) and q in val.lower():
-                return True
-
-        return False
-
-    rough = [p for p in profiles if matches_rough(p)]
-    use_for_names = rough if rough else profiles
+    use_for_names: Iterable[dict] = [p for p in profiles if _matches_rough(p, q)]
+    if q and not use_for_names:
+        use_for_names = profiles
 
     cog = bot.get_cog("UserControlCog")
     sem = asyncio.Semaphore(8)
 
-    def as_float(x, d=0.0):
-        try:
-            return float(x)
-
-        except Exception:
-            return d
-
-    def as_int(x, d=0):
-        try:
-            return int(x)
-
-        except Exception:
-            try:
-                return int(float(x))
-
-            except Exception:
-                return d
-
-    def build_view(p: dict, extra: Optional[dict]) -> dict:
-        data: ProfileData = p.get("data", ProfileData())
-        username = (extra or {}).get("username") or "Без имени"
-        avatar_url = (extra or {}).get("avatar_url") or p.get("avatar_url") or ""
-        return {
-            "uuid": p.get("uuid"),
-            "discord_id": p.get("discord_id"),
-            "steam_id": p.get("steam_id"),
-            "username": username,
-            "avatar_url": avatar_url,
-            "access": data.access,
-            "has_blacklist": data.has_blacklist,
-            "blacklist": {
-                "chars": data.blacklist.get("chars", False),
-                "lore_chars": data.blacklist.get("lore_chars", False),
-                "admin": data.blacklist.get("admin", False),
-            },
-            "limits": {
-                "base_limit": as_float(data.limits.get("base_limit", 0)),
-                "donate_limit": as_float(data.limits.get("donate_limit", 0)),
-                "used": as_float(data.limits.get("used", 0)),
-                "base_char": as_int(data.limits.get("base_char", 0)),
-                "donate_char": as_int(data.limits.get("donate_char", 0)),
-            },
-            "notes": data.notes,
-            "chars": data.chars,
-        }
-
-    async def fetch_one(p: dict, idx: int):
+    async def fetch_one(p: dict):
         extra = {}
         did = p.get("discord_id")
         if did and cog:
@@ -205,34 +163,56 @@ async def profile_admin_profiles_stream(request: Request):
                 async with sem:
                     info = await cog.get_user_info(int(did))  # type: ignore
                     extra = info or {}
-
             except Exception:
                 extra = {}
+        return _build_view_for_profile(p, extra)
 
-        return build_view(p, extra)
-
-    tasks = [asyncio.create_task(fetch_one(p, i)) for i, p in enumerate(use_for_names)]
+    tasks = [asyncio.create_task(fetch_one(p)) for p in use_for_names]
 
     async def gen():
-        for coro in asyncio.as_completed(tasks):
-            try:
-                view = await coro
+        try:
+            for coro in asyncio.as_completed(tasks):
+                if await request.is_disconnected():
+                    break
+                try:
+                    view = await coro
+                except Exception:
+                    view = {
+                        "uuid": None,
+                        "username": "???",
+                        "avatar_url": "/static/images/logo/discord.png",
+                        "discord_id": None,
+                    }
 
-            except Exception:
-                view = {
-                    "uuid": None,
-                    "username": "???",
-                    "avatar_url": "",
-                    "discord_id": None,
-                }
+                if q:
+                    uname = (view.get("username") or "").lower()
+                    ids = (
+                        (view.get("uuid") or ""),
+                        (view.get("discord_id") or ""),
+                        (view.get("steam_id") or ""),
+                    )
+                    ql = q.lower()
+                    if not (
+                        ql in uname
+                        or any(isinstance(x, str) and ql in x.lower() for x in ids)
+                    ):
+                        continue
 
-            line = json.dumps(view, ensure_ascii=False)
-            yield (line + "\n").encode("utf-8")
+                line = json.dumps(view, ensure_ascii=False)
+                yield (line + "\n").encode("utf-8")
 
-    return StreamingResponse(gen(), media_type="application/x-ndjson")
+        finally:
+            for t in tasks:
+                if not t.done():
+                    t.cancel()
+
+    return StreamingResponse(
+        gen(),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
-# Admin: update/delete (permissions)
 @router.post("/profile/admin/profile/update")
 async def profile_admin_update(request: Request):
     admin = utils.admin.require_access(request, "edit_profiles")
@@ -257,7 +237,6 @@ async def profile_admin_update(request: Request):
     access_checked = {
         k[len("access_") :] for k in form.keys() if k.startswith("access_")
     }
-
     admin_data: ProfileData = admin.get("data", ProfileData())  # type: ignore
 
     for key in ACCESS_FIELDS.keys():
@@ -322,7 +301,6 @@ async def profile_admin_delete(request: Request, uuid: str = Form(...)):
     return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
-# Admin: notes & chars (permissions)
 @router.post("/profile/admin/note/add")
 async def profile_admin_note_add(
     request: Request,
@@ -480,7 +458,6 @@ async def profile_admin_char_delete(
     return RedirectResponse(url="/profile/admin/profiles", status_code=303)
 
 
-# Admin: create & role check
 @router.post("/profile/admin/profile/create")
 async def profile_admin_create(
     request: Request,

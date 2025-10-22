@@ -13,20 +13,22 @@
 <body>
     <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
         {% include 'partials/header.html' %}
+
         <main class="content-tile" style="max-width:1100px;">
             <h1 class="welcome-title">Профили игроков</h1>
 
-            <form method="get" action="/profile/admin/profiles">
-                <input type="text" name="q" placeholder="Поиск: Имя / UUID / Discord / Steam" value="{{ q or '' }}"
+            <form id="search-form" action="/profile/admin/profiles" method="get" onsubmit="return false;">
+                <input id="search-q" type="text" name="q" placeholder="Поиск: Имя / UUID / Discord / Steam"
+                    value="{{ q or '' }}" autocomplete="off"
                     style="width:min(520px,90%);padding:.55rem;border-radius:8px;border:1px solid #666;background:#111;color:#eee;">
-                <button class="btn" type="submit">Искать</button>
+                <button class="btn" type="button" id="search-btn">Искать</button>
             </form>
 
             <section style="margin-top:1rem;">
                 <h2 class="welcome-title" style="margin-bottom:.4rem;">Добавить игрока</h2>
                 <form method="post" action="/profile/admin/profile/create" class="create-form">
                     <input type="text" name="discord_id" placeholder="Discord ID" pattern="\d{5,}" required>
-                    <input type="text" name="steam_input" placeholder="Steam ссылка / ID" required>
+                    <input type="text" name="steam_input" placeholder="Steam ссылка / ID / vanity" required>
                     <button class="btn" type="submit">Создать профиль</button>
                 </form>
             </section>
@@ -48,22 +50,25 @@
             </section>
 
             {% if not users %}
-            <p>Пока пусто.</p>
-            {% else %}
+            <p id="empty-fallback">Пока пусто.</p>
+            {% endif %}
+
             <div class="players-grid" id="players">
+                {% if users %}
                 {% for u in users %}
                 <div class="player-card" data-profile='{{ {
-                     "uuid": u.uuid,
-                     "username": u.username,
-                     "discord": u.discord_id,
-                     "steam": u.steam_id,
-                     "avatar_url": u.avatar_url or "/static/images/logo/discord.png",
-                     "access": u.access,
-                     "blacklist": u.blacklist,
-                     "limits": u.limits,
-                     "notes": u.notes or [],
-                     "chars": u.chars or []
-                 } | tojson }}'>
+                        "uuid": u.uuid,
+                        "username": u.username,
+                        "discord": u.discord_id,
+                        "steam": u.steam_id,
+                        "avatar_url": u.avatar_url or "/static/images/logo/discord.png",
+                        "access": u.access,
+                        "blacklist": u.blacklist,
+                        "limits": u.limits,
+                        "notes": u.notes or [],
+                        "chars": u.chars or [],
+                        "has_blacklist": u.has_blacklist
+                    } | tojson }}'>
                     <div class="player-header">
                         <img src="{{ u.avatar_url or '/static/images/logo/discord.png' }}" alt="avatar">
                         <div class="player-name">{{ u.username }}</div>
@@ -83,11 +88,12 @@
                     </div>
                 </div>
                 {% endfor %}
+                {% endif %}
             </div>
-            {% endif %}
         </main>
     </div>
 
+    <!-- Модалка -->
     <div class="modal-backdrop" id="modal-backdrop">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-player-name">
             <h2 id="modal-player-name">Игрок</h2>
@@ -204,7 +210,8 @@
                     blacklist: view.blacklist || {},
                     limits: view.limits || {},
                     notes: view.notes || [],
-                    chars: view.chars || []
+                    chars: view.chars || [],
+                    has_blacklist: !!view.has_blacklist
                 });
 
                 div.innerHTML = `
@@ -223,11 +230,11 @@
                     <input type="hidden" name="uuid" value="${escapeHtml(view.uuid || '')}">
                     <button class="btn danger" type="submit">Удалить</button>
                 </form>
-            </div>
-        `;
+            </div>`;
                 return div;
             }
 
+            // --- DOM refs ---
             const grid = document.getElementById('players');
             const backdrop = document.getElementById('modal-backdrop');
 
@@ -249,6 +256,11 @@
             const charList = document.getElementById('char_list');
             const noteList = document.getElementById('note_list');
 
+            const searchForm = document.getElementById('search-form');
+            const searchInput = document.getElementById('search-q');
+            const searchBtn = document.getElementById('search-btn');
+
+            // --- modal helpers ---
             function setCheckboxes(prefix, data) {
                 Object.entries(data || {}).forEach(([key, value]) => {
                     const el = document.getElementById(prefix + key);
@@ -349,17 +361,41 @@
                 if (e.key === 'Escape') closeModal();
             });
 
-            async function consumeStream() {
-                const players = document.getElementById('players');
-                if (!players) return;
+            // --- dynamic streaming search ---
+            let currentCtrl = null;
+            let debounceTimer = null;
 
-                const params = new URLSearchParams(window.location.search);
-                const q = params.get('q');
+            function setQueryInUrl(q) {
+                const base = window.location.pathname;
+                const qs = q ? ('?q=' + encodeURIComponent(q)) : '';
+                history.replaceState(null, '', base + qs);
+            }
+
+            function clearGrid() {
+                if (!grid) return;
+                grid.innerHTML = '';
+            }
+
+            async function openStream(q) {
+                if (!grid) return;
+
+                // cancel previous
+                if (currentCtrl) currentCtrl.abort();
+                currentCtrl = new AbortController();
+
+                clearGrid();
+
                 const url = '/profile/admin/profiles/stream' + (q ? '?q=' + encodeURIComponent(q) : '');
+                let gotAny = false;
 
                 try {
-                    const res = await fetch(url);
-                    if (!res.body) return;
+                    const res = await fetch(url, {
+                        signal: currentCtrl.signal,
+                        headers: { 'accept': 'application/x-ndjson' },
+                        cache: 'no-store'
+                    });
+                    if (!res.ok || !res.body) return;
+
                     const reader = res.body.getReader();
                     const decoder = new TextDecoder('utf-8');
                     let buf = '';
@@ -368,51 +404,69 @@
                         const { done, value } = await reader.read();
                         if (done) break;
                         buf += decoder.decode(value, { stream: true });
+
                         let idx;
                         while ((idx = buf.indexOf('\n')) >= 0) {
                             const line = buf.slice(0, idx).trim();
                             buf = buf.slice(idx + 1);
                             if (!line) continue;
+
                             try {
                                 const obj = JSON.parse(line);
-                                const existing = Array.from(players.children).find(
-                                    c => c.dataset.profile && JSON.parse(c.dataset.profile).uuid === obj.uuid
-                                );
-                                if (existing) {
-                                    const img = existing.querySelector('.player-header img');
-                                    const name = existing.querySelector('.player-name');
-                                    if (img && obj.avatar_url) img.src = obj.avatar_url;
-                                    if (name && obj.username) name.textContent = obj.username;
-                                    existing.dataset.profile = JSON.stringify({
-                                        uuid: obj.uuid,
-                                        username: obj.username,
-                                        discord: obj.discord_id,
-                                        steam: obj.steam_id,
-                                        avatar_url: obj.avatar_url || '/static/images/logo/discord.png',
-                                        access: obj.access || {},
-                                        blacklist: obj.blacklist || {},
-                                        limits: obj.limits || {},
-                                        notes: obj.notes || [],
-                                        chars: obj.chars || []
-                                    });
-                                } else {
-                                    const node = createCardNode(obj);
-                                    players.appendChild(node);
-                                }
+                                const node = createCardNode(obj);
+                                grid.appendChild(node);
+                                gotAny = true;
                             } catch (e) {
                                 console.warn('Malformed stream line', e);
                             }
                         }
                     }
                 } catch (e) {
-                    console.warn('Profile stream failed', e);
+                    if (e.name !== 'AbortError') console.warn('Profile stream failed', e);
+                } finally {
+                    if (!gotAny) {
+                        const p = document.createElement('p');
+                        p.textContent = 'Ничего не найдено.';
+                        grid.appendChild(p);
+                    }
                 }
             }
 
+            function triggerSearch() {
+                const q = searchInput ? searchInput.value.trim() : '';
+                setQueryInUrl(q);
+                openStream(q);
+            }
+
+            if (searchInput) {
+                // стартовое значение из URL
+                const params = new URLSearchParams(window.location.search);
+                if (!searchInput.value && params.get('q')) {
+                    searchInput.value = params.get('q');
+                }
+
+                searchInput.addEventListener('input', () => {
+                    if (debounceTimer) clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(triggerSearch, 250);
+                });
+            }
+
+            if (searchBtn) {
+                searchBtn.addEventListener('click', triggerSearch);
+            }
+
+            if (searchForm) {
+                searchForm.addEventListener('submit', e => {
+                    e.preventDefault();
+                    triggerSearch();
+                });
+            }
+
+            // auto-run on load
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', consumeStream);
+                document.addEventListener('DOMContentLoaded', triggerSearch);
             } else {
-                consumeStream();
+                triggerSearch();
             }
         })();
     </script>
