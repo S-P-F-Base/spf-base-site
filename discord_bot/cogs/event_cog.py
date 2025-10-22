@@ -12,6 +12,7 @@ ON_MEM_ADD_DM = """
 По вопросом не стесняйтесь обращаться в <#1361032640760905748>.
 
 Немного ссылкок:
+Часто задаваемые вопросы: <#1427916856903209000>
 В случае если вы хотите связаться по вопросам сотрудничества: https://spf-base.ru/wiki/docs/cooperation
 Каналы для анонимных отзывов: https://spf-base.ru/feedback
 """
@@ -30,12 +31,7 @@ class EventCog(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         if not self.update_status.is_running():
-            channel = self.bot.get_channel(1321317710222721054)
-            if channel:
-                await channel.send(str(self.update_status.is_running()))
             self.update_status.start()
-            if channel:
-                await channel.send(str(self.update_status.is_running()))
 
         await self.update_status()
 
@@ -94,12 +90,8 @@ class EventCog(commands.Cog):
             color=discord.Color.red(),
         )
 
-    @tasks.loop(minutes=1)
+    @tasks.loop(minutes=5)
     async def update_status(self):
-        channel = self.bot.get_channel(1321317710222721054)
-
-        if channel:
-            await channel.send("f")
         status = ServerControl.get_status()
         if status == "Включен":
             activity = discord.Game(name="Garry's mod, server spf-base.ru")
@@ -108,9 +100,6 @@ class EventCog(commands.Cog):
         else:
             activity = discord.CustomActivity(name="Кушает RAM сервера...")
             status = discord.Status.idle
-
-        if channel:
-            await channel.send(f"fucku: {status}")
 
         await self.bot.change_presence(activity=activity, status=status)
 

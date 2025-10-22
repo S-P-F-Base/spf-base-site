@@ -20,13 +20,16 @@ class PlayerCog(commands.Cog):
 
         profile = ProfileDataBase.get_profile_by_discord(str(author_id))
         if not profile:
+            await ctx.message.add_reaction("\U0000274c")
             return
 
         profile = profile.get("data", None)
         if not profile:
+            await ctx.message.add_reaction("\U0000274c")
             return
 
         if not profile.has_access("edit_profiles"):
+            await ctx.message.add_reaction("\U0000274c")
             return
 
         async with ctx.typing():
