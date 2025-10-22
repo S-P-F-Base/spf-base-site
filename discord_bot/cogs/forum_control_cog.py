@@ -1,4 +1,5 @@
 import logging
+from enum import IntEnum
 
 import discord
 from discord.ext import commands
@@ -7,12 +8,22 @@ from data_class import ProfileData, ProfileDataBase
 
 from .etc import build_limits_embeds
 
-WATCHED_FORUM_IDS = {
-    1355066916326215690,  # баг-репорты
-    1359870657185185792,  # предложения-и-идеи
-    1321317936756953119,  # анкеты-персонажи
-    1398286514571448433,  # заявки-на-администрацию
-}
+
+class ForumsID(IntEnum):
+    BugReports = 1355066916326215690  # баг-репорты
+    SuggestionsIdeas = 1359870657185185792  # предложения-и-идеи
+    CharacterQuestionnaires = 1321317936756953119  # анкеты-персонажи
+    ApplicationsAdministration = 1398286514571448433  # заявки-на-администрацию
+
+
+WATCHED_FORUM_IDS = frozenset(
+    {
+        ForumsID.BugReports.value,
+        ForumsID.SuggestionsIdeas.value,
+        ForumsID.CharacterQuestionnaires.value,
+        ForumsID.ApplicationsAdministration.value,
+    }
+)
 
 APPEAL_STR = (
     "Для апелляции или уточнения создайте тикет: "
@@ -27,10 +38,13 @@ class ForumControlCog(commands.Cog):
     @commands.command(name="cleanup_ankets")
     @commands.has_permissions(manage_threads=True)
     async def purge_bad_forms(self, ctx: commands.Context):
-        forum_id = 1321317936756953119
+        forum_id = ForumsID.CharacterQuestionnaires
         target_tag_id = 1355814835169919052
+        if ctx.guild is None:
+            print("???")
+            return
 
-        forum = ctx.guild.get_channel(forum_id)  # type: ignore
+        forum = ctx.guild.get_channel(forum_id)
         if not isinstance(forum, discord.ForumChannel):
             await ctx.send("Форум не найден или указан неверный ID.")
             return
@@ -123,7 +137,9 @@ class ForumControlCog(commands.Cog):
                 logging.error(f"Ошибка при удалении темы {thread.id}: {e}")
 
         # Проверка на блок для заявок в админы
-        if tr_parent.id == 1398286514571448433 and data.blacklist.get("admin", False):
+        if tr_parent.id == ForumsID.ApplicationsAdministration and data.blacklist.get(
+            "admin", False
+        ):
             await send_dm_and_delete("ЧС администрации с БД spf-base.ru")
             return
 
@@ -148,7 +164,7 @@ class ForumControlCog(commands.Cog):
                 return
 
         # Если же ничего не нашли просто пишем сколько лимита осталось
-        if tr_parent.id == 1398286514571448433:
+        if tr_parent.id != ForumsID.CharacterQuestionnaires:
             return
 
         await thread.send(embeds=build_limits_embeds(data))
