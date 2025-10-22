@@ -104,11 +104,11 @@ class ForumControlCog(commands.Cog):
         ):
             return
 
+        await thread.send("<@&1355456288716488854>")
+
         author_id = thread.owner_id
         if not author_id:
             return
-
-        await thread.send("<@&1355456288716488854>")
 
         profile = ProfileDataBase.get_profile_by_discord(str(author_id))
         if not profile:
@@ -153,17 +153,18 @@ class ForumControlCog(commands.Cog):
         except Exception:
             logging.warning("Не найден или не прочитан тег лорного персонажа")
 
-        if is_lore:
-            if data.blacklist.get("lore_chars", False):
-                await send_dm_and_delete("ЧС лорных персонажей с БД spf-base.ru")
-                return
+        if tr_parent.id == ForumsID.CharacterQuestionnaires:
+            if is_lore:
+                if data.blacklist.get("lore_chars", False):
+                    await send_dm_and_delete("ЧС лорных персонажей с БД spf-base.ru")
+                    return
 
-        else:
-            if data.blacklist.get("chars", False):
-                await send_dm_and_delete("ЧС обычных персонажей с БД spf-base.ru")
-                return
+            else:
+                if data.blacklist.get("chars", False):
+                    await send_dm_and_delete("ЧС обычных персонажей с БД spf-base.ru")
+                    return
 
-        # Если же ничего не нашли просто пишем сколько лимита осталось
+        # Лимит онли в чар запросах
         if tr_parent.id != ForumsID.CharacterQuestionnaires:
             return
 
