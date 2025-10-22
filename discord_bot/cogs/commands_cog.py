@@ -65,6 +65,7 @@ class CommandsCog(commands.Cog):
                     "`!server <start|stop>` - Остановить / запустить сервер",
                     "`!update_status` - Обновить статус бота",
                     "`!user_time` - Расстрельный список",
+                    "`!cleanup_ankets` - Чистка",
                 ]
             ),
             inline=False,
