@@ -65,7 +65,7 @@ class UserControlCog(commands.Cog):
             member = guild.get_member(user_id)
             if member:
                 data = {
-                    "username": member.display_name or member.name,
+                    "username": member.name,
                     "avatar_url": member.display_avatar.url
                     if member.display_avatar
                     else "",
