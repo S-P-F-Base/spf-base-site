@@ -148,7 +148,7 @@
             <section>
                 <h2 class="welcome-title" style="margin-bottom:.4rem;">Создать платёж</h2>
                 {% if not services %}
-                <p class="muted">Нет активных сервисов — добавить позиции нельзя.</p>
+                <p class="muted">Нет активных сервисов - добавить позиции нельзя.</p>
                 {% else %}
                 <form id="create-form" method="post" action="/profile/admin/payment/create">
                     <fieldset class="fieldset">
@@ -228,7 +228,7 @@
                             <summary class="tiny">Позиции</summary>
                             <ul class="snap-list">
                                 {% for s in p.snapshot %}
-                                <li>{{ s.name }} — {{ s.price_main }} {% if s.discount_value %}(-{{ s.discount_value
+                                <li>{{ s.name }} - {{ s.price_main }} {% if s.discount_value %}(-{{ s.discount_value
                                     }}%){% endif %}</li>
                                 {% endfor %}
                             </ul>
@@ -321,7 +321,7 @@
                 const s = mapSvc[id];
                 if (!s) return 'не найден в активных';
                 const left = (s.left != null) ? `, ост. ${s.left}` : '';
-                return `${s.name} — ${s.final_price}${left}`;
+                return `${s.name} - ${s.final_price}${left}`;
             }
 
             function rowTemplate(idx, uuidMode) {
@@ -331,11 +331,11 @@
         <input class="uuid-input mono" type="text" name="service_u_id" placeholder="299de16097e24e32b0e8db9e66afcf45">
         <input type="number" name="qty" min="1" step="1" value="1">
         <button class="btn danger" type="button" data-del>x</button>
-        <div class="preview muted" data-preview>—</div>
+        <div class="preview muted" data-preview>-</div>
       </div>`;
                 } else {
                     const opt = SERVICES.map(s =>
-                        `<option value="${s.u_id}">${s.name} — ${s.final_price}${s.left != null ? ` (ост. ${s.left})` : ''}</option>`
+                        `<option value="${s.u_id}">${s.name} - ${s.final_price}${s.left != null ? ` (ост. ${s.left})` : ''}</option>`
                     ).join('');
                     return `
       <div class="row item" data-index="${idx}">
@@ -533,7 +533,7 @@
                 f_snapshot.innerHTML = '';
                 (p.snapshot || []).forEach(s => {
                     const li = document.createElement('li');
-                    li.textContent = `${s.name} — ${s.price_main}${s.discount_value ? ` (-${s.discount_value}%)` : ''}`;
+                    li.textContent = `${s.name} - ${s.price_main}${s.discount_value ? ` (-${s.discount_value}%)` : ''}`;
                     f_snapshot.appendChild(li);
                 });
 

@@ -272,7 +272,7 @@
                 try {
                     const p = JSON.parse(card.dataset.profile || '{}');
 
-                    modalName.textContent = p.username || '—';
+                    modalName.textContent = p.username || '-';
                     m_uuid.textContent = p.uuid || '';
                     m_discord.textContent = p.discord || '-';
                     m_steam.textContent = p.steam || '-';

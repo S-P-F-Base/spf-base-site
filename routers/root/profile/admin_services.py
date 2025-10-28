@@ -53,11 +53,20 @@ async def service_create(
     discount_value: int = Form(0),
     discount_date: str | None = Form(None),
     status: str = Form("off"),
-    left: int | None = Form(None),
+    left_raw: str | None = Form(None),
     sell_time: str | None = Form(None),
     oferta_limit: bool = Form(False),
 ):
     utils.admin.require_access(request, "edit_services")
+    left = (
+        int(left_raw)
+        if left_raw
+        not in (
+            None,
+            "",
+        )
+        else None
+    )
 
     payload = {
         "name": name,
