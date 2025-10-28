@@ -51,13 +51,14 @@ async def service_create(
     description: str = Form(""),
     price_main: str = Form(...),
     discount_value: int = Form(0),
-    discount_date: str | None = Form(None),
+    discount_date_raw: str | None = Form(None),
     status: str = Form("off"),
     left_raw: str | None = Form(None),
     sell_time: str | None = Form(None),
     oferta_limit: bool = Form(False),
 ):
     utils.admin.require_access(request, "edit_services")
+
     left = (
         int(left_raw)
         if left_raw
@@ -67,6 +68,7 @@ async def service_create(
         )
         else None
     )
+    discount_date = discount_date_raw or None
 
     payload = {
         "name": name,
@@ -93,9 +95,9 @@ async def service_update(
     description: str = Form(""),
     price_main: str = Form(...),
     discount_value: int = Form(0),
-    discount_date: str | None = Form(None),
+    discount_date_raw: str | None = Form(None),
     status: str = Form("off"),
-    left: int | None = Form(None),
+    left_raw: str | None = Form(None),
     sell_time: str | None = Form(None),
     oferta_limit: bool = Form(False),
 ):
@@ -104,6 +106,18 @@ async def service_update(
     current = PaymentServiceDB.get_service(u_id)
     if not current:
         utils.error.not_found("service_not_found", "Service not found", u_id=u_id)
+        return
+
+    left = (
+        int(left_raw)
+        if left_raw
+        not in (
+            None,
+            "",
+        )
+        else None
+    )
+    discount_date = discount_date_raw or None
 
     patch = {
         "name": name,
@@ -116,6 +130,7 @@ async def service_update(
         "sell_time": sell_time,
         "oferta_limit": bool(oferta_limit),
     }
+
     merged = current.to_dict()  # type: ignore
     merged.update(patch)
     updated = ServiceModel.from_dict(merged)
