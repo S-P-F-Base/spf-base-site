@@ -54,7 +54,7 @@ async def service_create(
     discount_date_raw: str | None = Form(None),
     status: str = Form("off"),
     left_raw: str | None = Form(None),
-    sell_time: str | None = Form(None),
+    sell_time_raw: str | None = Form(None),
     oferta_limit: bool = Form(False),
 ):
     utils.admin.require_access(request, "edit_services")
@@ -69,6 +69,7 @@ async def service_create(
         else None
     )
     discount_date = discount_date_raw or None
+    sell_time = sell_time_raw or None
 
     payload = {
         "name": name,
@@ -82,8 +83,10 @@ async def service_create(
         "sell_time": sell_time,
         "oferta_limit": bool(oferta_limit),
     }
+
     svc = ServiceModel.from_dict(payload)
     PaymentServiceDB.upsert_service(uuid.uuid4().hex, svc)
+
     return RedirectResponse("/profile/admin/services", status_code=303)
 
 
@@ -98,7 +101,7 @@ async def service_update(
     discount_date_raw: str | None = Form(None),
     status: str = Form("off"),
     left_raw: str | None = Form(None),
-    sell_time: str | None = Form(None),
+    sell_time_raw: str | None = Form(None),
     oferta_limit: bool = Form(False),
 ):
     utils.admin.require_access(request, "edit_services")
@@ -118,6 +121,7 @@ async def service_update(
         else None
     )
     discount_date = discount_date_raw or None
+    sell_time = sell_time_raw or None
 
     patch = {
         "name": name,
@@ -133,6 +137,7 @@ async def service_update(
 
     merged = current.to_dict()  # type: ignore
     merged.update(patch)
+
     updated = ServiceModel.from_dict(merged)
     PaymentServiceDB.upsert_service(u_id, updated)
 
