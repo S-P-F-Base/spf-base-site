@@ -66,6 +66,7 @@ class CommandsCog(commands.Cog):
                     "`!update_status` - Обновить статус бота",
                     "`!user_time` - Расстрельный список",
                     "`!cleanup_ankets` - Чистка",
+                    "`!user_inventory` - Получить рейтлимит от дискорда",
                 ]
             ),
             inline=False,
