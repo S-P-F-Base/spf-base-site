@@ -143,14 +143,17 @@ class ForumControlCog(commands.Cog):
             return
 
         forum_id = ForumsID.CharacterQuestionnaires.value
-        target_tag_id = 1355814835169919052  # 'отклонено'
+        target_tags_id = [
+            1355814835169919052,  # 'отклонено'
+            1404794315707781160,  # 'выведен из рп'
+        ]
 
         forum = ctx.guild.get_channel(forum_id)
         if not isinstance(forum, discord.ForumChannel):
             await ctx.send("Форум не найден или указан неверный ID.")
             return
 
-        target_tag = forum.get_tag(target_tag_id)
+        target_tag = [forum.get_tag(tag) for tag in target_tags_id]
         if not target_tag:
             await ctx.send("Тег не найден.")
             return
@@ -163,7 +166,7 @@ class ForumControlCog(commands.Cog):
                 try:
                     if target_tag in getattr(thread, "applied_tags", ()):
                         await thread.delete(
-                            reason=f"Удаление анкет с тегом 'отклонено' юзером {ctx.author.id}"
+                            reason=f"Удаление анкет с тегом 'отклонено'/'выведен из рп' юзером {ctx.author.id}"
                         )
                         deleted += 1
 
