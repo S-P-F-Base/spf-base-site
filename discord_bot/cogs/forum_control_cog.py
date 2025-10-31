@@ -153,9 +153,11 @@ class ForumControlCog(commands.Cog):
             await ctx.send("Форум не найден или указан неверный ID.")
             return
 
-        target_tag = [forum.get_tag(tag) for tag in target_tags_id]
-        if not target_tag:
-            await ctx.send("Тег не найден.")
+        target_tags = [forum.get_tag(tag_id) for tag_id in target_tags_id]
+        target_tags = [t for t in target_tags if t is not None]
+
+        if not target_tags:
+            await ctx.send("Теги не найдены.")
             return
 
         deleted = 0
@@ -164,7 +166,8 @@ class ForumControlCog(commands.Cog):
         async with ctx.typing():
             async for thread in self._iter_forum_threads(forum):
                 try:
-                    if target_tag in getattr(thread, "applied_tags", ()):
+                    applied_tags = getattr(thread, "applied_tags", ())
+                    if any(tag in applied_tags for tag in target_tags):
                         await thread.delete(
                             reason=f"Удаление анкет с тегом 'отклонено'/'выведен из рп' юзером {ctx.author.id}"
                         )
