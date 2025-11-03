@@ -31,40 +31,41 @@ class CommandsCog(commands.Cog):
 
     @commands.command(name="size")
     async def size_cmd(self, ctx: commands.Context, *args: str):
-        ids: list[str] = []
-        for part in args:
-            m = re.search(r"[?&]id=(\d+)", part)
-            if m:
-                ids.append(m.group(1))
-            elif part.isdigit():
-                ids.append(part)
+        async with ctx.typing():
+            ids: list[str] = []
+            for part in args:
+                m = re.search(r"[?&]id=(\d+)", part)
+                if m:
+                    ids.append(m.group(1))
+                elif part.isdigit():
+                    ids.append(part)
 
-        if not ids:
-            await ctx.send("Не найдено ни одного ID.")
-            return
+            if not ids:
+                await ctx.send("Не найдено ни одного ID.")
+                return
 
-        sizes: dict[str, int] = {}
+            sizes: dict[str, int] = {}
 
-        for wid in ids:
-            result = utils.steam.fetch_workshop_sizes([wid])
-            if isinstance(result, dict):
-                sizes.update(result)
+            for wid in ids:
+                result = utils.steam.fetch_workshop_sizes([wid])
+                if isinstance(result, dict):
+                    sizes.update(result)
 
-            elif isinstance(result, (int, float)):
-                sizes[wid] = result
+                elif isinstance(result, (int, float)):
+                    sizes[wid] = result
 
-        if not sizes:
-            await ctx.send("Не удалось получить размеры указанных аддонов.")
-            return
+            if not sizes:
+                await ctx.send("Не удалось получить размеры указанных аддонов.")
+                return
 
-        total_size = sum(sizes.values())
-        lines = [f"Всего: {total_size / 1024 / 1024:.2f} МБ\n"]
+            total_size = sum(sizes.values())
+            lines = [f"Всего: {total_size / 1024 / 1024:.2f} МБ"]
 
-        for wid, size in sizes.items():
-            mb = size / 1024 / 1024
-            lines.append(f"- {wid}: {mb:.2f} МБ")
+            for wid, size in sizes.items():
+                mb = size / 1024 / 1024
+                lines.append(f"- `{wid}`: `{mb:.2f}` МБ")
 
-        await ctx.send("\n".join(lines))
+            await ctx.send("\n".join(lines))
 
     @commands.command(name="help")
     async def help_cmd(self, ctx: commands.Context):
