@@ -38,9 +38,21 @@ class CommandsCog(commands.Cog):
                 ids.append(m.group(1))
 
         sizes = utils.steam.fetch_workshop_sizes(ids)
-        total_size = sum(sizes.values())
-        total_mb = round(total_size / 1024 / 1024, 2)
-        await ctx.send(f"{total_mb} МБ")
+        if not sizes:
+            await ctx.send("Не удалось получить размеры указанных аддонов.")
+            return
+
+        lines = []
+        total_size = 0
+        for wid, size in sizes.items():
+            mb = size / 1024 / 1024
+            lines.append(f"- {wid}: {mb:.2f} МБ")
+            total_size += size
+
+        total_mb = total_size / 1024 / 1024
+        lines.insert(0, f"Всего: {total_mb:.2f} МБ")
+
+        await ctx.send("\n".join(lines))
 
     @commands.command(name="help")
     async def help_cmd(self, ctx: commands.Context):
