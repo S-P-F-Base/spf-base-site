@@ -30,27 +30,39 @@ class CommandsCog(commands.Cog):
         await ctx.send(embeds=build_limits_embeds(data))
 
     @commands.command(name="size")
-    async def size_cmd(self, ctx: commands.Context, url: str):
+    async def size_cmd(self, ctx: commands.Context, *args: str):
         ids: list[str] = []
-        for part in re.split(r"[\s,]+", (url or "").strip()):
+        for part in args:
             m = re.search(r"[?&]id=(\d+)", part)
             if m:
                 ids.append(m.group(1))
+            elif part.isdigit():
+                ids.append(part)
 
-        sizes = utils.steam.fetch_workshop_sizes(ids)
+        if not ids:
+            await ctx.send("Не найдено ни одного ID.")
+            return
+
+        sizes: dict[str, int] = {}
+
+        for wid in ids:
+            result = utils.steam.fetch_workshop_sizes([wid])
+            if isinstance(result, dict):
+                sizes.update(result)
+
+            elif isinstance(result, (int, float)):
+                sizes[wid] = result
+
         if not sizes:
             await ctx.send("Не удалось получить размеры указанных аддонов.")
             return
 
-        lines = []
-        total_size = 0
+        total_size = sum(sizes.values())
+        lines = [f"Всего: {total_size / 1024 / 1024:.2f} МБ\n"]
+
         for wid, size in sizes.items():
             mb = size / 1024 / 1024
             lines.append(f"- {wid}: {mb:.2f} МБ")
-            total_size += size
-
-        total_mb = total_size / 1024 / 1024
-        lines.insert(0, f"Всего: {total_mb:.2f} МБ")
 
         await ctx.send("\n".join(lines))
 
