@@ -51,25 +51,15 @@ async def service_create(
     description: str = Form(""),
     price_main: str = Form(...),
     discount_value: int = Form(0),
-    discount_date_raw: str | None = Form(None),
+    discount_date: str | None = Form(None),
     status: str = Form("off"),
-    left_raw: str | None = Form(None),
-    sell_time_raw: str | None = Form(None),
+    left: str | None = Form(None),
+    sell_time: str | None = Form(None),
     oferta_limit: bool = Form(False),
 ):
     utils.admin.require_access(request, "edit_services")
 
-    left = (
-        int(left_raw)
-        if left_raw
-        not in (
-            None,
-            "",
-        )
-        else None
-    )
-    discount_date = discount_date_raw or None
-    sell_time = sell_time_raw or None
+    left_i = int(left) if left not in (None, "") else None
 
     payload = {
         "name": name,
@@ -79,14 +69,13 @@ async def service_create(
         "discount_value": discount_value,
         "discount_date": discount_date,
         "status": status,
-        "left": left,
+        "left": left_i,
         "sell_time": sell_time,
         "oferta_limit": bool(oferta_limit),
     }
 
     svc = ServiceModel.from_dict(payload)
     PaymentServiceDB.upsert_service(uuid.uuid4().hex, svc)
-
     return RedirectResponse("/profile/admin/services", status_code=303)
 
 
@@ -98,10 +87,10 @@ async def service_update(
     description: str = Form(""),
     price_main: str = Form(...),
     discount_value: int = Form(0),
-    discount_date_raw: str | None = Form(None),
+    discount_date: str | None = Form(None),
     status: str = Form("off"),
-    left_raw: str | None = Form(None),
-    sell_time_raw: str | None = Form(None),
+    left: str | None = Form(None),
+    sell_time: str | None = Form(None),
     oferta_limit: bool = Form(False),
 ):
     utils.admin.require_access(request, "edit_services")
@@ -111,17 +100,7 @@ async def service_update(
         utils.error.not_found("service_not_found", "Service not found", u_id=u_id)
         return
 
-    left = (
-        int(left_raw)
-        if left_raw
-        not in (
-            None,
-            "",
-        )
-        else None
-    )
-    discount_date = discount_date_raw or None
-    sell_time = sell_time_raw or None
+    left_i = int(left) if left not in (None, "") else None
 
     patch = {
         "name": name,
@@ -130,17 +109,15 @@ async def service_update(
         "discount_value": discount_value,
         "discount_date": discount_date,
         "status": status,
-        "left": left,
+        "left": left_i,
         "sell_time": sell_time,
         "oferta_limit": bool(oferta_limit),
     }
 
     merged = current.to_dict()  # type: ignore
     merged.update(patch)
-
     updated = ServiceModel.from_dict(merged)
     PaymentServiceDB.upsert_service(u_id, updated)
-
     return RedirectResponse("/profile/admin/services", status_code=303)
 
 
