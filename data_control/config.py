@@ -23,7 +23,7 @@ class Config:
             "JWT_KEY",
             "TAX_PASSWORD",
             "TAX_INN",
-            "OVERHOSTING_COOKIES",
+            "HOSTING_COOKIES",
             "STEAM_API",
             "DISCORD_BOT",
             "DISCORD_APP",
@@ -74,8 +74,8 @@ class Config:
         return cls._base_get_env("TAX_INN")
 
     @classmethod
-    def overhosting_cookies(cls) -> dict:
-        return json.loads(cls._base_get_env("OVERHOSTING_COOKIES"))
+    def hosting_cookies(cls) -> dict:
+        return json.loads(cls._base_get_env("HOSTING_COOKIES"))
 
     @classmethod
     def steam_api(cls) -> str:
