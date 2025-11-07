@@ -38,6 +38,7 @@ def _build_snapshots(items: list[dict]) -> list[ServiceSnapshot]:
 
         try:
             qty = int(entry.get("qty", 1))
+
         except Exception:
             raise ValueError(f"qty must be int for {svc_id}")
 
@@ -64,10 +65,13 @@ def _build_snapshots(items: list[dict]) -> list[ServiceSnapshot]:
         for svc_id, qty in want.items():
             if not PaymentServiceDB.decrement_service_left(svc_id, qty):
                 raise ValueError(f"Failed to decrement stock for {svc_id}")
+
             decremented.append((svc_id, qty))
+
     except Exception:
         for svc_id, qty in reversed(decremented):
             PaymentServiceDB.increment_service_left(svc_id, qty)
+
         raise
 
     snaps: list[ServiceSnapshot] = []
@@ -91,7 +95,20 @@ def _build_snapshots(items: list[dict]) -> list[ServiceSnapshot]:
 async def admin_payments(request: Request):
     utils.admin.require_access(request, "edit_payments")
 
-    rows = PaymentServiceDB.list_payments()
+    rows = list(PaymentServiceDB.list_payments())
+
+    def _sort_key(row: tuple[str, PaymentModel]):
+        pay = row[1]
+        return (
+            getattr(pay, "creation_date", None) or getattr(pay, "created_at", None) or 0
+        )
+
+    try:
+        rows.sort(key=_sort_key, reverse=True)
+
+    except Exception:
+        pass
+
     payments = []
     for u_id, pay in rows:
         payments.append(
@@ -120,6 +137,7 @@ async def admin_payments(request: Request):
     for u, svc in svc_rows:
         if svc.status != "on":
             continue
+
         d = svc.to_dict()
         services.append(
             {
@@ -130,6 +148,7 @@ async def admin_payments(request: Request):
             }
         )
 
+    created_id = request.query_params.get("created_id")
     return templates.TemplateResponse(
         "profile/admin/payments.html",
         {
@@ -137,6 +156,7 @@ async def admin_payments(request: Request):
             "authenticated": True,
             "payments": payments,
             "services": services,
+            "created_id": created_id,
         },
     )
 
@@ -166,6 +186,7 @@ async def payment_create(
 
     try:
         snapshots = _build_snapshots(items)
+
     except ValueError as e:
         utils.error.bad_request("build_snapshots_failed", str(e))
 
@@ -181,7 +202,10 @@ async def payment_create(
     u_id = uuid.uuid4().hex
     PaymentServiceDB.upsert_payment(u_id, pay)
 
-    return RedirectResponse("/profile/admin/payments", status_code=303)
+    return RedirectResponse(
+        f"/profile/admin/payments?created_id={u_id}",
+        status_code=303,
+    )
 
 
 @router.post("/profile/admin/payment/update")
@@ -215,7 +239,9 @@ async def payment_update(
                 if svc_id:
                     PaymentServiceDB.increment_service_left(svc_id, 1)
                     restored += 1
+
             logger.info("Restored %d items for %s", restored, u_id)
+
         pay.status = status
 
     if player_id is not None and player_id != pay.player_id:
@@ -246,7 +272,9 @@ async def payment_delete(request: Request, u_id: str = Form(...)):
     ok = PaymentServiceDB.delete_payment(u_id)
     if not ok:
         utils.error.server_error(
-            "payment_delete_failed", "Failed to delete payment", u_id=u_id
+            "payment_delete_failed",
+            "Failed to delete payment",
+            u_id=u_id,
         )
 
     return RedirectResponse("/profile/admin/payments", status_code=303)

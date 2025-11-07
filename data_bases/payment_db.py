@@ -23,11 +23,12 @@ def _dt_to_iso(dt: datetime | None) -> str | None:
     return dt.replace(microsecond=0).isoformat()
 
 
-def _dt_from_iso(s: str | None) -> datetime | None:
-    if s is None:
+def _dt_from_iso(value: str | None) -> datetime | None:
+    if not value:
         return None
 
-    return datetime.fromisoformat(s).replace(microsecond=0)
+    dt = datetime.fromisoformat(value)
+    return dt.astimezone(UTC) if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 def _dec_to_str(d: Decimal) -> str:

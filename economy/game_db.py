@@ -13,8 +13,8 @@ class GameDBProcessor:
     JSON_PATH = Path("data/game_server.json")
 
     @classmethod
-    def _download_db(cls) -> None:
-        urllib.request.urlretrieve(Config.game_server_ftp(), cls.DB_PATH)
+    def download_db(cls, db_path: Path = Path("data/game_server.db")) -> None:
+        urllib.request.urlretrieve(Config.game_server_ftp(), db_path)
 
     @classmethod
     def _cleanup_db(cls) -> None:
@@ -100,7 +100,7 @@ class GameDBProcessor:
 
     @classmethod
     def create_json(cls) -> Path:
-        cls._download_db()
+        cls.download_db()
         cls._cleanup_db()
         cls._drop_json()
         cls._delete_db()

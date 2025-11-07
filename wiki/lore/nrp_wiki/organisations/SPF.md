@@ -1,6 +1,6 @@
 Title: Secure Protect Future
 Author: Grom
-Date: 3 Сентября 2025 г.
+Date: 9 Октября 2025 г.
 Background: /static/wiki/images/lore/nrp_wiki/organisations/SPF/background.png
 
 !!! blue "Grom"

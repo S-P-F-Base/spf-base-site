@@ -1,17 +1,12 @@
 import re
 
-import discord
+from discord import Colour, Embed
 from discord.ext import commands
 
 import utils.steam
 from data_class import ProfileData, ProfileDataBase
 
-HELP_STR: str = """
-Список доступных команд:
-- `!help` - Показать справку по командам
-- `!limits` - Показать свои лимиты
-- `!size <url>` - Показать занимаемое место аддона
-"""
+from .etc import build_limits_embeds
 
 
 class CommandsCog(commands.Cog):
@@ -32,56 +27,74 @@ class CommandsCog(commands.Cog):
             return
 
         data: ProfileData = profile.get("data", ProfileData())
-
-        embed = discord.Embed(title="Лимиты", color=discord.Color.orange())
-
-        total_space = data.limits.get("base_limit", 0) + data.limits.get(
-            "donate_limit", 0
-        )
-        used_space = data.limits.get("used", 0)
-        free_space = total_space - used_space
-
-        embed.add_field(
-            name="Место",
-            value=(
-                f"Всего: `{total_space}` МБ\n"
-                f"Доступно: `{free_space}` МБ\n"
-                f"Занято: `{used_space}` МБ"
-            ),
-            inline=False,
-        )
-
-        total_chars = data.limits.get("base_char", 0) + data.limits.get(
-            "donate_char", 0
-        )
-        used_chars = len(data.chars)
-        free_chars = total_chars - used_chars
-
-        embed.add_field(
-            name="Персонажи",
-            value=(
-                f"Всего: `{total_chars}` шт.\n"
-                f"Доступно: `{free_chars}` шт.\n"
-                f"Занято: `{used_chars}` шт."
-            ),
-            inline=False,
-        )
-
-        await ctx.send(embed=embed)
+        await ctx.send(embeds=build_limits_embeds(data))
 
     @commands.command(name="size")
-    async def size_cmd(self, ctx: commands.Context, url: str):
-        ids: list[str] = []
-        for part in re.split(r"[\s,]+", (url or "").strip()):
-            m = re.search(r"[?&]id=(\d+)", part)
-            if m:
-                ids.append(m.group(1))
+    async def size_cmd(self, ctx: commands.Context, *args: str):
+        async with ctx.typing():
+            ids: list[str] = []
+            for part in args:
+                m = re.search(r"[?&]id=(\d+)", part)
+                if m:
+                    ids.append(m.group(1))
+                elif part.isdigit():
+                    ids.append(part)
 
-        sizes = utils.steam.fetch_workshop_sizes(ids)
-        total_size = sum(sizes.values())
-        total_mb = round(total_size / 1024 / 1024, 2)
-        await ctx.send(f"{total_mb} МБ")
+            if not ids:
+                await ctx.send("Не найдено ни одного ID.")
+                return
+
+            sizes: dict[str, int] = {}
+
+            for wid in ids:
+                result = utils.steam.fetch_workshop_sizes([wid])
+                if isinstance(result, dict):
+                    sizes.update(result)
+
+                elif isinstance(result, (int, float)):
+                    sizes[wid] = result
+
+            if not sizes:
+                await ctx.send("Не удалось получить размеры указанных аддонов.")
+                return
+
+            total_size = sum(sizes.values())
+            lines = [f"Всего: {total_size / 1024 / 1024:.2f} МБ"]
+
+            for wid, size in sizes.items():
+                mb = size / 1024 / 1024
+                lines.append(f"- `{wid}`: `{mb:.2f}` МБ")
+
+            await ctx.send("\n".join(lines))
 
     @commands.command(name="help")
     async def help_cmd(self, ctx: commands.Context):
-        await ctx.send(HELP_STR)
+        user_embed = Embed(title="Команды для игроков", colour=Colour.orange())
+        user_embed.add_field(
+            name="",
+            value="\n".join(
+                [
+                    "`!help` - Показать справку по командам",
+                    "`!limits` - Показать свои лимиты",
+                    "`!size <url>` - Показать занимаемое место аддона",
+                ]
+            ),
+            inline=False,
+        )
+
+        admin_embed = Embed(title="Команды для администрации", colour=Colour.red())
+        admin_embed.add_field(
+            name="",
+            value="\n".join(
+                [
+                    "`!server <start|stop>` - Остановить / запустить сервер",
+                    "`!update_status` - Обновить статус бота",
+                    "`!user_time` - Расстрельный список",
+                    "`!cleanup_ankets` - Чистка",
+                    "`!user_inventory` - Получить рейтлимит от дискорда",
+                ]
+            ),
+            inline=False,
+        )
+
+        await ctx.send(embeds=[user_embed, admin_embed])

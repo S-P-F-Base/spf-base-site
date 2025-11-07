@@ -53,11 +53,13 @@ async def service_create(
     discount_value: int = Form(0),
     discount_date: str | None = Form(None),
     status: str = Form("off"),
-    left: int | None = Form(None),
+    left: str | None = Form(None),
     sell_time: str | None = Form(None),
     oferta_limit: bool = Form(False),
 ):
     utils.admin.require_access(request, "edit_services")
+
+    left_i = int(left) if left not in (None, "") else None
 
     payload = {
         "name": name,
@@ -67,10 +69,11 @@ async def service_create(
         "discount_value": discount_value,
         "discount_date": discount_date,
         "status": status,
-        "left": left,
+        "left": left_i,
         "sell_time": sell_time,
         "oferta_limit": bool(oferta_limit),
     }
+
     svc = ServiceModel.from_dict(payload)
     PaymentServiceDB.upsert_service(uuid.uuid4().hex, svc)
     return RedirectResponse("/profile/admin/services", status_code=303)
@@ -86,7 +89,7 @@ async def service_update(
     discount_value: int = Form(0),
     discount_date: str | None = Form(None),
     status: str = Form("off"),
-    left: int | None = Form(None),
+    left: str | None = Form(None),
     sell_time: str | None = Form(None),
     oferta_limit: bool = Form(False),
 ):
@@ -95,6 +98,9 @@ async def service_update(
     current = PaymentServiceDB.get_service(u_id)
     if not current:
         utils.error.not_found("service_not_found", "Service not found", u_id=u_id)
+        return
+
+    left_i = int(left) if left not in (None, "") else None
 
     patch = {
         "name": name,
@@ -103,15 +109,15 @@ async def service_update(
         "discount_value": discount_value,
         "discount_date": discount_date,
         "status": status,
-        "left": left,
+        "left": left_i,
         "sell_time": sell_time,
         "oferta_limit": bool(oferta_limit),
     }
+
     merged = current.to_dict()  # type: ignore
     merged.update(patch)
     updated = ServiceModel.from_dict(merged)
     PaymentServiceDB.upsert_service(u_id, updated)
-
     return RedirectResponse("/profile/admin/services", status_code=303)
 
 

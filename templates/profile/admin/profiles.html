@@ -13,20 +13,22 @@
 <body>
     <div class="page-background" style="background-image: url('/static/images/wallpaper.jpeg');">
         {% include 'partials/header.html' %}
+
         <main class="content-tile" style="max-width:1100px;">
             <h1 class="welcome-title">Профили игроков</h1>
 
-            <form method="get" action="/profile/admin/profiles">
-                <input type="text" name="q" placeholder="Поиск: Имя / UUID / Discord / Steam" value="{{ q or '' }}"
+            <form id="search-form" action="/profile/admin/profiles" method="get" onsubmit="return false;">
+                <input id="search-q" type="text" name="q" placeholder="Поиск: Имя / UUID / Discord / Steam"
+                    value="{{ q or '' }}" autocomplete="off"
                     style="width:min(520px,90%);padding:.55rem;border-radius:8px;border:1px solid #666;background:#111;color:#eee;">
-                <button class="btn" type="submit">Искать</button>
+                <button class="btn" type="button" id="search-btn">Искать</button>
             </form>
 
             <section style="margin-top:1rem;">
                 <h2 class="welcome-title" style="margin-bottom:.4rem;">Добавить игрока</h2>
                 <form method="post" action="/profile/admin/profile/create" class="create-form">
                     <input type="text" name="discord_id" placeholder="Discord ID" pattern="\d{5,}" required>
-                    <input type="text" name="steam_input" placeholder="Steam ссылка / ID" required>
+                    <input type="text" name="steam_input" placeholder="Steam ссылка / ID / vanity" required>
                     <button class="btn" type="submit">Создать профиль</button>
                 </form>
             </section>
@@ -48,22 +50,25 @@
             </section>
 
             {% if not users %}
-            <p>Пока пусто.</p>
-            {% else %}
+            <p id="empty-fallback">Пока пусто.</p>
+            {% endif %}
+
             <div class="players-grid" id="players">
+                {% if users %}
                 {% for u in users %}
                 <div class="player-card" data-profile='{{ {
-                     "uuid": u.uuid,
-                     "username": u.username,
-                     "discord": u.discord_id,
-                     "steam": u.steam_id,
-                     "avatar_url": u.avatar_url or "/static/images/logo/discord.png",
-                     "access": u.access,
-                     "blacklist": u.blacklist,
-                     "limits": u.limits,
-                     "notes": u.notes or [],
-                     "chars": u.chars or []
-                 } | tojson }}'>
+                        "uuid": u.uuid,
+                        "username": u.username,
+                        "discord": u.discord_id,
+                        "steam": u.steam_id,
+                        "avatar_url": u.avatar_url or "/static/images/logo/discord.png",
+                        "access": u.access,
+                        "blacklist": u.blacklist,
+                        "limits": u.limits,
+                        "notes": u.notes or [],
+                        "chars": u.chars or [],
+                        "has_blacklist": u.has_blacklist
+                    } | tojson }}'>
                     <div class="player-header">
                         <img src="{{ u.avatar_url or '/static/images/logo/discord.png' }}" alt="avatar">
                         <div class="player-name">{{ u.username }}</div>
@@ -83,11 +88,12 @@
                     </div>
                 </div>
                 {% endfor %}
+                {% endif %}
             </div>
-            {% endif %}
         </main>
     </div>
 
+    <!-- Модалка -->
     <div class="modal-backdrop" id="modal-backdrop">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-player-name">
             <h2 id="modal-player-name">Игрок</h2>
@@ -181,6 +187,54 @@
 
     <script>
         (function () {
+            function escapeHtml(s) {
+                if (s == null) return '';
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function createCardNode(view) {
+                const div = document.createElement('div');
+                div.className = 'player-card';
+                div.dataset.profile = JSON.stringify({
+                    uuid: view.uuid,
+                    username: view.username,
+                    discord: view.discord_id,
+                    steam: view.steam_id,
+                    avatar_url: view.avatar_url || '/static/images/logo/discord.png',
+                    access: view.access || {},
+                    blacklist: view.blacklist || {},
+                    limits: view.limits || {},
+                    notes: view.notes || [],
+                    chars: view.chars || [],
+                    has_blacklist: !!view.has_blacklist
+                });
+
+                div.innerHTML = `
+            <div class="player-header">
+                <img src="${escapeHtml(view.avatar_url || '/static/images/logo/discord.png')}" alt="avatar">
+                <div class="player-name">${escapeHtml(view.username || 'Без имени')}</div>
+            </div>
+            <div class="badges">
+                ${view.access && view.access.panel_access ? '<span class="badge admin">Админ-панель</span>' : ''}
+                ${view.access && view.access.full_access ? '<span class="badge admin">Full</span>' : ''}
+                ${view.has_blacklist ? '<span class="badge blacklist">ЧС</span>' : ''}
+            </div>
+            <div class="card-actions">
+                <button class="btn btn-edit" type="button">Изменить</button>
+                <form method="post" action="/profile/admin/profile/delete" onsubmit="return confirm('Удалить профиль? Это необратимо.');" style="display:inline;">
+                    <input type="hidden" name="uuid" value="${escapeHtml(view.uuid || '')}">
+                    <button class="btn danger" type="submit">Удалить</button>
+                </form>
+            </div>`;
+                return div;
+            }
+
+            // --- DOM refs ---
             const grid = document.getElementById('players');
             const backdrop = document.getElementById('modal-backdrop');
 
@@ -202,6 +256,11 @@
             const charList = document.getElementById('char_list');
             const noteList = document.getElementById('note_list');
 
+            const searchForm = document.getElementById('search-form');
+            const searchInput = document.getElementById('search-q');
+            const searchBtn = document.getElementById('search-btn');
+
+            // --- modal helpers ---
             function setCheckboxes(prefix, data) {
                 Object.entries(data || {}).forEach(([key, value]) => {
                     const el = document.getElementById(prefix + key);
@@ -210,61 +269,205 @@
             }
 
             function openModal(card) {
-                const p = JSON.parse(card.dataset.profile);
+                try {
+                    const p = JSON.parse(card.dataset.profile || '{}');
 
-                modalName.textContent = p.username || '—';
-                m_uuid.textContent = p.uuid;
-                m_discord.textContent = p.discord || '-';
-                m_steam.textContent = p.steam || '-';
+                    modalName.textContent = p.username || '-';
+                    m_uuid.textContent = p.uuid || '';
+                    m_discord.textContent = p.discord || '-';
+                    m_steam.textContent = p.steam || '-';
 
-                f_uuid.value = p.uuid;
-                c_uuid.value = p.uuid;
-                n_uuid.value = p.uuid;
+                    if (f_uuid) f_uuid.value = p.uuid || '';
+                    if (c_uuid) c_uuid.value = p.uuid || '';
+                    if (n_uuid) n_uuid.value = p.uuid || '';
 
-                setCheckboxes('f_acc_', p.access || {});
-                setCheckboxes('f_bl_', p.blacklist || {});
+                    setCheckboxes('f_acc_', p.access || {});
+                    setCheckboxes('f_bl_', p.blacklist || {});
 
-                limBase.value = p.limits.base_limit || 0;
-                limDonate.value = p.limits.donate_limit || 0;
-                limUsed.value = p.limits.used || 0;
-                limBaseChar.value = p.limits.base_char || 0;
-                limDonateChar.value = p.limits.donate_char || 0;
+                    if (limBase) limBase.value = (p.limits && p.limits.base_limit) != null ? p.limits.base_limit : 0;
+                    if (limDonate) limDonate.value = (p.limits && p.limits.donate_limit) != null ? p.limits.donate_limit : 0;
+                    if (limUsed) limUsed.value = (p.limits && p.limits.used) != null ? p.limits.used : 0;
+                    if (limBaseChar) limBaseChar.value = (p.limits && p.limits.base_char) != null ? p.limits.base_char : 0;
+                    if (limDonateChar) limDonateChar.value = (p.limits && p.limits.donate_char) != null ? p.limits.donate_char : 0;
 
-                noteList.innerHTML = '';
-                (p.notes || []).forEach(n => {
-                    const li = document.createElement('li');
-                    li.textContent = `[${n.date}] (${n.status}) ${n.content}`;
-                    noteList.appendChild(li);
-                });
-
-                charList.innerHTML = '';
-                (p.chars || []).forEach((c, i) => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<strong>${c.name}</strong>` +
-                        (c.discord_url ? ` – <a href="${c.discord_url}" target="_blank">анкета</a>` : '');
-                    if (Array.isArray(c.steam_urls) && c.steam_urls.length) {
-                        li.innerHTML += '<br>Контент: ' + c.steam_urls.map(s => `<a href="${s}" target="_blank">link</a>`).join(', ');
+                    if (noteList) {
+                        noteList.innerHTML = '';
+                        (p.notes || []).forEach(n => {
+                            const li = document.createElement('li');
+                            li.textContent = `[${n.date || '-'}] (${n.status || 'info'}) ${n.content || ''}`;
+                            noteList.appendChild(li);
+                        });
                     }
-                    li.innerHTML += `<form method="post" action="/profile/admin/char/delete" onsubmit="return confirm('Удалить ${c.name}?');">
-                <input type="hidden" name="uuid" value="${p.uuid}">
-                <input type="hidden" name="index" value="${i}">
-                <button class="btn danger" type="submit">Удалить</button>
-            </form>`;
-                    charList.appendChild(li);
-                });
 
-                backdrop.style.display = 'flex';
+                    if (charList) {
+                        charList.innerHTML = '';
+                        (p.chars || []).forEach((c, i) => {
+                            const li = document.createElement('li');
+
+                            let html = `<strong>${escapeHtml(c.name || 'Без имени')}</strong>`;
+                            if (c.discord_url) {
+                                html += ` – <a href="${escapeHtml(c.discord_url)}" target="_blank">анкета</a>`;
+                            }
+                            if (Array.isArray(c.steam_urls) && c.steam_urls.length) {
+                                html += '<br>Контент: ' + c.steam_urls.map(s => `<a href="${escapeHtml(s)}" target="_blank">link</a>`).join(', ');
+                            }
+
+                            html += `<form method="post" action="/profile/admin/char/delete" onsubmit="return confirm('Удалить ${escapeHtml(c.name || '')}?');">
+                        <input type="hidden" name="uuid" value="${escapeHtml(p.uuid || '')}">
+                        <input type="hidden" name="index" value="${i}">
+                        <button class="btn danger" type="submit">Удалить</button>
+                    </form>`;
+
+                            li.innerHTML = html;
+                            charList.appendChild(li);
+                        });
+                    }
+
+                    if (backdrop) backdrop.style.display = 'flex';
+                } catch (e) {
+                    console.warn('Failed to open modal for card', e);
+                }
             }
 
-            function closeModal() { backdrop.style.display = 'none'; }
+            function closeModal() {
+                if (backdrop) backdrop.style.display = 'none';
+            }
 
-            grid.addEventListener('click', e => {
-                const btn = e.target.closest('.btn-edit');
-                if (btn) openModal(btn.closest('.player-card'));
+            if (grid) {
+                grid.addEventListener('click', e => {
+                    const btn = e.target.closest('.btn-edit');
+                    if (btn) {
+                        const card = btn.closest('.player-card');
+                        if (card) openModal(card);
+                    }
+                });
+            }
+
+            const btnCancel = document.getElementById('btn-cancel');
+            if (btnCancel) {
+                btnCancel.addEventListener('click', e => {
+                    e.preventDefault();
+                    closeModal();
+                });
+            }
+
+            if (backdrop) {
+                backdrop.addEventListener('click', e => {
+                    if (e.target === backdrop) closeModal();
+                });
+            }
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') closeModal();
             });
-            document.getElementById('btn-cancel').addEventListener('click', e => { e.preventDefault(); closeModal(); });
-            backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
-            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+            // --- dynamic streaming search ---
+            let currentCtrl = null;
+            let debounceTimer = null;
+
+            function setQueryInUrl(q) {
+                const base = window.location.pathname;
+                const qs = q ? ('?q=' + encodeURIComponent(q)) : '';
+                history.replaceState(null, '', base + qs);
+            }
+
+            function clearGrid() {
+                if (!grid) return;
+                grid.innerHTML = '';
+            }
+
+            async function openStream(q) {
+                if (!grid) return;
+
+                // cancel previous
+                if (currentCtrl) currentCtrl.abort();
+                currentCtrl = new AbortController();
+
+                clearGrid();
+
+                const url = '/profile/admin/profiles/stream' + (q ? '?q=' + encodeURIComponent(q) : '');
+                let gotAny = false;
+
+                try {
+                    const res = await fetch(url, {
+                        signal: currentCtrl.signal,
+                        headers: { 'accept': 'application/x-ndjson' },
+                        cache: 'no-store'
+                    });
+                    if (!res.ok || !res.body) return;
+
+                    const reader = res.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let buf = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        buf += decoder.decode(value, { stream: true });
+
+                        let idx;
+                        while ((idx = buf.indexOf('\n')) >= 0) {
+                            const line = buf.slice(0, idx).trim();
+                            buf = buf.slice(idx + 1);
+                            if (!line) continue;
+
+                            try {
+                                const obj = JSON.parse(line);
+                                const node = createCardNode(obj);
+                                grid.appendChild(node);
+                                gotAny = true;
+                            } catch (e) {
+                                console.warn('Malformed stream line', e);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.warn('Profile stream failed', e);
+                } finally {
+                    if (!gotAny) {
+                        const p = document.createElement('p');
+                        p.textContent = 'Ничего не найдено.';
+                        grid.appendChild(p);
+                    }
+                }
+            }
+
+            function triggerSearch() {
+                const q = searchInput ? searchInput.value.trim() : '';
+                setQueryInUrl(q);
+                openStream(q);
+            }
+
+            if (searchInput) {
+                // стартовое значение из URL
+                const params = new URLSearchParams(window.location.search);
+                if (!searchInput.value && params.get('q')) {
+                    searchInput.value = params.get('q');
+                }
+
+                searchInput.addEventListener('input', () => {
+                    if (debounceTimer) clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(triggerSearch, 250);
+                });
+            }
+
+            if (searchBtn) {
+                searchBtn.addEventListener('click', triggerSearch);
+            }
+
+            if (searchForm) {
+                searchForm.addEventListener('submit', e => {
+                    e.preventDefault();
+                    triggerSearch();
+                });
+            }
+
+            // auto-run on load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', triggerSearch);
+            } else {
+                triggerSearch();
+            }
         })();
     </script>
 </body>

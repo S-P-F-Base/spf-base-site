@@ -5,9 +5,9 @@ from data_control import Config
 
 from .cogs import (
     CommandsCog,
-    DebugCog,
     EventCog,
     ForumControlCog,
+    PlayerCog,
     ServerControlCog,
     UserControlCog,
 )
@@ -20,9 +20,9 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 async def start():
     for cls in [
         CommandsCog,
-        DebugCog,
         EventCog,
         ForumControlCog,
+        PlayerCog,
         ServerControlCog,
         UserControlCog,
     ]:

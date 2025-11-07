@@ -28,14 +28,14 @@
                     <input type="text" name="description" placeholder="Описание">
                     <input type="text" name="price_main" placeholder="Цена" required>
                     <input type="number" name="discount_value" placeholder="Скидка (%)" min="0" max="100">
-                    <input type="text" name="discount_date" placeholder="Дата конца скидки (ISO)">
+                    <input type="datetime-local" name="discount_date" placeholder="Дата конца скидки">
                     <select name="status">
                         <option value="on">Вкл</option>
-                        <option value="off">Выкл</option>
+                        <option value="off" selected>Выкл</option>
                         <option value="archive">Архив</option>
                     </select>
                     <input type="number" name="left" placeholder="Остаток">
-                    <input type="text" name="sell_time" placeholder="Время продажи">
+                    <input type="datetime-local" name="sell_time" placeholder="Время продажи">
                     <label><input type="checkbox" name="oferta_limit"> Ограничение оферты</label>
                     <button class="btn" type="submit">Создать</button>
                 </form>
@@ -54,7 +54,7 @@
                     <div class="badges">
                         <span class="badge">{{ s.status }}</span>
                         {% if s.discount_value and s.discount_value > 0 %}
-                        <span class="badge">{{ s.discount_value }}%</span>
+                        <span class="badge">-{{ s.discount_value }}%</span>
                         {% endif %}
                     </div>
                     <div class="card-actions">
@@ -92,7 +92,8 @@
                     <div class="form-grid">
                         <label>Скидка (%)<input type="number" name="discount_value" id="f_discount" min="0"
                                 max="100"></label>
-                        <label>Дата скидки<input type="text" name="discount_date" id="f_discdate"></label>
+                        <label>Дата конца скидки<input type="datetime-local" name="discount_date"
+                                id="f_discdate"></label>
                     </div>
                 </fieldset>
 
@@ -107,7 +108,7 @@
                             </select>
                         </label>
                         <label>Остаток<input type="number" name="left" id="f_left"></label>
-                        <label>Время продажи<input type="text" name="sell_time" id="f_sell"></label>
+                        <label>Время продажи<input type="datetime-local" name="sell_time" id="f_sell"></label>
                     </div>
                     <label style="margin-top:.6rem;display:block;">
                         <input type="checkbox" name="oferta_limit" id="f_oferta"> Ограничение оферты
@@ -137,6 +138,12 @@
                 f_sell = document.getElementById('f_sell'),
                 f_oferta = document.getElementById('f_oferta');
 
+            function isoToLocal(dtStr) {
+                if (!dtStr) return "";
+                const dt = new Date(dtStr);
+                return dt.toISOString().slice(0, 16);
+            }
+
             function openModal(card) {
                 const s = JSON.parse(card.dataset.service);
                 f_id.value = s.u_id;
@@ -144,23 +151,34 @@
                 f_desc.value = s.description || '';
                 f_price.value = s.price_main || '';
                 f_discount.value = s.discount_value || 0;
-                f_discdate.value = s.discount_date || '';
+                f_discdate.value = isoToLocal(s.discount_date);
                 f_status.value = s.status || 'off';
                 f_left.value = s.left || '';
-                f_sell.value = s.sell_time || '';
+                f_sell.value = isoToLocal(s.sell_time);
                 f_oferta.checked = !!s.oferta_limit;
                 backdrop.style.display = 'flex';
             }
+
             function closeModal() { backdrop.style.display = 'none'; }
+
             if (grid) {
                 grid.addEventListener('click', e => {
                     const btn = e.target.closest('.btn-edit');
                     if (btn) openModal(btn.closest('.player-card'));
                 });
             }
-            document.getElementById('btn-cancel').addEventListener('click', e => { e.preventDefault(); closeModal(); });
-            backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
-            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+            document.getElementById('btn-cancel').addEventListener('click', e => {
+                e.preventDefault(); closeModal();
+            });
+
+            backdrop.addEventListener('click', e => {
+                if (e.target === backdrop) closeModal();
+            });
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') closeModal();
+            });
         })();
     </script>
 </body>

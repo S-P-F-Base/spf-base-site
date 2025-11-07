@@ -17,11 +17,9 @@ class UserControlCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-        # --- кэш user_info --- #
         self._user_cache: dict[int, tuple[float, dict]] = {}
-        self._cache_ttl = 15 * 60  # 15 минут
+        self._cache_ttl = 3 * 60 * 60  # 3 часа
 
-        # --- мягкий rate-limit для REST --- #
         self._rl_lock = asyncio.Lock()
         self._rl_calls = deque()  # timestamps
         self._rl_per = 45  # запросов
@@ -46,8 +44,10 @@ class UserControlCog(commands.Cog):
             now = time.monotonic()
             while self._rl_calls and now - self._rl_calls[0] > self._rl_window:
                 self._rl_calls.popleft()
+
             if len(self._rl_calls) >= self._rl_per:
                 await asyncio.sleep(self._rl_window - (now - self._rl_calls[0]))
+
             self._rl_calls.append(time.monotonic())
 
     # ---------------- public API ----------------
@@ -65,7 +65,7 @@ class UserControlCog(commands.Cog):
             member = guild.get_member(user_id)
             if member:
                 data = {
-                    "username": member.display_name or member.name,
+                    "username": member.name,
                     "avatar_url": member.display_avatar.url
                     if member.display_avatar
                     else "",
@@ -91,6 +91,7 @@ class UserControlCog(commands.Cog):
 
         if data is not None:
             self._cache_set(user_id, data)
+
         return data
 
     async def get_role_value(self, user_id: int) -> tuple[int, int]:
@@ -115,10 +116,5 @@ class UserControlCog(commands.Cog):
             value = ROLE_VALUES.get(role.id)
             if value and value > max_value:
                 max_value = value
-        return max_value
 
-    # для теста командой в Discord
-    @commands.command(name="userinfo")
-    async def userinfo(self, ctx: commands.Context, user_id: int):
-        data = await self.get_user_info(user_id)
-        await ctx.send(str(data))
+        return max_value

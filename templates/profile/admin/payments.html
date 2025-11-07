@@ -75,6 +75,66 @@
             font-size: .85rem;
             opacity: .85;
         }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .5rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: .35rem;
+            flex-shrink: 0;
+        }
+
+        .btn.tiny {
+            font-size: .8rem;
+            padding: .2rem .45rem;
+            line-height: 1.2;
+        }
+
+        .toast {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            background: rgba(18, 18, 18, .95);
+            color: #eee;
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: .75rem .9rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+            display: none;
+            gap: .6rem;
+            align-items: center;
+            max-width: min(520px, 90vw);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            display: flex;
+        }
+
+        .toast .btn {
+            margin-left: .4rem;
+        }
+
+        .copy-field {
+            display: flex;
+            align-items: stretch;
+            gap: .4rem;
+            margin-top: .5rem;
+        }
+
+        .copy-field input {
+            flex: 1 1 auto;
+            padding: .4rem .55rem;
+            border-radius: 8px;
+            border: 1px solid #666;
+            background: #111;
+            color: #eee;
+        }
     </style>
 </head>
 
@@ -88,7 +148,7 @@
             <section>
                 <h2 class="welcome-title" style="margin-bottom:.4rem;">Создать платёж</h2>
                 {% if not services %}
-                <p class="muted">Нет активных сервисов — добавить позиции нельзя.</p>
+                <p class="muted">Нет активных сервисов - добавить позиции нельзя.</p>
                 {% else %}
                 <form id="create-form" method="post" action="/profile/admin/payment/create">
                     <fieldset class="fieldset">
@@ -147,6 +207,11 @@
                     <div class="player-card" data-payment='{{ p | tojson }}'>
                         <div class="player-header">
                             <div class="player-name mono">{{ p.u_id }}</div>
+                            <div class="header-actions">
+                                <button class="btn tiny" type="button" data-copy-link data-id="{{ p.u_id }}">Копировать
+                                    ссылку</button>
+                                <button class="btn tiny" type="button" data-copy-id data-id="{{ p.u_id }}">ID</button>
+                            </div>
                         </div>
 
                         <div class="badges" style="margin:.35rem 0;">
@@ -163,7 +228,7 @@
                             <summary class="tiny">Позиции</summary>
                             <ul class="snap-list">
                                 {% for s in p.snapshot %}
-                                <li>{{ s.name }} — {{ s.price_main }} {% if s.discount_value %}(-{{ s.discount_value
+                                <li>{{ s.name }} - {{ s.price_main }} {% if s.discount_value %}(-{{ s.discount_value
                                     }}%){% endif %}</li>
                                 {% endfor %}
                             </ul>
@@ -186,6 +251,7 @@
         </main>
     </div>
 
+    <!-- Reuse edit modal -->
     <div class="modal-backdrop" id="modal-backdrop">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <h2 id="modal-title">Редактировать платёж</h2>
@@ -226,6 +292,12 @@
         </div>
     </div>
 
+    <!-- Lightweight toast for "link copied" and quick copy field -->
+    <div class="toast" id="copy-toast" aria-live="polite">
+        <div id="toast-text">Ссылка скопирована.</div>
+        <button class="btn tiny" id="toast-close" type="button">Закрыть</button>
+    </div>
+
     <script id="services-json" type="application/json">{{ services | tojson }}</script>
 
     <script>
@@ -249,27 +321,27 @@
                 const s = mapSvc[id];
                 if (!s) return 'не найден в активных';
                 const left = (s.left != null) ? `, ост. ${s.left}` : '';
-                return `${s.name} — ${s.final_price}${left}`;
+                return `${s.name} - ${s.final_price}${left}`;
             }
 
             function rowTemplate(idx, uuidMode) {
                 if (uuidMode) {
                     return `
       <div class="row item" data-index="${idx}">
-        <input class="uuid-input mono" type="text" name="service_u_id" placeholder="299de16097e24e32b0e8db9e66afcf45" pattern="[0-9a-fA-F]{32}">
+        <input class="uuid-input mono" type="text" name="service_u_id" placeholder="299de16097e24e32b0e8db9e66afcf45">
         <input type="number" name="qty" min="1" step="1" value="1">
-        <button class="btn danger" type="button" data-del>×</button>
-        <div class="preview muted" data-preview>—</div>
+        <button class="btn danger" type="button" data-del>x</button>
+        <div class="preview muted" data-preview>-</div>
       </div>`;
                 } else {
                     const opt = SERVICES.map(s =>
-                        `<option value="${s.u_id}">${s.name} — ${s.final_price}${s.left != null ? ` (ост. ${s.left})` : ''}</option>`
+                        `<option value="${s.u_id}">${s.name} - ${s.final_price}${s.left != null ? ` (ост. ${s.left})` : ''}</option>`
                     ).join('');
                     return `
       <div class="row item" data-index="${idx}">
         <select name="service_u_id">${opt}</select>
         <input type="number" name="qty" min="1" step="1" value="1">
-        <button class="btn danger" type="button" data-del>×</button>
+        <button class="btn danger" type="button" data-del>x</button>
       </div>`;
                 }
             }
@@ -376,7 +448,74 @@
                 });
             });
 
+            const toast = document.getElementById('copy-toast');
+            const toastText = document.getElementById('toast-text');
+            const toastClose = document.getElementById('toast-close');
+
+            function showToast(msg, ttl = 3500) {
+                toastText.textContent = msg;
+                toast.classList.add('show');
+                if (ttl > 0) {
+                    setTimeout(() => toast.classList.remove('show'), ttl);
+                }
+            }
+
+            toastClose?.addEventListener('click', () => toast.classList.remove('show'));
+
+            async function copyText(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch {
+                    const tmp = document.createElement('input');
+                    tmp.value = text;
+                    document.body.appendChild(tmp);
+                    tmp.select();
+                    try {
+                        document.execCommand('copy');
+                        return true;
+                    } catch {
+                        return false;
+                    } finally {
+                        document.body.removeChild(tmp);
+                    }
+                }
+            }
+
+            function buildPaymentLink(id) {
+                return `${location.origin}/payment/${id}`;
+            }
+
             const grid = document.getElementById('payments');
+            if (grid) {
+                grid.addEventListener('click', async e => {
+                    const btnLink = e.target.closest('[data-copy-link]');
+                    const btnId = e.target.closest('[data-copy-id]');
+                    if (btnLink) {
+                        const id = btnLink.getAttribute('data-id');
+                        const url = buildPaymentLink(id);
+                        const ok = await copyText(url);
+                        showToast(ok ? `Ссылка скопирована: ${url}` : `Не удалось скопировать, скопируй вручную: ${url}`);
+                    } else if (btnId) {
+                        const id = btnId.getAttribute('data-id');
+                        const ok = await copyText(id);
+                        showToast(ok ? `ID скопирован: ${id}` : `Не удалось скопировать, скопируй вручную: ${id}`);
+                    }
+                });
+            }
+
+            const params = new URLSearchParams(location.search);
+            const createdId = params.get('created_id') || '{{ created_id or "" }}';
+            if (createdId) {
+                const link = buildPaymentLink(createdId);
+                copyText(link).then(ok => {
+                    showToast(ok ? `Ссылка на платёж скопирована: ${link}` : `Создан платёж. Ссылка: ${link}`);
+                });
+                try {
+                    history.replaceState(null, "", location.pathname + location.hash);
+                } catch { /* no-op */ }
+            }
+
             const backdrop = document.getElementById('modal-backdrop');
             const f_id = document.getElementById('f_id');
             const f_player = document.getElementById('f_player');
@@ -394,7 +533,7 @@
                 f_snapshot.innerHTML = '';
                 (p.snapshot || []).forEach(s => {
                     const li = document.createElement('li');
-                    li.textContent = `${s.name} — ${s.price_main}${s.discount_value ? ` (-${s.discount_value}%)` : ''}`;
+                    li.textContent = `${s.name} - ${s.price_main}${s.discount_value ? ` (-${s.discount_value}%)` : ''}`;
                     f_snapshot.appendChild(li);
                 });
 

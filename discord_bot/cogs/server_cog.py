@@ -30,20 +30,30 @@ class ServerControlCog(commands.Cog):
         profile = self._get_admin_profile(ctx.author.id)
 
         if profile is None:
-            await ctx.reply("Ошибка доступа к команде.")
+            await ctx.message.add_reaction("\U0000274c")
+            return
+
+        server_stat = ServerControl.get_status()
+        if (server_stat == "Включен" and action == "start") or (
+            server_stat == "Выключен" and action == "stop"
+        ):
+            await ctx.message.add_reaction("\U0000274c")
+            await ctx.reply(
+                f"Нельзя запустить `{action}` если сервер уже `{server_stat}`"
+            )
             return
 
         if action == "start":
             ServerControl.perform_action("start")
-            await ctx.reply("Сервер запущен")
+            await ctx.message.add_reaction("\U00002705")
 
         elif action == "stop":
             ServerControl.perform_action("stop")
-            await ctx.reply("Сервер остановлен")
+            await ctx.message.add_reaction("\U00002705")
 
         else:
+            await ctx.message.add_reaction("\U0000274c")
             await ctx.reply("Неверный параметр\n`!server start`\n`!server stop`")
-            return
 
         channel = self.bot.get_channel(ANNOUNCE_CHANNEL_ID)
         if channel:
