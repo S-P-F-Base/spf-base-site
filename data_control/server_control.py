@@ -63,7 +63,8 @@ class ServerControl:
         except Exception:
             return cls._cache["text"]
 
-        status = str(data.get("server_status"))
+        raw = data.get("server_status")
+        status = str(raw) if raw is not None else "unknown"
 
         match status:
             case "1":
@@ -73,7 +74,7 @@ class ServerControl:
                 text = "Включен"
 
             case _:
-                text = "ХЗ"
+                text = "not_set " + status
 
         cls._cache["text"] = text
         cls._save_cache()
