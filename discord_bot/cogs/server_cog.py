@@ -1,5 +1,8 @@
+from datetime import datetime, time
+from zoneinfo import ZoneInfo
+
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from data_class import ProfileData, ProfileDataBase
 from data_control import ServerControl
@@ -13,6 +16,7 @@ class ServerControlCog(commands.Cog):
         self.announcement_texts = {
             "start": "<@&1358390418613469355>\nСервер запущен",
             "stop": "<@&1358390418613469355>\nСервер оффлаин",
+            "6_am": "<@&1358390418613469355>\nЯ отправила сервер спатки.",
         }
 
     def _get_admin_profile(self, discord_id: int) -> dict | None:
@@ -65,6 +69,37 @@ class ServerControlCog(commands.Cog):
                 except Exception as e:
                     await ctx.reply(f"Не удалось отправить уведомление: {e}")
 
+    @tasks.loop(minutes=1)
+    async def autostop_task(self):
+        now = datetime.now(ZoneInfo("Europe/Moscow")).time()
+        target = time(6, 0)
+
+        if now.hour == target.hour and now.minute == target.minute:
+            ServerControl.perform_action("stop")
+
+            channel = self.bot.get_channel(ANNOUNCE_CHANNEL_ID)
+            if channel and isinstance(channel, discord.TextChannel):
+                await channel.send(self.announcement_texts["6_am"])
+
     @commands.command(name="server")
-    async def server_cmd(self, ctx: commands.Context, action: str):
+    async def server_cmd(self, ctx: commands.Context, action: str | None = None):
+        if action is None:
+            await ctx.message.add_reaction("\U0000274c")
+            await ctx.reply(
+                "Нужно указать действие: `!server start` или `!server stop`"
+            )
+            return
+
         await self._do_action(ctx, action.lower())
+
+    @commands.command(name="server_status")
+    async def server_status_cmd(self, ctx: commands.Context):
+        profile = self._get_admin_profile(ctx.author.id)
+
+        if profile is None:
+            await ctx.message.add_reaction("\U0000274c")
+            return
+
+        status = ServerControl.get_status()
+        await ctx.message.add_reaction("\U00002705")
+        await ctx.reply(f"Текущее состояние сервера: `{status}`")
