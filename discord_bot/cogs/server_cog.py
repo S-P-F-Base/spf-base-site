@@ -16,7 +16,7 @@ class ServerControlCog(commands.Cog):
         self.announcement_texts = {
             "start": "<@&1358390418613469355>\nСервер запущен",
             "stop": "<@&1358390418613469355>\nСервер оффлаин",
-            "6_am": "<@&1358390418613469355>\nЯ отправила сервер спатки.",
+            "6_am": "<@&1358390418613469355>\nЯ отправила сервер спатки",
         }
 
     def _get_admin_profile(self, discord_id: int) -> dict | None:
@@ -83,23 +83,43 @@ class ServerControlCog(commands.Cog):
 
     @commands.command(name="server")
     async def server_cmd(self, ctx: commands.Context, action: str | None = None):
-        if action is None:
-            await ctx.message.add_reaction("\U0000274c")
-            await ctx.reply(
-                "Нужно указать действие: `!server start` или `!server stop`"
-            )
-            return
-
-        await self._do_action(ctx, action.lower())
-
-    @commands.command(name="server_status")
-    async def server_status_cmd(self, ctx: commands.Context):
         profile = self._get_admin_profile(ctx.author.id)
 
         if profile is None:
             await ctx.message.add_reaction("\U0000274c")
             return
 
-        status = ServerControl.get_status()
-        await ctx.message.add_reaction("\U00002705")
-        await ctx.reply(f"Текущее состояние сервера: `{status}`")
+        if action is None:
+            await ctx.message.add_reaction("\U0000274c")
+            await ctx.reply(
+                "Нужно указать действие: `!server start`, `!server stop` или `!server status`"
+            )
+            return
+
+        action = action.lower()
+
+        ACTIONS = {
+            "start": {"type": "action"},
+            "stop": {"type": "action"},
+            "status": {"type": "status"},
+        }
+
+        if action not in ACTIONS:
+            await ctx.message.add_reaction("\U0000274c")
+            await ctx.reply(
+                "Неизвестная команда.\n"
+                "`!server start`\n"
+                "`!server stop`\n"
+                "`!server status`"
+            )
+            return
+
+        kind = ACTIONS[action]["type"]
+
+        if kind == "status":
+            status = ServerControl.get_status()
+            await ctx.message.add_reaction("\U00002705")
+            await ctx.reply(f"Текущее состояние сервера: `{status}`")
+            return
+
+        await self._do_action(ctx, action)
