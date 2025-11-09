@@ -63,13 +63,13 @@ class ServerControl:
         except Exception:
             return cls._cache["text"]
 
-        status = data.get("server_status")
+        status = str(data.get("server_status"))
 
         match status:
-            case 1:
+            case "1":
                 text = "Выключен"
 
-            case 2:
+            case "2":
                 text = "Включен"
 
             case _:
