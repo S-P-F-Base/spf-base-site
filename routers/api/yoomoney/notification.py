@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import logging
 from decimal import ROUND_HALF_UP, Decimal
-from typing import cast, get_args
+from typing import Literal, cast, get_args
 
 from fastapi import APIRouter, Form, HTTPException, status
 from fastapi.responses import PlainTextResponse
@@ -24,6 +24,60 @@ def q2(x: Decimal) -> Decimal:
 
 def dec_rate_from_float(x: float) -> Decimal:
     return Decimal(str(x))
+
+
+def _resolve_commission_key(raw_key: str | None) -> Literal["PC", "AC"]:
+    if raw_key and raw_key in get_args(Config.CommissionKey):
+        return cast(Config.CommissionKey, raw_key)
+
+    return "AC"
+
+
+def _expectations_both_scenarios(payment, rate: Decimal) -> dict:
+    exp_amt_user, exp_wd_user = payment.expected_amounts(True, rate)
+    exp_amt_seller, exp_wd_seller = payment.expected_amounts(False, rate)
+    return {
+        "seller_pays": {"amount": exp_amt_seller, "withdraw": exp_wd_seller},
+        "user_pays": {"amount": exp_amt_user, "withdraw": exp_wd_user},
+    }
+
+
+def _match_scenario(
+    amount_dec: Decimal, withdraw_dec: Decimal | None, expectations: dict
+) -> tuple[bool, str | None]:
+    for scenario, exp in expectations.items():
+        exp_amount = exp["amount"]
+        exp_withdraw = exp["withdraw"]
+
+        amount_ok = abs(amount_dec - exp_amount) <= EPS
+        withdraw_ok = (
+            True if withdraw_dec is None else abs(withdraw_dec - exp_withdraw) <= EPS
+        )
+
+        if amount_ok and withdraw_ok:
+            return True, scenario
+
+    return False, None
+
+
+def _ensure_tax_receipt(payment_id: str, payment) -> None:
+    if getattr(payment, "tax_check_id", None):
+        AutoTax.remove_from_queue(payment_id)
+        return
+
+    services = payment.to_fns_struct()
+    if not services:
+        logger.error("Payment %s has no services for tax receipt", payment_id)
+        return
+
+    try:
+        tax_uuid = AutoTax.post_income(services)
+        payment.tax_check_id = tax_uuid
+        AutoTax.remove_from_queue(payment_id)
+
+    except Exception as exc:
+        logger.error("AutoTax.post_income failed for %s: %s", payment_id, exc)
+        AutoTax.enqueue_income(payment_id, services)
 
 
 @router.post("/notification", response_class=PlainTextResponse)
@@ -84,27 +138,8 @@ def yoomoney_notification(
         else:
             payment.payer_amount = withdraw_dec
 
-    def ensure_tax_receipt() -> None:
-        if getattr(payment, "tax_check_id", None):
-            AutoTax.remove_from_queue(payment_id)
-            return
-
-        services = payment.to_fns_struct()
-        if not services:
-            logger.error("Payment %s has no services for tax receipt", payment_id)
-            return
-
-        try:
-            tax_uuid = AutoTax.post_income(services)
-            payment.tax_check_id = tax_uuid
-            AutoTax.remove_from_queue(payment_id)
-
-        except Exception as exc:
-            logger.error("AutoTax.post_income failed for %s: %s", payment_id, exc)
-            AutoTax.enqueue_income(payment_id, services)
-
     if payment.status == "done":
-        ensure_tax_receipt()
+        _ensure_tax_receipt(payment_id, payment)
         PaymentServiceDB.upsert_payment(payment_id, payment)
         return PlainTextResponse("OK", status_code=200)
 
@@ -116,30 +151,90 @@ def yoomoney_notification(
         PaymentServiceDB.upsert_payment(payment_id, payment)
         return PlainTextResponse("OK", status_code=200)
 
-    raw_key = getattr(payment, "commission_key", "AC")
-    if raw_key in get_args(Config.CommissionKey):
-        commission_key = cast(Config.CommissionKey, raw_key)
-
-    else:
-        commission_key = "AC"
-
+    commission_key = _resolve_commission_key(getattr(payment, "commission_key", "AC"))
     rate = dec_rate_from_float(Config.get_commission_rates(commission_key))
-    user_pays = Config.user_pays_commission()
-    expected_amount, expected_withdraw = payment.expected_amounts(user_pays, rate)
+    expectations = _expectations_both_scenarios(payment, rate)
 
-    amount_ok = abs(amount_dec - expected_amount) <= EPS
-    withdraw_ok = (
-        True if withdraw_dec is None else abs(withdraw_dec - expected_withdraw) <= EPS
-    )
+    matched, scenario = _match_scenario(amount_dec, withdraw_dec, expectations)
 
-    if not (amount_ok and withdraw_ok):
+    if not matched:
+        logger.warning(
+            "Payment %s mismatch: got amount=%s withdraw=%s; "
+            "exp(seller)=%s/%s; exp(user)=%s/%s",
+            payment_id,
+            amount_dec,
+            withdraw_dec,
+            expectations["seller_pays"]["amount"],
+            expectations["seller_pays"]["withdraw"],
+            expectations["user_pays"]["amount"],
+            expectations["user_pays"]["withdraw"],
+        )
         payment.status = "pending"
         PaymentServiceDB.upsert_payment(payment_id, payment)
         return PlainTextResponse("OK", status_code=200)
 
     payment.status = "done"
+    logger.info("Payment %s matched scenario: %s", payment_id, scenario)
 
-    ensure_tax_receipt()
+    _ensure_tax_receipt(payment_id, payment)
     PaymentServiceDB.upsert_payment(payment_id, payment)
 
     return PlainTextResponse("OK", status_code=200)
+
+
+def revalidate(payment_id: str, apply: bool) -> dict:
+    payment = PaymentServiceDB.get_payment(payment_id)
+    if payment is None:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    commission_key = _resolve_commission_key(getattr(payment, "commission_key", "AC"))
+    rate = dec_rate_from_float(Config.get_commission_rates(commission_key))
+    expectations = _expectations_both_scenarios(payment, rate)
+
+    amt = payment.received_amount
+    wd = payment.payer_amount
+
+    if amt is None:
+        return {
+            "payment_id": payment_id,
+            "status_before": payment.status,
+            "matched": False,
+            "reason": "No received_amount yet — nothing to validate.",
+            "expected": expectations,
+        }
+
+    matched, scenario = _match_scenario(amt, wd, expectations)
+
+    result = {
+        "payment_id": payment_id,
+        "status_before": payment.status,
+        "matched": matched,
+        "scenario": scenario,
+        "received_amount": str(amt) if amt is not None else None,
+        "payer_amount": str(wd) if wd is not None else None,
+        "expected": {
+            "seller_pays": {
+                "amount": str(expectations["seller_pays"]["amount"]),
+                "withdraw": str(expectations["seller_pays"]["withdraw"]),
+            },
+            "user_pays": {
+                "amount": str(expectations["user_pays"]["amount"]),
+                "withdraw": str(expectations["user_pays"]["withdraw"]),
+            },
+        },
+        "total": str(payment.total()),
+        "rate": str(rate),
+        "eps": str(EPS),
+    }
+
+    if matched and apply:
+        payment.status = "done"
+        _ensure_tax_receipt(payment_id, payment)
+        PaymentServiceDB.upsert_payment(payment_id, payment)
+        result["status_after"] = payment.status
+        result["applied"] = True
+    else:
+        result["status_after"] = payment.status
+        result["applied"] = False
+
+    return result

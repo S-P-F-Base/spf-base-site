@@ -6,6 +6,7 @@ from discord.ext import commands
 import utils.steam
 from data_class import ProfileData, ProfileDataBase
 
+from ...routers.api.yoomoney.notification import revalidate
 from .etc import build_limits_embeds
 
 
@@ -28,6 +29,39 @@ class CommandsCog(commands.Cog):
 
         data: ProfileData = profile.get("data", ProfileData())
         await ctx.send(embeds=build_limits_embeds(data))
+
+    @commands.command(name="update_payment")
+    async def update_payment_cmd(self, ctx: commands.Context, uuid: str):
+        author_id = ctx.author.id
+
+        if not uuid:
+            await ctx.message.add_reaction("\U0000274c")
+            return
+
+        profile = ProfileDataBase.get_profile_by_discord(str(author_id))
+        if not profile:
+            await ctx.message.add_reaction("\U0000274c")
+            return
+
+        data = profile.get("data", ProfileData())
+        if not isinstance(data, ProfileData):
+            await ctx.message.add_reaction("\U0000274c")
+            return
+
+        if not data.has_access("edit_payments"):
+            await ctx.message.add_reaction("\U0000274c")
+            return
+
+        try:
+            result = revalidate(uuid, True)
+        except Exception as exc:
+            await ctx.author.send(f"Ошибка при обновлении платежа:\n{exc}")
+            await ctx.message.add_reaction("\U0000274c")
+            return
+
+        await ctx.author.send(f"Результат проверки платежа `{uuid}`:\n```{result}```")
+
+        await ctx.message.add_reaction("\U00002705")
 
     @commands.command(name="size")
     async def size_cmd(self, ctx: commands.Context, *args: str):
