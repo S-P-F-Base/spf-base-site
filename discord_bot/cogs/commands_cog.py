@@ -5,8 +5,8 @@ from discord.ext import commands
 
 import utils.steam
 from data_class import ProfileData, ProfileDataBase
+from routers.api.yoomoney.notification import revalidate
 
-from ...routers.api.yoomoney.notification import revalidate
 from .etc import build_limits_embeds
 
 
