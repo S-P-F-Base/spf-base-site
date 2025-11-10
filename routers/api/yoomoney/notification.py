@@ -43,16 +43,21 @@ def _expectations_both_scenarios(payment, rate: Decimal) -> dict:
 
 
 def _match_scenario(
-    amount_dec: Decimal, withdraw_dec: Decimal | None, expectations: dict
+    amount_dec: Decimal,
+    withdraw_dec: Decimal | None,
+    expectations: dict,
 ) -> tuple[bool, str | None]:
     for scenario, exp in expectations.items():
         exp_amount = exp["amount"]
         exp_withdraw = exp["withdraw"]
 
-        amount_ok = abs(amount_dec - exp_amount) <= EPS
-        withdraw_ok = (
-            True if withdraw_dec is None else abs(withdraw_dec - exp_withdraw) <= EPS
-        )
+        amount_ok = amount_dec >= exp_amount - EPS
+
+        if withdraw_dec is None:
+            withdraw_ok = True
+
+        else:
+            withdraw_ok = withdraw_dec >= exp_withdraw - EPS
 
         if amount_ok and withdraw_ok:
             return True, scenario
