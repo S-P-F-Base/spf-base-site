@@ -136,8 +136,8 @@ class CommandsCog(commands.Cog):
             inline=False,
         )
 
-        admin_embed = Embed(title="Команды для сержантов", colour=Colour.yellow())
-        admin_embed.add_field(
+        team_embed = Embed(title="Команды для сержантов", colour=Colour.yellow())
+        team_embed.add_field(
             name="",
             value="\n".join(
                 [
@@ -162,7 +162,7 @@ class CommandsCog(commands.Cog):
             inline=False,
         )
 
-        await ctx.send(embeds=[user_embed, admin_embed])
+        await ctx.send(embeds=[user_embed, team_embed, admin_embed])
 
     @commands.command(name="team")
     async def team_cmd(
