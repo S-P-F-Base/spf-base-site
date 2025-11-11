@@ -119,8 +119,8 @@ class EventCog(commands.Cog):
         profile = self._get_admin_profile(ctx.author.id)
 
         if profile is None:
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             return
 
         await self.update_status()
-        await ctx.message.add_reaction("\U00002705")
+        await ctx.message.add_reaction("\u2705")

@@ -34,14 +34,14 @@ class ServerControlCog(commands.Cog):
         profile = self._get_admin_profile(ctx.author.id)
 
         if profile is None:
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             return
 
         server_stat = ServerControl.get_status()
         if (server_stat == "Включен" and action == "start") or (
             server_stat == "Выключен" and action == "stop"
         ):
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             await ctx.reply(
                 f"Нельзя запустить `{action}` если сервер уже `{server_stat}`"
             )
@@ -49,14 +49,14 @@ class ServerControlCog(commands.Cog):
 
         if action == "start":
             ServerControl.perform_action("start")
-            await ctx.message.add_reaction("\U00002705")
+            await ctx.message.add_reaction("\u2705")
 
         elif action == "stop":
             ServerControl.perform_action("stop")
-            await ctx.message.add_reaction("\U00002705")
+            await ctx.message.add_reaction("\u2705")
 
         else:
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             await ctx.reply("Неверный параметр\n`!server start`\n`!server stop`")
 
         channel = self.bot.get_channel(ANNOUNCE_CHANNEL_ID)
@@ -86,11 +86,11 @@ class ServerControlCog(commands.Cog):
         profile = self._get_admin_profile(ctx.author.id)
 
         if profile is None:
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             return
 
         if action is None:
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             await ctx.reply(
                 "Нужно указать действие: `!server start`, `!server stop` или `!server status`"
             )
@@ -105,7 +105,7 @@ class ServerControlCog(commands.Cog):
         }
 
         if action not in ACTIONS:
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             await ctx.reply(
                 "Неизвестная команда.\n"
                 "`!server start`\n"
@@ -118,7 +118,7 @@ class ServerControlCog(commands.Cog):
 
         if kind == "status":
             status = ServerControl.get_status()
-            await ctx.message.add_reaction("\U00002705")
+            await ctx.message.add_reaction("\u2705")
             await ctx.reply(f"Текущее состояние сервера: `{status}`")
             return
 

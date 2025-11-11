@@ -1,5 +1,6 @@
 import re
 
+import discord
 from discord import Colour, Embed
 from discord.ext import commands
 
@@ -8,6 +9,25 @@ from data_class import ProfileData, ProfileDataBase
 from routers.api.yoomoney.notification import revalidate
 
 from .etc import build_limits_embeds
+
+ALLOWED_ROLES = {
+    1361481568404766780,  # Сержант
+    1322091700813955084,  # Ст. админ
+    1414370801318105188,  # Ст. модер
+    1321537454645448716,  # Гл. спф
+    1353426520915579060,  # Расист
+    1402602828387844177,  # .
+    1355456288716488854,  # Бот
+}
+
+TEAM_ROLES = {
+    "0": 1430944877721423916,
+    "1": 1430944267492393123,
+    "2": 1430944532475805746,
+    "3": 1430944606324916334,
+    "4": 1430944655561723944,
+    "5": 1430944692018610207,
+}
 
 
 class CommandsCog(commands.Cog):
@@ -35,33 +55,33 @@ class CommandsCog(commands.Cog):
         author_id = ctx.author.id
 
         if not uuid:
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             return
 
         profile = ProfileDataBase.get_profile_by_discord(str(author_id))
         if not profile:
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             return
 
         data = profile.get("data", ProfileData())
         if not isinstance(data, ProfileData):
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             return
 
         if not data.has_access("edit_payments"):
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             return
 
         try:
             result = revalidate(uuid, True)
         except Exception as exc:
             await ctx.author.send(f"Ошибка при обновлении платежа:\n{exc}")
-            await ctx.message.add_reaction("\U0000274c")
+            await ctx.message.add_reaction("\u274c")
             return
 
         await ctx.author.send(f"Результат проверки платежа `{uuid}`:\n```{result}```")
 
-        await ctx.message.add_reaction("\U00002705")
+        await ctx.message.add_reaction("\u2705")
 
     @commands.command(name="size")
     async def size_cmd(self, ctx: commands.Context, *args: str):
@@ -116,6 +136,17 @@ class CommandsCog(commands.Cog):
             inline=False,
         )
 
+        admin_embed = Embed(title="Команды для сержантов", colour=Colour.yellow())
+        admin_embed.add_field(
+            name="",
+            value="\n".join(
+                [
+                    "`!team <user> <0|1|2|3|4|5|remove>` - Добавить или удалить из отярда человека",
+                ]
+            ),
+            inline=False,
+        )
+
         admin_embed = Embed(title="Команды для администрации", colour=Colour.red())
         admin_embed.add_field(
             name="",
@@ -132,3 +163,51 @@ class CommandsCog(commands.Cog):
         )
 
         await ctx.send(embeds=[user_embed, admin_embed])
+
+    @commands.command(name="team")
+    async def team_cmd(
+        self,
+        ctx: commands.Context,
+        member: discord.Member,
+        value: str,
+    ):
+        guild = ctx.guild
+        if guild is None:
+            await ctx.send("Эта команда доступна только на сервере.")
+            return
+
+        author: discord.Member = ctx.author  # type: ignore[assignment]
+
+        author_roles = {r.id for r in author.roles}
+        if not (author_roles & ALLOWED_ROLES):
+            await ctx.message.add_reaction("\u274c")
+            return
+
+        value = value.lower().strip()
+        if value == "remove":
+            changed = False
+            for rid in TEAM_ROLES.values():
+                role = guild.get_role(rid)
+                if role and role in member.roles:
+                    await member.remove_roles(role, reason=f"team remove by {author}")
+                    changed = True
+
+            await ctx.message.add_reaction("\u2705" if changed else "\u274c")
+            return
+
+        if value not in TEAM_ROLES:
+            await ctx.send("Неверный аргумент. Используйте 0–5 или remove.")
+            return
+
+        target_role = guild.get_role(TEAM_ROLES[value])
+        if target_role is None:
+            await ctx.send("Целевая роль не найдена на сервере.")
+            return
+
+        for rid in TEAM_ROLES.values():
+            role = guild.get_role(rid)
+            if role and role in member.roles and role.id != target_role.id:
+                await member.remove_roles(role, reason=f"team switch by {author}")
+
+        await member.add_roles(target_role, reason=f"team set {value} by {author}")
+        await ctx.message.add_reaction("\u2705")
