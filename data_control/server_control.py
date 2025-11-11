@@ -10,15 +10,14 @@ from .config import Config
 
 class ServerControl:
     _cache: dict[str, str | None] = {"text": None}
+    _last_status: str | None = None
 
     _session = Session()
 
     status_ttl = 300
-
-    base_url = "https://panel.ark-hoster.ru/servers/control/"
-    status_url = "gsDataInfo/20011"
-    stop_url = "action/20011/stop"
-    start_url = "action/20011/start"
+    base_url = "https://my.overhosting.ru/servers/control"
+    status_url = base_url + "/ajaxaction/32620/get_server_status"
+    action_url = base_url + "/action/32620/"
 
     cache_data = Path("data/server_status_cache.json")
 
@@ -55,26 +54,32 @@ class ServerControl:
 
     @classmethod
     def _get_status(cls) -> str | None:
+        if cls._last_status is not None and cls._last_status != "working":
+            return cls._cache["text"]
+
         try:
-            resp = cls._session.get(cls.base_url + cls.status_url, timeout=10)
+            resp = cls._session.get(cls.status_url, timeout=10)
             resp.raise_for_status()
             data = resp.json()
 
         except Exception:
             return cls._cache["text"]
 
-        raw = data.get("server_status")
-        status = str(raw) if raw is not None else "unknown"
+        status = data.get("status")
+        cls._last_status = status
 
         match status:
-            case "1":
-                text = "Выключен"
+            case "success":
+                cls.status_ttl = 300
+                text = data.get("badge_text")
 
-            case "2":
-                text = "Включен"
+            case "working":
+                cls.status_ttl = 5
+                text = data.get("description")
 
             case _:
-                text = "not_set " + status
+                cls.status_ttl = 300
+                text = data.get("description", cls._cache["text"])
 
         cls._cache["text"] = text
         cls._save_cache()
@@ -83,13 +88,13 @@ class ServerControl:
     @classmethod
     def perform_action(cls, action: Literal["start", "stop"]) -> None:
         try:
-            url = cls.base_url + getattr(cls, f"{action}_url")
-            resp = cls._session.get(url)
+            resp = cls._session.get(f"{cls.action_url}/{action}")
             resp.raise_for_status()
 
         except Exception as e:
             raise RuntimeError(f"Failed to {action} server: {e}")
 
+        cls._last_status = None
         cls._get_status()
 
     @classmethod
