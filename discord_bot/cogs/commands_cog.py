@@ -141,7 +141,7 @@ class CommandsCog(commands.Cog):
             name="",
             value="\n".join(
                 [
-                    "`!team <user> <0|1|2|3|4|5|remove>` - Добавить или удалить из отярда человека",
+                    "`!team <user> <0|1|2|3|4|5|remove>` - Добавить или удалить из отряда человека",
                 ]
             ),
             inline=False,
