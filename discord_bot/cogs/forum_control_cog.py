@@ -4,12 +4,13 @@ from enum import IntEnum
 
 import discord
 from discord.ext import commands
+from discord.utils import utcnow
 
 from data_class import ProfileData, ProfileDataBase
 
 from .etc import build_limits_embeds
 
-NOTIFY_ROLE_ID = 1355456288716488854  # универсальная роль для пинга (боты)
+NOTIFY_ROLE_ID = 1355456288716488854
 
 APPEAL_STR = (
     "Для апелляции или уточнения создайте тикет: "
@@ -33,13 +34,14 @@ WATCHED_FORUM_IDS = frozenset(
     }
 )
 
-# Тег "лорный персонаж" в форуме анкет
 LORE_TAG_ID = 1404795974706135152
 
 
 class ForumControlCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self._processed_threads: set[int] = set()
+        self._start_time = utcnow()
 
     async def _iter_forum_threads(self, forum: discord.ForumChannel):
         for th in forum.threads:
@@ -133,7 +135,64 @@ class ForumControlCog(commands.Cog):
 
         return None
 
-    # -------------------- Commands --------------------
+    async def _process_new_forum_thread(
+        self,
+        thread: discord.Thread,
+        parent: discord.ForumChannel,
+    ):
+        try:
+            await thread.send(f"<@&{NOTIFY_ROLE_ID}>")
+        except discord.HTTPException:
+            pass
+
+        author = await self.get_thread_owner(thread)
+        if not author:
+            return
+
+        author_id = author.id
+
+        profile = ProfileDataBase.get_profile_by_discord(str(author_id))
+        if not profile:
+            return
+
+        data: ProfileData = profile.get("data", ProfileData())
+
+        blacklist_key: str | None = None
+
+        if parent.id == ForumsID.ApplicationsAdministration.value:
+            blacklist_key = "admin"
+
+        elif parent.id == ForumsID.CharacterQuestionnaires.value:
+            is_lore = False
+            try:
+                lore_tag = parent.get_tag(LORE_TAG_ID)
+                if lore_tag and lore_tag in getattr(thread, "applied_tags", ()):
+                    is_lore = True
+
+            except Exception:
+                logging.warning("Не найден или не прочитан тег лорного персонажа")
+
+            blacklist_key = "lore_chars" if is_lore else "chars"
+
+        if blacklist_key and data.blacklist.get(blacklist_key, False):
+            reason_map = {
+                "admin": "ЧС администрации с БД spf-base.ru",
+                "lore_chars": "ЧС лорных персонажей с БД spf-base.ru",
+                "chars": "ЧС обычных персонажей с БД spf-base.ru",
+            }
+            await self._send_dm_and_delete(
+                author_id,
+                thread,
+                reason_map[blacklist_key],
+            )
+            return
+
+        if parent.id == ForumsID.CharacterQuestionnaires.value:
+            try:
+                await thread.send(embeds=build_limits_embeds(data))
+
+            except discord.HTTPException:
+                pass
 
     @commands.command(name="cleanup_ankets")
     @commands.has_permissions(manage_threads=True)
@@ -169,7 +228,11 @@ class ForumControlCog(commands.Cog):
                     applied_tags = getattr(thread, "applied_tags", ())
                     if any(tag in applied_tags for tag in target_tags):
                         await thread.delete(
-                            reason=f"Удаление анкет с тегом 'отклонено'/'выведен из рп' юзером {ctx.author.id}"
+                            reason=(
+                                "Удаление анкет с тегом "
+                                "'отклонено'/'выведен из рп' "
+                                f"юзером {ctx.author.id}"
+                            )
                         )
                         deleted += 1
 
@@ -184,61 +247,27 @@ class ForumControlCog(commands.Cog):
         await ctx.send(f"Удалено {deleted} тредов, не удалось удалить {failed}.")
 
     @commands.Cog.listener()
-    async def on_thread_create(self, thread: discord.Thread):
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+
+        thread = message.channel
+        if not isinstance(thread, discord.Thread):
+            return
+
         parent = thread.parent
-        if not (
-            parent
-            and isinstance(parent, discord.ForumChannel)
-            and parent.id in WATCHED_FORUM_IDS
-        ):
+        if not parent or not isinstance(parent, discord.ForumChannel):
             return
 
-        try:
-            await thread.send(f"<@&{NOTIFY_ROLE_ID}>")
-
-        except discord.HTTPException:
-            pass
-
-        author = await self.get_thread_owner(thread)
-        if not author:
+        if parent.id not in WATCHED_FORUM_IDS:
             return
 
-        author_id = author.id
-
-        profile = ProfileDataBase.get_profile_by_discord(str(author_id))
-        if not profile:
+        if thread.created_at and thread.created_at < self._start_time:
             return
 
-        data: ProfileData = profile.get("data", ProfileData())
-
-        blacklist_key = None
-        if parent.id == ForumsID.ApplicationsAdministration.value:
-            blacklist_key = "admin"
-
-        elif parent.id == ForumsID.CharacterQuestionnaires.value:
-            is_lore = False
-            try:
-                lore_tag = parent.get_tag(LORE_TAG_ID)
-                if lore_tag and lore_tag in getattr(thread, "applied_tags", ()):
-                    is_lore = True
-
-            except Exception:
-                logging.warning("Не найден или не прочитан тег лорного персонажа")
-
-            blacklist_key = "lore_chars" if is_lore else "chars"
-
-        if blacklist_key and data.blacklist.get(blacklist_key, False):
-            reason_map = {
-                "admin": "ЧС администрации с БД spf-base.ru",
-                "lore_chars": "ЧС лорных персонажей с БД spf-base.ru",
-                "chars": "ЧС обычных персонажей с БД spf-base.ru",
-            }
-            await self._send_dm_and_delete(author_id, thread, reason_map[blacklist_key])
+        if thread.id in self._processed_threads:
             return
 
-        if parent.id == ForumsID.CharacterQuestionnaires.value:
-            try:
-                await thread.send(embeds=build_limits_embeds(data))
+        self._processed_threads.add(thread.id)
 
-            except discord.HTTPException:
-                pass
+        await self._process_new_forum_thread(thread, parent)
