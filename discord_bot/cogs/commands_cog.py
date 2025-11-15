@@ -212,7 +212,7 @@ class CommandsCog(commands.Cog):
         await member.add_roles(target_role, reason=f"team set {value} by {author}")
         await ctx.message.add_reaction("\u2705")
 
-    @commands.command(name="сука_научитесь_читать")
+    @commands.command(name="сука")
     async def fuck_cmd(self, ctx: commands.Context, userid: str):
         author_id = ctx.author.id
         if author_id != 456381306553499649:
