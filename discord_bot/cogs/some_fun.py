@@ -53,7 +53,10 @@ class AIManager(commands.Cog):
         )
 
     def is_insult(self, msg: str) -> bool:
-        return bool(self.insult_pattern.search(msg))
+        if "<@1370825296839839795>" in msg:
+            return bool(self.insult_pattern.search(msg))
+    
+        return False
 
     def pick_block(self, blocks):
         phrase, filename = random.choice(blocks)
