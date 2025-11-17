@@ -152,10 +152,10 @@ class CommandsCog(commands.Cog):
             name="",
             value="\n".join(
                 [
-                    "`!server <start|stop>` - Остановить / запустить сервер",
-                    "`!update_status` - Обновить статус бота",
-                    "`!user <time|inventory>` - Немного магии",
-                    "`!cleanup_ankets` - Чистка",
+                    "`!server <start|stop|restart|status>` - Управление сервером",
+                    "`!user <time|inventory>` - Немного магии с пользователями",
+                    "`!update_status` - Прижать Эшли к полу и проверить статус сервера",
+                    "`!cleanup_ankets` - Чистка мусора с анкет",
                 ]
             ),
             inline=False,
@@ -202,11 +202,6 @@ class CommandsCog(commands.Cog):
         if target_role is None:
             await ctx.send("Целевая роль не найдена на сервере.")
             return
-
-        for rid in TEAM_ROLES.values():
-            role = guild.get_role(rid)
-            if role and role in member.roles and role.id != target_role.id:
-                await member.remove_roles(role, reason=f"team switch by {author}")
 
         await member.add_roles(target_role, reason=f"team set {value} by {author}")
         await ctx.message.add_reaction("\u2705")
