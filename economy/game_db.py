@@ -1,11 +1,11 @@
 import asyncio
 import json
+import shutil
 import sqlite3
-import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 
-from data_control import Config, ServerControl
+from data_control import ServerControl, ServerStatus
 
 
 class GameDBProcessor:
@@ -14,7 +14,7 @@ class GameDBProcessor:
 
     @classmethod
     def download_db(cls, db_path: Path = Path("data/game_server.db")) -> None:
-        urllib.request.urlretrieve(Config.game_server_ftp(), db_path)
+        shutil.copy(Path("/root/gmod/garrysmo/sv.db"), db_path)
 
     @classmethod
     def _cleanup_db(cls) -> None:
@@ -116,7 +116,7 @@ class GameDBProcessor:
     async def pull_db_data(cls):
         while True:
             try:
-                if ServerControl.get_status() == "Включен":
+                if ServerControl.get_status() is ServerStatus.RUNNING:
                     cls.create_json()
 
             except Exception:

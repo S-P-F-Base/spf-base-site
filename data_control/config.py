@@ -1,4 +1,3 @@
-import json
 import os
 from typing import Any, Literal
 
@@ -23,11 +22,9 @@ class Config:
             "JWT_KEY",
             "TAX_PASSWORD",
             "TAX_INN",
-            "HOSTING_COOKIES",
             "STEAM_API",
             "DISCORD_BOT",
             "DISCORD_APP",
-            "GAME_SERVER_FTP",
         ]:
             cls._cache[key] = os.getenv(key, None)
 
@@ -74,10 +71,6 @@ class Config:
         return cls._base_get_env("TAX_INN")
 
     @classmethod
-    def hosting_cookies(cls) -> dict:
-        return json.loads(cls._base_get_env("HOSTING_COOKIES"))
-
-    @classmethod
     def steam_api(cls) -> str:
         return cls._base_get_env("STEAM_API")
 
@@ -88,12 +81,6 @@ class Config:
     @classmethod
     def discord_app(cls) -> str:
         return cls._base_get_env("DISCORD_APP")
-
-    @classmethod
-    def game_server_ftp(cls) -> str:
-        data: str = cls._base_get_env("GAME_SERVER_FTP")
-        ip, user, password = data.split(" ")
-        return f"ftp://{user}:{password}@{ip}/garrysmod/sv.db"
 
     # endregion
 

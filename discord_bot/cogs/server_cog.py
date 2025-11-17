@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands, tasks
 
 from data_class import ProfileData, ProfileDataBase
-from data_control import ServerControl
+from data_control import ServerControl, ServerStatus
 
 ANNOUNCE_CHANNEL_ID = 1321307574242377769
 
@@ -18,6 +18,8 @@ class ServerControlCog(commands.Cog):
             "stop": "<@&1358390418613469355>\nСервер оффлаин",
             "6_am": "<@&1358390418613469355>\nЯ отправила сервер спатки",
         }
+        if not self.autostop_task.is_running():
+            self.autostop_task.start()
 
     def _get_admin_profile(self, discord_id: int) -> dict | None:
         profile = ProfileDataBase.get_profile_by_discord(str(discord_id))
@@ -32,37 +34,42 @@ class ServerControlCog(commands.Cog):
 
     async def _do_action(self, ctx: commands.Context, action: str) -> None:
         profile = self._get_admin_profile(ctx.author.id)
-
         if profile is None:
             await ctx.message.add_reaction("\u274c")
             return
 
         server_stat = ServerControl.get_status()
-        if (server_stat == "Включен" and action == "start") or (
-            server_stat == "Выключен" and action == "stop"
-        ):
+        if server_stat in [ServerStatus.FAILED, ServerStatus.UNKNOWN]:
             await ctx.message.add_reaction("\u274c")
             await ctx.reply(
-                f"Нельзя запустить `{action}` если сервер уже `{server_stat}`"
+                "Серверу что-то не хорошо. Трогать в таком состоянии я его не буду. Сообщите Кайну о проблеме"
             )
             return
 
-        if action == "start":
-            ServerControl.perform_action("start")
-            await ctx.message.add_reaction("\u2705")
+        if (
+            server_stat in [ServerStatus.RUNNING, ServerStatus.START]
+            and action == "start"
+        ) or (
+            server_stat in [ServerStatus.STOP, ServerStatus.DEAD] and action == "stop"
+        ):
+            await ctx.message.add_reaction("\u274c")
+            await ctx.reply(
+                f"Нельзя выполнить `{action}`, сервер уже `{server_stat.value}`"
+            )
+            return
 
-        elif action == "stop":
-            ServerControl.perform_action("stop")
+        if action in ["start", "stop", "restart"]:
+            ServerControl.perform_action(action)  # pyright: ignore[reportArgumentType]
             await ctx.message.add_reaction("\u2705")
 
         else:
             await ctx.message.add_reaction("\u274c")
-            await ctx.reply("Неверный параметр\n`!server start`\n`!server stop`")
+            await ctx.reply("Неверный параметр\n`!server <start|stop|restart>`")
 
         channel = self.bot.get_channel(ANNOUNCE_CHANNEL_ID)
-        if channel:
+        if channel and isinstance(channel, discord.TextChannel):
             text = self.announcement_texts.get(action)
-            if text and isinstance(channel, discord.TextChannel):
+            if text:
                 try:
                     await channel.send(text)
 
@@ -73,18 +80,16 @@ class ServerControlCog(commands.Cog):
     async def autostop_task(self):
         now = datetime.now(ZoneInfo("Europe/Moscow")).time()
         target = time(6, 0)
-
         if now.hour == target.hour and now.minute == target.minute:
-            ServerControl.perform_action("stop")
-
-            channel = self.bot.get_channel(ANNOUNCE_CHANNEL_ID)
-            if channel and isinstance(channel, discord.TextChannel):
-                await channel.send(self.announcement_texts["6_am"])
+            if ServerControl.get_status() is ServerStatus.RUNNING:
+                ServerControl.perform_action("stop")
+                channel = self.bot.get_channel(ANNOUNCE_CHANNEL_ID)
+                if channel and isinstance(channel, discord.TextChannel):
+                    await channel.send(self.announcement_texts["6_am"])
 
     @commands.command(name="server")
     async def server_cmd(self, ctx: commands.Context, action: str | None = None):
         profile = self._get_admin_profile(ctx.author.id)
-
         if profile is None:
             await ctx.message.add_reaction("\u274c")
             return
@@ -97,29 +102,10 @@ class ServerControlCog(commands.Cog):
             return
 
         action = action.lower()
-
-        ACTIONS = {
-            "start": {"type": "action"},
-            "stop": {"type": "action"},
-            "status": {"type": "status"},
-        }
-
-        if action not in ACTIONS:
-            await ctx.message.add_reaction("\u274c")
-            await ctx.reply(
-                "Неизвестная команда.\n"
-                "`!server start`\n"
-                "`!server stop`\n"
-                "`!server status`"
-            )
-            return
-
-        kind = ACTIONS[action]["type"]
-
-        if kind == "status":
+        if action == "status":
             status = ServerControl.get_status()
             await ctx.message.add_reaction("\u2705")
-            await ctx.reply(f"Текущее состояние сервера: `{status}`")
+            await ctx.reply(f"Текущее состояние сервера: `{status.value}`")
             return
 
         await self._do_action(ctx, action)

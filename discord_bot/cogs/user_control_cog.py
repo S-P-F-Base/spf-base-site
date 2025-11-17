@@ -30,9 +30,11 @@ class UserControlCog(commands.Cog):
         rec = self._user_cache.get(user_id)
         if not rec:
             return None
+        
         exp, data = rec
         if exp > time.monotonic():
             return data
+        
         self._user_cache.pop(user_id, None)
         return None
 

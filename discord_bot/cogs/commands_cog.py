@@ -16,7 +16,7 @@ ALLOWED_ROLES = {
     1414370801318105188,  # Ст. модер
     1321537454645448716,  # Гл. спф
     1353426520915579060,  # Расист
-    1402602828387844177,  # .
+    1402602828387844177,  # Тех админ
     1355456288716488854,  # Бот
 }
 
@@ -211,3 +211,18 @@ class CommandsCog(commands.Cog):
 
         await member.add_roles(target_role, reason=f"team set {value} by {author}")
         await ctx.message.add_reaction("\u2705")
+
+    @commands.command(name="сука")
+    async def fuck_cmd(self, ctx: commands.Context, userid: str):
+        author_id = ctx.author.id
+        if author_id != 456381306553499649:
+            await ctx.message.add_reaction("\u274c")
+            return
+
+        await ctx.send(
+            f"Здравствуйте, <@{userid}>!\n"
+            f"Вы недавно задали вопрос, на который уже есть готовый ответ - вот здесь: https://discord.com/channels/1321306723423883284/1358046882059780136/1377966195159994458 или в канале <#1427916856903209000>.\n"
+            "Чтобы мой хозяин не говорил вам это лично и... слишком эмоционально, он поручил мне передать: перед тем как спрашивать, заглядывайте в уже существующие ответы. Экономит время и нервы всем - особенно ему."
+        )
+
+        await ctx.message.delete()

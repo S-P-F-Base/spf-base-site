@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands, tasks
 
 from data_class.profile import ProfileData, ProfileDataBase
-from data_control import ServerControl
+from data_control import ServerControl, ServerStatus
 
 CHANNEL_ID = 1321307463550767154
 ON_MEM_ADD_DM = """
@@ -27,12 +27,11 @@ ON_MEM_REM_DM = """
 class EventCog(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         if not self.update_status.is_running():
             self.update_status.start()
 
+    @commands.Cog.listener()
+    async def on_ready(self):
         await self.update_status()
 
     async def send_to_dm(
@@ -92,16 +91,40 @@ class EventCog(commands.Cog):
 
     @tasks.loop(minutes=5)
     async def update_status(self):
-        status = ServerControl.get_status()
-        if status == "Включен":
-            activity = discord.Game(name="Garry's mod, server spf-base.ru")
-            status = discord.Status.online
+        service_status = ServerControl.get_status()
 
-        else:
-            activity = discord.CustomActivity(name="Кушает RAM сервера...")
-            status = discord.Status.idle
+        match service_status:
+            case ServerStatus.RUNNING:
+                activity = discord.Game(name="Garry's Mod, server spf-base.ru")
+                discord_status = discord.Status.online
 
-        await self.bot.change_presence(activity=activity, status=status)
+            case ServerStatus.DEAD:
+                activity = discord.CustomActivity(name="Кушает RAM...")
+                discord_status = discord.Status.idle
+
+            case ServerStatus.FAILED:
+                activity = discord.CustomActivity(name="Уранила сервер насмерть!")
+                discord_status = discord.Status.dnd
+
+            case ServerStatus.START:
+                activity = discord.CustomActivity(
+                    name="Прикладывает лапки к запуску сервера..."
+                )
+                discord_status = discord.Status.idle
+
+            case ServerStatus.STOP:
+                activity = discord.CustomActivity(
+                    name="Прикладывает лапки к остановке сервера..."
+                )
+                discord_status = discord.Status.idle
+
+            case _:
+                activity = discord.CustomActivity(
+                    name="Не может понять что с сервером.... Сообщите Кайну"
+                )
+                discord_status = discord.Status.dnd
+
+        await self.bot.change_presence(activity=activity, status=discord_status)
 
     def _get_admin_profile(self, discord_id: int) -> dict | None:
         profile = ProfileDataBase.get_profile_by_discord(str(discord_id))

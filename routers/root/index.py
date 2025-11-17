@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from markdown import Markdown
 
-from data_control import ServerControl
+from data_control import ServerControl, ServerStatus
 from templates import templates
 
 from .wiki.wiki_render import WIKI_DIR
@@ -87,6 +87,14 @@ def parse_date_any(raw: str | str, fallback_ts: float) -> datetime:
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request):
     status = ServerControl.get_status()
+    status = {
+        ServerStatus.DEAD: "Выключен",
+        ServerStatus.RUNNING: "Включён",
+        ServerStatus.START: "Запускается",
+        ServerStatus.STOP: "Останавливается",
+        ServerStatus.FAILED: "Упал насмерть",
+    }.get(status, "Неизвестно")
+
     latest_news = get_latest_news(3)
     return templates.TemplateResponse(
         "index.html",
