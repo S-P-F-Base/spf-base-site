@@ -107,12 +107,10 @@ class AIManager(commands.Cog):
         )
 
     def is_insult(self, msg: str) -> bool:
-        bot_mention = f"<@{self.bot.user.id}>"
-        return bot_mention in msg and bool(self.insult_pattern.search(msg))
+        return bool(self.insult_pattern.search(msg))
 
     def is_ping(self, msg: str) -> bool:
-        bot_mention = f"<@{self.bot.user.id}>"
-        return bot_mention in msg and not self.insult_pattern.search(msg)
+        return not self.insult_pattern.search(msg)
 
     def pick_block(self, blocks: List[Response]) -> Response:
         return random.choice(blocks)
@@ -181,9 +179,13 @@ class AIManager(commands.Cog):
         user_id = user.id
         content = message.content
 
-        if self.is_insult(content):
-            await self.handle_insult(message, user, user_id)
+        if f"<@{self.bot.user.id}>" not in content:
+            return
 
-        elif self.is_ping(content):
-            response = self.pick_block(self.ping_responses)
-            await self.send_response(message.channel, response)
+        async with message.channel.typing():
+            if self.is_insult(content):
+                await self.handle_insult(message, user, user_id)
+
+            elif self.is_ping(content):
+                response = self.pick_block(self.ping_responses)
+                await self.send_response(message.channel, response)
