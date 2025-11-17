@@ -10,6 +10,7 @@ from .cogs import (
     PlayerCog,
     ServerControlCog,
     UserControlCog,
+    AIManager
 )
 
 intents = discord.Intents.all()
@@ -25,6 +26,7 @@ async def start():
         PlayerCog,
         ServerControlCog,
         UserControlCog,
+        AIManager
     ]:
         await bot.add_cog(cls(bot))
 
