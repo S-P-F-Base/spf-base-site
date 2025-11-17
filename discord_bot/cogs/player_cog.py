@@ -14,7 +14,11 @@ class PlayerCog(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 
-    @commands.command(name="user_time")
+    @commands.group(name="user", invoke_without_command=True)
+    async def user(self, ctx: commands.Context):
+        await ctx.send("Используй подкоманду: `time` или `inventory`")
+
+    @user.command(name="time")
     async def user_time(self, ctx: commands.Context):
         author_id = ctx.author.id
         if not author_id:
@@ -66,7 +70,7 @@ class PlayerCog(commands.Cog):
                 await ctx.send("Нет персонажей, не заходивших более месяца.")
                 return
 
-            header = "# Персонажи, не заходившие более месяца:\n"
+            header = "Я посмотрела бд, и вот что нашла:\nПерсонажи, не заходившие более месяца:\n"
             message = header
             for name, ts, steamid, id in inactive:
                 line = f"`{id}` `{steamid}` `{name}` - <t:{ts}:R> (<t:{ts}:f>)\n"
@@ -81,7 +85,7 @@ class PlayerCog(commands.Cog):
 
             db_path.unlink(missing_ok=True)
 
-    @commands.command(name="user_inventory")
+    @user.command(name="inventory")
     async def user_inventory(self, ctx: commands.Context):
         author_id = ctx.author.id
         if not author_id:

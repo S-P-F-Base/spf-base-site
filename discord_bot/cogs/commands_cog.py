@@ -154,9 +154,8 @@ class CommandsCog(commands.Cog):
                 [
                     "`!server <start|stop>` - Остановить / запустить сервер",
                     "`!update_status` - Обновить статус бота",
-                    "`!user_time` - Расстрельный список",
+                    "`!user <time|inventory>` - Немного магии",
                     "`!cleanup_ankets` - Чистка",
-                    "`!user_inventory` - Получить рейтлимит от дискорда",
                 ]
             ),
             inline=False,
