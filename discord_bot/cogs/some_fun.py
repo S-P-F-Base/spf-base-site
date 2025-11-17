@@ -1,10 +1,24 @@
 import random
 import re
+from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
+from typing import Dict, List
 
 import discord
 from discord.ext import commands
+
+
+@dataclass
+class Response:
+    phrase: str
+    image: Path | None = None
+
+
+@dataclass
+class Level:
+    threshold: int
+    responses: List[Response] = field(default_factory=list)
 
 
 class AIManager(commands.Cog):
@@ -13,36 +27,76 @@ class AIManager(commands.Cog):
         self.owner_id = 456381306553499649
         self.images_root = Path("static/images/ashley")
 
-        self.offenses = {}
-        self.repeat = set()
+        self.offenses: Dict[int, int] = {}
+        self.repeat: set[int] = set()
 
-        self.levels = {
-            1: [
-                ("Эй... может, не надо так грубо?", "normal.png"),
-                ("Мм... я делаю вид, что не услышала.", "sili.png"),
-            ],
-            2: [
-                ("Ты правда хочешь продолжать?", "worry.png"),
-                ("Я начинаю сердиться... чуть-чуть.", "normal.png"),
-            ],
-            3: [
-                ("Хватит. Последний раз предупреждаю.", "angry.png"),
-                ("Ты нарываешься на час тишины.", "angry.png"),
-            ],
-        }
-
-        self.owner_responses = [
-            ("Ну ты же знаешь, что со мной так нельзя...", "worry.png"),
+        self.levels: List[Level] = [
+            Level(
+                1,
+                [
+                    Response(
+                        "Эй... может, не надо так грубо?",
+                        self.images_root / "normal.png",
+                    ),
+                    Response(
+                        "Мм... я делаю вид, что не услышала.",
+                        self.images_root / "sili.png",
+                    ),
+                ],
+            ),
+            Level(
+                2,
+                [
+                    Response(
+                        "Ты правда хочешь продолжать?", self.images_root / "worry.png"
+                    ),
+                    Response(
+                        "Я начинаю сердиться... чуть-чуть.",
+                        self.images_root / "normal.png",
+                    ),
+                ],
+            ),
+            Level(
+                3,
+                [
+                    Response(
+                        "Хватит. Последний раз предупреждаю.",
+                        self.images_root / "angry.png",
+                    ),
+                    Response(
+                        "Ты нарываешься на час тишины.", self.images_root / "angry.png"
+                    ),
+                ],
+            ),
         ]
 
-        self.cannot_punish = [
-            ("Я не могу его тронуть...", "something_wrong.png"),
+        self.owner_responses: List[Response] = [
+            Response(
+                "Ну ты же знаешь, что со мной так нельзя...",
+                self.images_root / "worry.png",
+            ),
+        ]
+        self.repeat_responses: List[Response] = [
+            Response(
+                "Мы это уже проходили. Я всё ещё помню тебя.",
+                self.images_root / "angry.png",
+            ),
+            Response("Снова? Хорошо.", self.images_root / "angry.png"),
+            Response("Ты явно не учишься. Отдыхай.", self.images_root / "angry.png"),
         ]
 
-        self.repeat_responses = [
-            ("Мы это уже проходили. Я всё ещё помню тебя.", "angry.png"),
-            ("Снова? Хорошо.", "angry.png"),
-            ("Ты явно не учишься. Отдыхай.", "angry.png"),
+        self.cannot_punish: List[Response] = [
+            Response(
+                "Я не могу его тронуть, а он обижает...",
+                self.images_root / "something_wrong.png",
+            ),
+        ]
+
+        self.ping_responses: List[Response] = [
+            Response(
+                "Умф... Я не являюсь разумной. Я не смогу поддерживать диалог вне моих рамок. Если сильно хотите помучать меня - спросите у моего Мастера что вас интересует по мне.",
+                self.images_root / "not_ai_i.png",
+            ),
         ]
 
         self.insult_pattern = re.compile(
@@ -53,60 +107,83 @@ class AIManager(commands.Cog):
         )
 
     def is_insult(self, msg: str) -> bool:
-        if "<@1370825296839839795>" in msg:
-            return bool(self.insult_pattern.search(msg))
-    
-        return False
+        bot_mention = f"<@{self.bot.user.id}>"
+        return bot_mention in msg and bool(self.insult_pattern.search(msg))
 
-    def pick_block(self, blocks):
-        phrase, filename = random.choice(blocks)
-        return phrase, self.images_root / filename
+    def is_ping(self, msg: str) -> bool:
+        bot_mention = f"<@{self.bot.user.id}>"
+        return bot_mention in msg and not self.insult_pattern.search(msg)
 
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
+    def pick_block(self, blocks: List[Response]) -> Response:
+        return random.choice(blocks)
 
-        content = message.content
-        if not self.is_insult(content):
-            return
-
-        user = message.author
-        user_id = user.id
-
+    async def handle_insult(
+        self,
+        message: discord.Message,
+        user: discord.Member,
+        user_id: int,
+    ):
         if user_id == self.owner_id:
-            phrase, img = self.pick_block(self.owner_responses)
-            await message.channel.send(phrase, file=discord.File(img))
+            response = self.pick_block(self.owner_responses)
+            await self.send_response(message.channel, response)
             return
 
         if user_id in self.repeat:
-            phrase, img = self.pick_block(self.repeat_responses)
-            await message.channel.send(phrase, file=discord.File(img))
+            response = self.pick_block(self.repeat_responses)
+            await self.send_response(message.channel, response)
             await self.apply_timeout_or_report(user, message.channel)
             return
 
         count = self.offenses.get(user_id, 0) + 1
         self.offenses[user_id] = count
 
-        level = min(count, 3)
-        phrase, img = self.pick_block(self.levels[level])
-        await message.channel.send(phrase, file=discord.File(img))
+        level_response = None
+        for level in reversed(self.levels):
+            if count >= level.threshold:
+                level_response = self.pick_block(level.responses)
+                break
 
-        if count >= 3:
+        if level_response:
+            await self.send_response(message.channel, level_response)
+
+        if count >= self.levels[-1].threshold:
             self.repeat.add(user_id)
             await self.apply_timeout_or_report(user, message.channel)
 
+    async def send_response(self, channel: discord.TextChannel, response: Response):
+        if response.image:
+            await channel.send(response.phrase, file=discord.File(response.image))
+
+        else:
+            await channel.send(response.phrase)
+
     async def apply_timeout_or_report(
-        self, user: discord.Member, channel: discord.TextChannel
+        self,
+        user: discord.Member,
+        channel: discord.TextChannel,
     ):
         try:
             await user.timeout(timedelta(hours=1), reason="Bot insult")
-
         except Exception:
             owner = self.bot.get_user(self.owner_id)
             if owner:
-                phrase, img = self.pick_block(self.cannot_punish)
-                await owner.send(f"{phrase} {user.mention}", file=discord.File(img))
-
+                response = self.pick_block(self.cannot_punish)
+                await self.send_response(owner, response)
             else:
                 await channel.send("Я даже пожаловаться не могу...")
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+
+        user = message.author
+        user_id = user.id
+        content = message.content
+
+        if self.is_insult(content):
+            await self.handle_insult(message, user, user_id)
+
+        elif self.is_ping(content):
+            response = self.pick_block(self.ping_responses)
+            await self.send_response(message.channel, response)
