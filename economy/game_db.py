@@ -14,7 +14,7 @@ class GameDBProcessor:
 
     @classmethod
     def download_db(cls, db_path: Path = Path("data/game_server.db")) -> None:
-        shutil.copy(Path("/root/gmod/garrysmo/sv.db"), db_path)
+        shutil.copy(Path("/root/gmod/garrysmod/sv.db"), db_path)
 
     @classmethod
     def _cleanup_db(cls) -> None:
