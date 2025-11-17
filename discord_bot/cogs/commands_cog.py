@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 import discord
 from discord import Colour, Embed
@@ -220,3 +221,19 @@ class CommandsCog(commands.Cog):
         )
 
         await ctx.message.delete()
+
+    @commands.command(name="give")
+    async def owo_cmd(self, ctx: commands.Context):
+        author_id = ctx.author.id
+        if author_id != 456381306553499649:
+            await ctx.message.add_reaction("\u274c")
+            return
+
+        txt = "Умф... Хозяин сказал что разработка моих алгоритмов не в приоритете.\n Так же он просил напомнить что есть [донат](https://spf-base.ru/donate) если кто-то хочет поддержать проект.\n\n||А ещё он вредный и не хочет печеньками делиться!||"
+
+        channel = self.bot.get_channel(1321307574242377769)
+        if channel and isinstance(channel, discord.TextChannel):
+            await channel.send(
+                txt,
+                file=discord.File(Path("static/images/ashley/happy.png")),
+            )
