@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import wraps
 from zoneinfo import ZoneInfo
 
 import discord
@@ -11,6 +12,7 @@ ANNOUNCE_CHANNEL_ID = 1321307574242377769
 
 
 def server_admin_only(func):
+    @wraps(func)
     async def wrapper(self, ctx: commands.Context, *args, **kwargs):
         profile = ProfileDataBase.get_profile_by_discord(str(ctx.author.id))
         data = profile.get("data") if profile else None
