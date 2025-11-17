@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import discord
@@ -10,62 +10,31 @@ from data_control import ServerControl, ServerStatus
 ANNOUNCE_CHANNEL_ID = 1321307574242377769
 
 
+def server_admin_only(func):
+    async def wrapper(self, ctx: commands.Context, *args, **kwargs):
+        profile = ProfileDataBase.get_profile_by_discord(str(ctx.author.id))
+        data = profile.get("data") if profile else None
+        if not isinstance(data, ProfileData) or not data.has_access("server_control"):
+            await ctx.message.add_reaction("\u274c")
+            return
+
+        return await func(self, ctx, *args, **kwargs)
+
+    return wrapper
+
+
 class ServerControlCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.announcement_texts = {
-            "start": "<@&1358390418613469355>\nСервер запущен",
-            "stop": "<@&1358390418613469355>\nСервер оффлаин",
+            "start": "<@&1358390418613469355>\nЯ лапками запустила сервер",
+            "stop": "<@&1358390418613469355>\nЯ лапками выключила сервер",
             "6_am": "<@&1358390418613469355>\nЯ отправила сервер спатки",
         }
         if not self.autostop_task.is_running():
             self.autostop_task.start()
 
-    def _get_admin_profile(self, discord_id: int) -> dict | None:
-        profile = ProfileDataBase.get_profile_by_discord(str(discord_id))
-        if not profile:
-            return None
-
-        data = profile.get("data", ProfileData())
-        if not isinstance(data, ProfileData):
-            return None
-
-        return profile if data.has_access("server_control") else None
-
-    async def _do_action(self, ctx: commands.Context, action: str) -> None:
-        profile = self._get_admin_profile(ctx.author.id)
-        if profile is None:
-            await ctx.message.add_reaction("\u274c")
-            return
-
-        server_stat = ServerControl.get_status()
-        if server_stat in [ServerStatus.FAILED, ServerStatus.UNKNOWN]:
-            await ctx.message.add_reaction("\u274c")
-            await ctx.reply(
-                "Серверу что-то не хорошо. Трогать в таком состоянии я его не буду. Сообщите Кайну о проблеме"
-            )
-            return
-
-        if (
-            server_stat in [ServerStatus.RUNNING, ServerStatus.START]
-            and action == "start"
-        ) or (
-            server_stat in [ServerStatus.STOP, ServerStatus.DEAD] and action == "stop"
-        ):
-            await ctx.message.add_reaction("\u274c")
-            await ctx.reply(
-                f"Нельзя выполнить `{action}`, сервер уже `{server_stat.value}`"
-            )
-            return
-
-        if action in ["start", "stop", "restart"]:
-            ServerControl.perform_action(action)  # pyright: ignore[reportArgumentType]
-            await ctx.message.add_reaction("\u2705")
-
-        else:
-            await ctx.message.add_reaction("\u274c")
-            await ctx.reply("Неверный параметр\n`!server <start|stop|restart>`")
-
+    async def _announce(self, action: str):
         channel = self.bot.get_channel(ANNOUNCE_CHANNEL_ID)
         if channel and isinstance(channel, discord.TextChannel):
             text = self.announcement_texts.get(action)
@@ -74,38 +43,82 @@ class ServerControlCog(commands.Cog):
                     await channel.send(text)
 
                 except Exception as e:
-                    await ctx.reply(f"Не удалось отправить уведомление: {e}")
+                    return f"Не удалось отправить уведомление: {e}"
+
+        return None
+
+    def _can_perform(self, action: str) -> bool:
+        status = ServerControl.get_status()
+
+        match action:
+            case "start":
+                return status not in [ServerStatus.RUNNING, ServerStatus.START]
+
+            case "stop":
+                return status not in [ServerStatus.STOP, ServerStatus.DEAD]
+
+            case "restart":
+                return status not in [ServerStatus.STOP, ServerStatus.DEAD]
+
+        return False
+
+    async def _perform_action(self, ctx: commands.Context, action: str):
+        status = ServerControl.get_status()
+
+        if status in [ServerStatus.FAILED, ServerStatus.UNKNOWN]:
+            await ctx.message.add_reaction("\u274c")
+            await ctx.reply(
+                "Сервер сложил лапки намертво, или ведёт себя странно. Я не буду выполнять вашу команду. Свяжитесь с Кайном"
+            )
+            return
+
+        if not self._can_perform(action):
+            await ctx.message.add_reaction("\u274c")
+            await ctx.reply(
+                f"Нельзя выполнить `{action}`, сервер уже `{status.value}` или сложил лапки"
+            )
+            return
+
+        ServerControl.perform_action(action)  # pyright: ignore[reportArgumentType]
+        await ctx.message.add_reaction("\u2705")
+
+        announce_key = "start" if action in ["start", "restart"] else action
+        await self._announce(announce_key)
 
     @tasks.loop(minutes=1)
     async def autostop_task(self):
         now = datetime.now(ZoneInfo("Europe/Moscow")).time()
-        target = time(6, 0)
-        if now.hour == target.hour and now.minute == target.minute:
-            if ServerControl.get_status() is ServerStatus.RUNNING:
-                ServerControl.perform_action("stop")
-                channel = self.bot.get_channel(ANNOUNCE_CHANNEL_ID)
-                if channel and isinstance(channel, discord.TextChannel):
-                    await channel.send(self.announcement_texts["6_am"])
+        if (
+            ServerControl.get_status() is ServerStatus.RUNNING
+            and now.hour == 6
+            and now.minute == 0
+        ):
+            ServerControl.perform_action("stop")
+            await self._announce("6_am")
 
-    @commands.command(name="server")
-    async def server_cmd(self, ctx: commands.Context, action: str | None = None):
-        profile = self._get_admin_profile(ctx.author.id)
-        if profile is None:
-            await ctx.message.add_reaction("\u274c")
-            return
+    @commands.group(name="server", invoke_without_command=True)
+    @server_admin_only
+    async def server(self, ctx: commands.Context):
+        await ctx.send("Используй подкоманду: `start`, `stop`, `restart` или `status`")
 
-        if action is None:
-            await ctx.message.add_reaction("\u274c")
-            await ctx.reply(
-                "Нужно указать действие: `!server start`, `!server stop` или `!server status`"
-            )
-            return
+    @server.command(name="start")
+    @server_admin_only
+    async def start(self, ctx: commands.Context):
+        await self._perform_action(ctx, "start")
 
-        action = action.lower()
-        if action == "status":
-            status = ServerControl.get_status()
-            await ctx.message.add_reaction("\u2705")
-            await ctx.reply(f"Текущее состояние сервера: `{status.value}`")
-            return
+    @server.command(name="stop")
+    @server_admin_only
+    async def stop(self, ctx: commands.Context):
+        await self._perform_action(ctx, "stop")
 
-        await self._do_action(ctx, action)
+    @server.command(name="restart")
+    @server_admin_only
+    async def restart(self, ctx: commands.Context):
+        await self._perform_action(ctx, "restart")
+
+    @server.command(name="status")
+    @server_admin_only
+    async def status(self, ctx: commands.Context):
+        status = ServerControl.get_status()
+        await ctx.message.add_reaction("\u2705")
+        await ctx.reply(f"Текущее состояние сервера: `{status.value}`")
