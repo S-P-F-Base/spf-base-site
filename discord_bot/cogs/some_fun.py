@@ -1,3 +1,4 @@
+import asyncio
 import os
 import random
 import re
@@ -157,7 +158,7 @@ class AIManager(commands.Cog):
             f"User said: {content}\n"
             "Ashley:"
         )
-        return run_llm(prompt)
+        return await asyncio.to_thread(run_llm, prompt)
 
     async def handle_insult(
         self,
