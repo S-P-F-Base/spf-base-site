@@ -238,4 +238,11 @@ class AIManager(commands.Cog):
                     await self.send_response(message.channel, response)
                 else:
                     text = await self.llm_answer(content)
-                    await message.channel.send(text)
+
+                    async def send_long_message(
+                        channel: discord.TextChannel, text: str
+                    ):
+                        for i in range(0, len(text), 2000):
+                            await channel.send(text[i : i + 2000])
+
+                    await send_long_message(message.channel, text)
