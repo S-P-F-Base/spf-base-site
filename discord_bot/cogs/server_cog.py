@@ -76,9 +76,13 @@ class ServerControlCog(commands.Cog):
 
         if not self._can_perform(action):
             await ctx.message.add_reaction("\u274c")
-            await ctx.reply(
-                f"Нельзя выполнить `{action}`, сервер уже `{status.value}` или сложил лапки"
-            )
+            st = {
+                ServerStatus.DEAD: "остановлен",
+                ServerStatus.STOP: "останавливается",
+                ServerStatus.START: "запускается",
+                ServerStatus.RUNNING: "запущен",
+            }.get(status, "Неизвестно")
+            await ctx.reply(f"Нельзя выполнить `{action}` если сервер {st}")
             return
 
         ServerControl.perform_action(action)  # pyright: ignore[reportArgumentType]
