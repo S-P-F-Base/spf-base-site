@@ -40,50 +40,54 @@ class PlayerCog(commands.Cog):
 
         async with ctx.typing():
             db_path = Path("data/users_time.db")
-            GameDBProcessor.download_db(db_path)
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
+            try:
+                GameDBProcessor.download_db(db_path)
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
 
-            cursor.execute(
-                "SELECT name, last_played_at, steamid, id FROM spf2_characters"
-            )
-            rows = cursor.fetchall()
-            conn.close()
+                cursor.execute(
+                    "SELECT name, last_played_at, steamid, id FROM spf2_characters"
+                )
+                rows = cursor.fetchall()
+                conn.close()
 
-            now = datetime.now().timestamp()
-            month_ago = now - 30 * 24 * 60 * 60
+                now = datetime.now().timestamp()
+                month_ago = now - 30 * 24 * 60 * 60
 
-            inactive = []
-            for name, ts, steamid, id in rows:
-                try:
-                    if steamid == "STORAGE":
+                inactive = []
+                for name, ts, steamid, id in rows:
+                    try:
+                        if steamid == "STORAGE":
+                            continue
+
+                        ts = int(ts)
+                        if ts and ts < month_ago:
+                            inactive.append((name, ts, steamid, id))
+
+                    except (ValueError, TypeError):
                         continue
 
-                    ts = int(ts)
-                    if ts and ts < month_ago:
-                        inactive.append((name, ts, steamid, id))
+                if not inactive:
+                    await ctx.send(
+                        "Я посмотрела бд, и не нашла никого, кто не заходил более 1 месяца"
+                    )
+                    return
 
-                except (ValueError, TypeError):
-                    continue
+                header = "Я посмотрела бд, и вот что нашла\n\nПерсонажи, не заходившие более месяца:\n"
+                message = header
+                for name, ts, steamid, id in inactive:
+                    line = f"`{id}` `{steamid}` `{name}` - <t:{ts}:R> (<t:{ts}:f>)\n"
+                    if len(message) + len(line) >= 2000:
+                        await ctx.send(message)
+                        message = line
+                    else:
+                        message += line
 
-            if not inactive:
-                await ctx.send("Нет персонажей, не заходивших более месяца.")
-                return
-
-            header = "Я посмотрела бд, и вот что нашла:\nПерсонажи, не заходившие более месяца:\n"
-            message = header
-            for name, ts, steamid, id in inactive:
-                line = f"`{id}` `{steamid}` `{name}` - <t:{ts}:R> (<t:{ts}:f>)\n"
-                if len(message) + len(line) >= 2000:
+                if message:
                     await ctx.send(message)
-                    message = line
-                else:
-                    message += line
 
-            if message:
-                await ctx.send(message)
-
-            db_path.unlink(missing_ok=True)
+            finally:
+                db_path.unlink(missing_ok=True)
 
     @user.command(name="inventory")
     async def user_inventory(self, ctx: commands.Context):
