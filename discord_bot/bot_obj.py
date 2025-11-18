@@ -4,13 +4,13 @@ from discord.ext import commands
 from data_control import Config
 
 from .cogs import (
+    AICore,
     CommandsCog,
     EventCog,
     ForumControlCog,
     PlayerCog,
     ServerControlCog,
     UserControlCog,
-    AIManager
 )
 
 intents = discord.Intents.all()
@@ -26,7 +26,7 @@ async def start():
         PlayerCog,
         ServerControlCog,
         UserControlCog,
-        AIManager
+        AICore,
     ]:
         await bot.add_cog(cls(bot))
 
