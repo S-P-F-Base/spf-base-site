@@ -111,84 +111,81 @@ class PlayerCog(commands.Cog):
 
         async with ctx.typing():
             db_path = Path("data/users_inventory.db")
-            out_path = (
-                Path("data")
-                / f"user_inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-            )
-
-            conn = None
             try:
-                GameDBProcessor.download_db(db_path)
-
-                conn = sqlite3.connect(db_path)
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-
-                cursor.execute(
-                    """
-                    SELECT
-                        cd.char_id,
-                        ch.name,
-                        ch.steamid,
-                        cd.json
-                    FROM spf2_char_data AS cd
-                    JOIN spf2_characters AS ch
-                    ON ch.id = cd.char_id
-                    WHERE cd.key = 'inventory';
-                    """
+                out_path = (
+                    Path("data")
+                    / f"user_inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
                 )
-                rows = cursor.fetchall()
-            finally:
-                if conn is not None:
-                    try:
-                        conn.close()
-                    except Exception:
-                        pass
 
-            lines = [
-                f"# Инвентари персонажей (generated {datetime.now().strftime('%Y-%m-%d %H:%M:%S')})\n"
-            ]
-
-            for row in rows:
-                steamid = (row["steamid"] or "").upper()
-                if steamid == "STORAGE":
-                    continue
-
+                conn = None
                 try:
-                    inv = json.loads(row["json"] or "{}")
-                except (TypeError, json.JSONDecodeError):
-                    continue
+                    GameDBProcessor.download_db(db_path)
 
-                items = inv.get("items", []) or []
-                if not items:
-                    continue
+                    conn = sqlite3.connect(db_path)
+                    conn.row_factory = sqlite3.Row
+                    cursor = conn.cursor()
 
-                lines.append(
-                    f"ID: {row['char_id']} | NAME: {row['name']} | STEAM: {row['steamid']}"
-                )
-                for item in items:
-                    item_id = item.get("id")
-                    if not item_id:
+                    cursor.execute(
+                        """
+                        SELECT
+                            cd.char_id,
+                            ch.name,
+                            ch.steamid,
+                            cd.json
+                        FROM spf2_char_data AS cd
+                        JOIN spf2_characters AS ch
+                        ON ch.id = cd.char_id
+                        WHERE cd.key = 'inventory';
+                        """
+                    )
+                    rows = cursor.fetchall()
+                finally:
+                    if conn is not None:
+                        try:
+                            conn.close()
+                        except Exception:
+                            pass
+
+                lines = [
+                    f"# Инвентари персонажей (generated {datetime.now().strftime('%Y-%m-%d %H:%M:%S')})\n"
+                ]
+
+                for row in rows:
+                    steamid = (row["steamid"] or "").upper()
+                    if steamid == "STORAGE":
                         continue
-                    count = item.get("count", 1)
-                    lines.append(f"  {item_id} x{count}")
-                lines.append("")
 
-            if len(lines) <= 1:
-                await ctx.send("Нет персонажей с непустым инвентарём.")
-                db_path.unlink(missing_ok=True)
-                return
+                    try:
+                        inv = json.loads(row["json"] or "{}")
+                    except (TypeError, json.JSONDecodeError):
+                        continue
 
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text("\n".join(lines), encoding="utf-8")
+                    items = inv.get("items", []) or []
+                    if not items:
+                        continue
 
-            await ctx.send(
-                content="Готово. Я собрала инвентари в файл:",
-                file=discord.File(out_path, filename=out_path.name),
-            )
+                    lines.append(
+                        f"ID: {row['char_id']} | NAME: {row['name']} | STEAM: {row['steamid']}"
+                    )
+                    for item in items:
+                        item_id = item.get("id")
+                        if not item_id:
+                            continue
+                        count = item.get("count", 1)
+                        lines.append(f"  {item_id} x{count}")
+                    lines.append("")
 
-            try:
-                out_path.unlink(missing_ok=True)
+                if len(lines) <= 1:
+                    await ctx.send("Нет персонажей с непустым инвентарём.")
+                    return
+
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text("\n".join(lines), encoding="utf-8")
+
+                await ctx.send(
+                    content="Готово. Я собрала инвентари в файл:",
+                    file=discord.File(out_path, filename=out_path.name),
+                )
 
             finally:
                 db_path.unlink(missing_ok=True)
