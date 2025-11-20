@@ -27,11 +27,12 @@ ON_MEM_REM_DM = """
 class EventCog(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-        if not self.update_status.is_running():
-            self.update_status.start()
 
     @commands.Cog.listener()
     async def on_ready(self):
+        if not self.update_status.is_running():
+            self.update_status.start()
+
         await self.update_status()
 
     async def send_to_dm(

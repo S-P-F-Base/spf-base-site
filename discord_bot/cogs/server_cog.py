@@ -33,6 +33,9 @@ class ServerControlCog(commands.Cog):
             "stop": "<@&1358390418613469355>\nЯ лапками выключила сервер",
             "6_am": "<@&1358390418613469355>\nЯ отправила сервер спатки",
         }
+
+    @commands.Cog.listener()
+    async def on_ready(self):
         if not self.autostop_task.is_running():
             self.autostop_task.start()
 
