@@ -57,7 +57,6 @@ class AICore(commands.Cog):
             Level(
                 3,
                 [
-                    Response("Хватит. Последний раз предупреждаю.", "angry.png"),
                     Response("Ты нарываешься на час тишины.", "angry.png"),
                 ],
             ),
