@@ -270,3 +270,8 @@
         justify-self: start;
     }
 }
+
+.label-text {
+    display: inline;
+    flex-shrink: 0;
+}

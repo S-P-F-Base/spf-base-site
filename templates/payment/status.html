@@ -2,7 +2,7 @@
 <html lang="ru">
 
 <head>
-    <title>S.P.F. Base — Статус оплаты</title>
+    <title>S.P.F. Base - Статус оплаты</title>
 
     <meta property="og:title" content="S.P.F. Base" />
     <meta property="og:description" content="Официальный сайт проекта S.P.F. на базе Garry's Mod" />
@@ -85,7 +85,7 @@
                         <button id="btn-reload" class="btn btn-inline" type="button">Обновить чек</button>
                     </div>
                     <div id="receipt-error" class="error" hidden>
-                        ФНС сейчас не отвечает. Попробуйте позже — страница остаётся доступной.
+                        ФНС сейчас не отвечает. Попробуйте позже - страница остаётся доступной.
                     </div>
                 </div>
                 {% else %}
@@ -93,7 +93,7 @@
                 <form method="get"><button class="btn" type="submit">Обновить статус</button></form>
                 {% endif %}
                 {% elif payment.status == "pending" %}
-                <div class="notice">Платёж в обработке. Если вы только что оплатили — дождитесь подтверждения и обновите
+                <div class="notice">Платёж в обработке. Если вы только что оплатили - дождитесь подтверждения и обновите
                     страницу.</div>
                 <form method="get"><button class="btn" type="submit">Обновить статус</button></form>
                 {% elif payment.status == "declined" %}
