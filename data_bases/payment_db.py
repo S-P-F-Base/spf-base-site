@@ -128,6 +128,7 @@ class ServiceSnapshot:
         if 0 < dv < 100:
             multiplier = Decimal(1) - (Decimal(dv) / Decimal(100))
             return q2(self.price_main * multiplier)
+
         return q2(self.price_main)
 
     def to_dict(self) -> dict:

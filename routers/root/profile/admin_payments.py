@@ -1,5 +1,6 @@
 import logging
 import uuid
+from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Form, Request
@@ -24,6 +25,23 @@ router = APIRouter()
 
 PaymentStatus = Literal["pending", "declined", "cancelled", "done"]
 CommissionKey = Literal["PC", "AC"]
+
+
+def _clamp_discount(v: int) -> int:
+    return 0 if v < 0 else 100 if v > 100 else v
+
+
+def _effective_discount(svc: ServiceModel) -> int:
+    now = datetime.now(UTC)
+    dv = _clamp_discount(svc.discount_value)
+
+    if not (0 < dv < 100):
+        return 0
+
+    if svc.discount_date and svc.discount_date > now:
+        return dv
+
+    return 0
 
 
 def _build_snapshots(items: list[dict]) -> list[ServiceSnapshot]:
@@ -52,12 +70,15 @@ def _build_snapshots(items: list[dict]) -> list[ServiceSnapshot]:
         svc = PaymentServiceDB.get_service(svc_id)
         if not svc:
             raise ValueError(f"Service not found: {svc_id}")
+
         if svc.status != "on":
             raise ValueError(f"Service is not active: {svc_id}")
+
         if svc.left is not None and svc.left < qty:
             raise ValueError(
                 f"Not enough stock for {svc_id}: need {qty}, left {svc.left}"
             )
+
         cache[svc_id] = svc
 
     decremented: list[tuple[str, int]] = []
@@ -77,17 +98,19 @@ def _build_snapshots(items: list[dict]) -> list[ServiceSnapshot]:
     snaps: list[ServiceSnapshot] = []
     for svc_id, qty in want.items():
         svc = cache[svc_id]
+
         for _ in range(qty):
+            eff_discount = _effective_discount(svc)
+
             snaps.append(
                 ServiceSnapshot(
                     name=svc.name,
                     creation_date=svc.creation_date,
-                    price_main=svc.price_main,
-                    discount_value=svc.discount_value,
+                    price_main=svc.price(),
+                    discount_value=eff_discount,
                     service_u_id=svc_id,
                 )
             )
-
     return snaps
 
 
