@@ -83,6 +83,18 @@ class Service:
 
         return q2(self.price_main)
 
+    def current_discount(self, now: datetime | None = None) -> int:
+        now = now or datetime.now(UTC)
+        dv = _clamp_discount(self.discount_value)
+
+        if not (0 < dv < 100):
+            return 0
+
+        if self.discount_date and self.discount_date > now:
+            return dv
+
+        return 0
+
     def to_dict(self) -> dict:
         return {
             "name": self.name,
