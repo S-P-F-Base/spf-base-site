@@ -4,7 +4,7 @@ Date: 3 Сентября 2025 г.
 
 # Энда Нормад "Язык" - отвечающая за политику
 
-!imgblock[/static/wiki/images/world_lore/etc_info/Yasik.png|left|350px,350px,hard]
+!imgblock[/static/wiki/images/lore/etc_info/Yasik.png|left|350px,350px,hard]
 Вес: 56,9 кг
 Рост: 166 см
 Возраст: 37 лет
