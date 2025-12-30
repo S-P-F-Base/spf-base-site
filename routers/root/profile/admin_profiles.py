@@ -3,7 +3,7 @@ import json
 import logging
 import re
 from datetime import UTC, datetime
-from typing import Iterable, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse, StreamingResponse

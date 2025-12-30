@@ -1,19 +1,25 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
+
+from ...utils import Constant
 
 router = APIRouter()
 
 
-COLLECTION_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id=3466203256"
-DISCORD_URL = "https://discord.gg/JEzsQrKzbY"
-
-
 def mods_redirect():
-    return RedirectResponse(COLLECTION_URL, status_code=302)
+    url = Constant.get("steam_url")
+    if url is None:
+        raise HTTPException(500, detail="steam_url not set")
+
+    return RedirectResponse(url, status_code=302)
 
 
 def discord_redirect():
-    return RedirectResponse(DISCORD_URL, status_code=302)
+    url = Constant.get("discord_url")
+    if url is None:
+        raise HTTPException(500, detail="discord_url not set")
+
+    return RedirectResponse(url, status_code=302)
 
 
 for path in (

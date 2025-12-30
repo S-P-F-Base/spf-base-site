@@ -1,5 +1,3 @@
-import json
-import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -8,6 +6,7 @@ from markdown import Markdown
 
 from templates import templates
 
+from ....utils import Constant
 from .extensions import (
     AutoLinkButtonsExtension,
     ButtonExtension,
@@ -30,21 +29,6 @@ router = APIRouter()
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 WIKI_DIR = BASE_DIR / "wiki"
-CONSTANTS_PATH = WIKI_DIR / "constants.json"
-
-
-def load_constants() -> dict[str, str]:
-    try:
-        with open(CONSTANTS_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-
-    except FileNotFoundError:
-        logging.warning(f"Constants file not found: {CONSTANTS_PATH}")
-        return {}
-
-    except json.JSONDecodeError as e:
-        logging.error(f"Invalid JSON in constants file: {e}")
-        return {}
 
 
 @router.get("/wiki/{page:path}", response_class=HTMLResponse)
@@ -63,8 +47,6 @@ def wiki_page(request: Request, page: Path):
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Page not found")
 
-    constants = load_constants()
-
     md = Markdown(
         extensions=[
             AutoLinkButtonsExtension(wiki_dir=WIKI_DIR),  # Динамические кнопки
@@ -78,7 +60,7 @@ def wiki_page(request: Request, page: Path):
             "smarty",  # Типографические ковычки
             "nl2br",  # Превращает одиночные \n в <br />
             WikiLinkExtension(),  # Поддержка [[url|name]] для вики-стилей
-            ConstExtension(constants=constants),  # Константы для замены
+            ConstExtension(constants=Constant.get_all_data()),  # Константы для замены
             ImgBlockExtension(),  # Для блоков с картинками и текстом
             RedactExtension(),  # Для обфускации информации с сайта пока не заглянут в код
             SingleImgExtension(),  # Макрос для картинок

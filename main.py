@@ -17,6 +17,7 @@ from routers.api.yoomoney import router as api_yoomoney
 from routers.api_v2.oauth2 import router as api_v2_oauth2
 from routers.root import router as root
 from templates import templates
+from utils import Constant
 
 ALLOWED_PATHS = {
     "/api/yoomoney/notification",
@@ -32,6 +33,7 @@ REQUIRED_AGENT = "spf-agent-v2"
 async def lifespan(app: FastAPI):
     try:
         Config.load()
+        Constant.load()
         PaymentServiceDB.create_db_table()
         ProfileDataBase.setup_db()
 
