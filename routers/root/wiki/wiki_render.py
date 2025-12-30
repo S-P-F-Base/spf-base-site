@@ -6,7 +6,7 @@ from markdown import Markdown
 
 from templates import templates
 
-from ....utils import Constant
+from utils import Constant
 from .extensions import (
     AutoLinkButtonsExtension,
     ButtonExtension,
