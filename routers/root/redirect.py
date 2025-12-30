@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 
-from ...utils import Constant
+from utils import Constant
 
 router = APIRouter()
 

@@ -5,8 +5,8 @@ from fastapi.responses import HTMLResponse
 from markdown import Markdown
 
 from templates import templates
-
 from utils import Constant
+
 from .extensions import (
     AutoLinkButtonsExtension,
     ButtonExtension,
