@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse
 
 router = APIRouter()
@@ -50,5 +50,5 @@ def get_audio(file_name: str):
 
 
 @router.get("/ping")
-async def overlord_static(path: str):
+async def ping():
     return {"ok": True}
