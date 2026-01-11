@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
@@ -7,10 +8,8 @@ from markdown import Markdown
 from data_control import ServerControl, ServerStatus
 from templates import templates
 
-from .wiki.wiki_render import WIKI_DIR
-
 router = APIRouter()
-NEWS_DIR = WIKI_DIR / "docs" / "news"
+NEWS_DIR = Path.home() / "spf/wiki/wiki/docs/news"
 RU_MONTHS = {
     "января": 1,
     "февраля": 2,
