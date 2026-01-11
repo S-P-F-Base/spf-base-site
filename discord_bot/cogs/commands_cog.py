@@ -142,7 +142,12 @@ class CommandsCog(commands.Cog):
             name="",
             value="\n".join(
                 [
-                    "`!team <user> <0|1|2|3|4|5|remove>` - Добавить или удалить из отряда человека",
+                    "`!team <user> <0|1|2|3|4|5> [add|remove]`",
+                    "Добавить или убрать пользователя из отряда.",
+                    "",
+                    "**Примеры:**",
+                    "`!team @User 3` — добавить в отряд 3",
+                    "`!team @User 3 remove` — убрать из отряда 3",
                 ]
             ),
             inline=False,
@@ -169,7 +174,8 @@ class CommandsCog(commands.Cog):
         self,
         ctx: commands.Context,
         member: discord.Member,
-        value: str,
+        team: str,
+        action: str = "add",
     ):
         guild = ctx.guild
         if guild is None:
@@ -183,28 +189,46 @@ class CommandsCog(commands.Cog):
             await ctx.message.add_reaction("\u274c")
             return
 
-        value = value.lower().strip()
-        if value == "remove":
-            changed = False
-            for rid in TEAM_ROLES.values():
-                role = guild.get_role(rid)
-                if role and role in member.roles:
-                    await member.remove_roles(role, reason=f"team remove by {author}")
-                    changed = True
+        team = team.lower().strip()
+        action = action.lower().strip()
 
-            await ctx.message.add_reaction("\u2705" if changed else "\u274c")
+        if team not in TEAM_ROLES:
+            await ctx.message.add_reaction("\u274c")
+            await ctx.send("Неверный номер отряда. Используйте 0–5.")
             return
 
-        if value not in TEAM_ROLES:
-            await ctx.send("Неверный аргумент. Используйте 0–5 или remove.")
+        if action not in ("add", "remove"):
+            await ctx.message.add_reaction("\u274c")
+            await ctx.send("Неверное действие. Используйте add или remove.")
             return
 
-        target_role = guild.get_role(TEAM_ROLES[value])
+        target_role = guild.get_role(TEAM_ROLES[team])
         if target_role is None:
-            await ctx.send("Целевая роль не найдена на сервере.")
+            await ctx.message.add_reaction("\u274c")
+            await ctx.send("Роль отряда не найдена на сервере.")
             return
 
-        await member.add_roles(target_role, reason=f"team set {value} by {author}")
+        if action == "remove":
+            if target_role not in member.roles:
+                await ctx.message.add_reaction("\u274c")
+                return
+
+            await member.remove_roles(
+                target_role,
+                reason=f"team remove {team} by {author}",
+            )
+            await ctx.message.add_reaction("\u2705")
+            return
+
+        # add
+        if target_role in member.roles:
+            await ctx.message.add_reaction("\u274c")
+            return
+
+        await member.add_roles(
+            target_role,
+            reason=f"team add {team} by {author}",
+        )
         await ctx.message.add_reaction("\u2705")
 
     @commands.command(name="сука")

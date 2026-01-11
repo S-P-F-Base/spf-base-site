@@ -16,12 +16,6 @@ ON_MEM_ADD_DM = """
 В случае если вы хотите связаться по вопросам сотрудничества: https://spf-base.ru/wiki/docs/cooperation
 Каналы для анонимных отзывов: https://spf-base.ru/feedback
 """
-ON_MEM_REM_DM = """
-Нам жаль, что вы покидаете проект, {user}!
-
-Если несложно - оставьте отзыв. Это можно сделать анонимно.
-Форма тут: https://spf-base.ru/leave_feedback
-"""
 
 
 class EventCog(commands.Cog):
@@ -82,7 +76,6 @@ class EventCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
-        await self.send_to_dm(member, ON_MEM_REM_DM)
         await self.sent_to_newmembers_channel(
             member,
             "Боец покинул ряды",

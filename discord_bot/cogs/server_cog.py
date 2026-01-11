@@ -91,9 +91,7 @@ class ServerControlCog(commands.Cog):
 
         ServerControl.perform_action(action)  # pyright: ignore[reportArgumentType]
         await ctx.message.add_reaction("\u2705")
-
-        announce_key = "start" if action in ["start", "restart"] else action
-        await self._announce(announce_key)
+        await self._announce(action)
 
     @tasks.loop(minutes=1)
     async def autostop_task(self):
