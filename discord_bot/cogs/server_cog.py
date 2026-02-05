@@ -8,7 +8,7 @@ from discord.ext import commands, tasks
 from data_class import ProfileData, ProfileDataBase
 from data_control import ServerControl, ServerStatus
 
-ANNOUNCE_CHANNEL_ID = 1321307574242377769
+ANNOUNCE_CHANNEL_ID = 1466667684849520864
 
 
 def server_admin_only(func):

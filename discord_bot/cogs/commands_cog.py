@@ -1,5 +1,4 @@
 import re
-from pathlib import Path
 
 import discord
 from discord import Colour, Embed
@@ -231,33 +230,20 @@ class CommandsCog(commands.Cog):
         )
         await ctx.message.add_reaction("\u2705")
 
-    @commands.command(name="сука")
-    async def fuck_cmd(self, ctx: commands.Context, userid: str):
+    @commands.command(name="say")
+    async def owo2_cmd(self, ctx: commands.Context, *args: str):
         author_id = ctx.author.id
         if author_id != 456381306553499649:
             await ctx.message.add_reaction("\u274c")
             return
 
-        await ctx.send(
-            f"Здравствуйте, <@{userid}>!\n"
-            f"Вы недавно задали вопрос, на который уже есть готовый ответ - вот здесь: https://discord.com/channels/1321306723423883284/1358046882059780136/1377966195159994458 или в канале <#1427916856903209000>.\n"
-            "Чтобы мой хозяин не говорил вам это лично и... слишком эмоционально, он поручил мне передать: перед тем как спрашивать, заглядывайте в уже существующие ответы. Экономит время и нервы всем - особенно ему."
-        )
+        txt = " ".join(args)
+
+        channel = self.bot.get_channel(1466667684849520864)
+        if channel and isinstance(channel, discord.TextChannel):
+            await channel.send(txt)
+
+        else:
+            await ctx.send("Произошло что-то странное...\nМой канал удалили...")
 
         await ctx.message.delete()
-
-    @commands.command(name="give")
-    async def owo_cmd(self, ctx: commands.Context):
-        author_id = ctx.author.id
-        if author_id != 456381306553499649:
-            await ctx.message.add_reaction("\u274c")
-            return
-
-        txt = "Умф... Хозяин сказал что разработка моих алгоритмов не в приоритете.\n Так же он просил напомнить что есть [донат](https://spf-base.ru/donate) если кто-то хочет поддержать проект.\n\n||А ещё он вредный и не хочет печеньками делиться!||"
-
-        channel = self.bot.get_channel(1321307574242377769)
-        if channel and isinstance(channel, discord.TextChannel):
-            await channel.send(
-                txt,
-                file=discord.File(Path("static/images/ashley/happy.png")),
-            )
