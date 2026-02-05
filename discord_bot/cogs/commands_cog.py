@@ -54,6 +54,10 @@ class CommandsCog(commands.Cog):
     async def update_payment_cmd(self, ctx: commands.Context, uuid: str):
         author_id = ctx.author.id
 
+        if author_id != CAIN_ID:
+            await add_nope(ctx.message)
+            return
+
         if not uuid:
             await add_nope(ctx.message)
             return
