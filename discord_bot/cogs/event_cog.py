@@ -4,7 +4,8 @@ from discord.ext import commands, tasks
 from data_class.profile import ProfileData, ProfileDataBase
 from data_control import ServerControl, ServerStatus
 
-CHANNEL_ID = 1321307463550767154
+from .etc import NEW_MEMBER_CHANNEL_ID, add_nope, add_yep
+
 ON_MEM_ADD_DM = """
 Доброго времени суток, {user}!
 
@@ -47,7 +48,7 @@ class EventCog(commands.Cog):
         description: str,
         color: discord.Color,
     ) -> None:
-        channel = self.bot.get_channel(CHANNEL_ID)
+        channel = self.bot.get_channel(NEW_MEMBER_CHANNEL_ID)
         if channel is None or not isinstance(channel, discord.TextChannel):
             return
 
@@ -97,7 +98,7 @@ class EventCog(commands.Cog):
                 discord_status = discord.Status.idle
 
             case ServerStatus.FAILED:
-                activity = discord.CustomActivity(name="Уранила сервер насмерть!")
+                activity = discord.CustomActivity(name="Уронила сервер насмерть!")
                 discord_status = discord.Status.dnd
 
             case ServerStatus.START:
@@ -136,8 +137,8 @@ class EventCog(commands.Cog):
         profile = self._get_admin_profile(ctx.author.id)
 
         if profile is None:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         await self.update_status()
-        await ctx.message.add_reaction("\u2705")
+        await add_yep(ctx.message)

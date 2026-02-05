@@ -8,7 +8,7 @@ import utils.steam
 from data_class import ProfileData, ProfileDataBase
 from routers.api.yoomoney.notification import revalidate
 
-from .etc import build_limits_embeds
+from .etc import BOT_CHANNEL_ID, CAIN_ID, add_nope, add_yep, build_limits_embeds
 
 ALLOWED_ROLES = {
     1361481568404766780,  # Сержант
@@ -55,33 +55,33 @@ class CommandsCog(commands.Cog):
         author_id = ctx.author.id
 
         if not uuid:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         profile = ProfileDataBase.get_profile_by_discord(str(author_id))
         if not profile:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         data = profile.get("data", ProfileData())
         if not isinstance(data, ProfileData):
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         if not data.has_access("edit_payments"):
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         try:
             result = revalidate(uuid, True)
         except Exception as exc:
             await ctx.author.send(f"Ошибка при обновлении платежа:\n{exc}")
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         await ctx.author.send(f"Результат проверки платежа `{uuid}`:\n```{result}```")
 
-        await ctx.message.add_reaction("\u2705")
+        await add_yep(ctx.message)
 
     @commands.command(name="size")
     async def size_cmd(self, ctx: commands.Context, *args: str):
@@ -185,61 +185,61 @@ class CommandsCog(commands.Cog):
 
         author_roles = {r.id for r in author.roles}
         if not (author_roles & ALLOWED_ROLES):
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         team = team.lower().strip()
         action = action.lower().strip()
 
         if team not in TEAM_ROLES:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             await ctx.send("Неверный номер отряда. Используйте 0–5.")
             return
 
         if action not in ("add", "remove"):
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             await ctx.send("Неверное действие. Используйте add или remove.")
             return
 
         target_role = guild.get_role(TEAM_ROLES[team])
         if target_role is None:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             await ctx.send("Роль отряда не найдена на сервере.")
             return
 
         if action == "remove":
             if target_role not in member.roles:
-                await ctx.message.add_reaction("\u274c")
+                await add_nope(ctx.message)
                 return
 
             await member.remove_roles(
                 target_role,
                 reason=f"team remove {team} by {author}",
             )
-            await ctx.message.add_reaction("\u2705")
+            await add_yep(ctx.message)
             return
 
         # add
         if target_role in member.roles:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         await member.add_roles(
             target_role,
             reason=f"team add {team} by {author}",
         )
-        await ctx.message.add_reaction("\u2705")
+        await add_yep(ctx.message)
 
     @commands.command(name="say")
     async def owo2_cmd(self, ctx: commands.Context, *args: str):
         author_id = ctx.author.id
-        if author_id != 456381306553499649:
-            await ctx.message.add_reaction("\u274c")
+        if author_id != CAIN_ID:
+            await add_nope(ctx.message)
             return
 
         txt = " ".join(args)
 
-        channel = self.bot.get_channel(1466667684849520864)
+        channel = self.bot.get_channel(BOT_CHANNEL_ID)
         if channel and isinstance(channel, discord.TextChannel):
             await channel.send(txt)
 

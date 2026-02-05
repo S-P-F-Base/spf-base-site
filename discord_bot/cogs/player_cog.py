@@ -9,6 +9,8 @@ from discord.ext import commands
 from data_class import ProfileDataBase
 from economy import GameDBProcessor
 
+from .etc import add_nope
+
 
 class PlayerCog(commands.Cog):
     def __init__(self, bot):
@@ -26,16 +28,16 @@ class PlayerCog(commands.Cog):
 
         profile = ProfileDataBase.get_profile_by_discord(str(author_id))
         if not profile:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         profile = profile.get("data", None)
         if not profile:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         if not profile.has_access("edit_profiles"):
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         async with ctx.typing():
@@ -97,16 +99,16 @@ class PlayerCog(commands.Cog):
 
         profile = ProfileDataBase.get_profile_by_discord(str(author_id))
         if not profile:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         profile = profile.get("data", None)
         if not profile:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         if not profile.has_access("full_access"):
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         async with ctx.typing():

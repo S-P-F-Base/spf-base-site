@@ -8,7 +8,7 @@ from discord.ext import commands, tasks
 from data_class import ProfileData, ProfileDataBase
 from data_control import ServerControl, ServerStatus
 
-ANNOUNCE_CHANNEL_ID = 1466667684849520864
+from .etc import BOT_CHANNEL_ID, add_nope, add_yep
 
 
 def server_admin_only(func):
@@ -17,7 +17,7 @@ def server_admin_only(func):
         profile = ProfileDataBase.get_profile_by_discord(str(ctx.author.id))
         data = profile.get("data") if profile else None
         if not isinstance(data, ProfileData) or not data.has_access("server_control"):
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             return
 
         return await func(self, ctx, *args, **kwargs)
@@ -41,7 +41,7 @@ class ServerControlCog(commands.Cog):
             self.autostop_task.start()
 
     async def _announce(self, action: str):
-        channel = self.bot.get_channel(ANNOUNCE_CHANNEL_ID)
+        channel = self.bot.get_channel(BOT_CHANNEL_ID)
         if channel and isinstance(channel, discord.TextChannel):
             text = self.announcement_texts.get(action)
             if text:
@@ -72,14 +72,14 @@ class ServerControlCog(commands.Cog):
         status = ServerControl.get_status()
 
         if status in [ServerStatus.FAILED, ServerStatus.UNKNOWN]:
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             await ctx.reply(
                 "Сервер сложил лапки намертво, или ведёт себя странно. Я не буду выполнять вашу команду. Свяжитесь с Кайном"
             )
             return
 
         if not self._can_perform(action):
-            await ctx.message.add_reaction("\u274c")
+            await add_nope(ctx.message)
             st = {
                 ServerStatus.DEAD: "остановлен",
                 ServerStatus.STOP: "останавливается",
@@ -90,7 +90,7 @@ class ServerControlCog(commands.Cog):
             return
 
         ServerControl.perform_action(action)  # pyright: ignore[reportArgumentType]
-        await ctx.message.add_reaction("\u2705")
+        await add_yep(ctx.message)
         await self._announce(action)
 
     @tasks.loop(minutes=1)
@@ -128,5 +128,5 @@ class ServerControlCog(commands.Cog):
     @server_admin_only
     async def status(self, ctx: commands.Context):
         status = ServerControl.get_status()
-        await ctx.message.add_reaction("\u2705")
+        await add_yep(ctx.message)
         await ctx.reply(f"Текущее состояние сервера: `{status.value}`")
