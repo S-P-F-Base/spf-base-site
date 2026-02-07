@@ -2,7 +2,7 @@ import re
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from data_bases import PaymentServiceDB, Service
 from templates import templates
@@ -69,6 +69,7 @@ def _is_archived(svc: Service) -> bool:
 
 @router.get("/store")
 def store(request: Request):
+    raise HTTPException(404)
     rows = PaymentServiceDB.list_services() or []
 
     active_list: list[dict] = []

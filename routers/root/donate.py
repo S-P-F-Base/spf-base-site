@@ -83,6 +83,7 @@ def _parse_amount(raw: str) -> Decimal:
 
 @router.get("/donate", response_class=HTMLResponse)
 def donate_page(request: Request):
+    raise HTTPException(404)
     return templates.TemplateResponse(
         "donate/index.html",
         {
@@ -100,6 +101,7 @@ def donate_submit(
     method: Literal["AC", "PC"] = Form(...),
     cover_commission: bool = Form(False),
 ):
+    raise HTTPException(404)
     amt = _parse_amount(amount)
 
     if amt < MIN_AMOUNT or amt > MAX_AMOUNT:
@@ -128,6 +130,7 @@ def donate_submit(
 
 @router.get("/donate/thanks", response_class=HTMLResponse)
 def donate_thanks(request: Request):
+    raise HTTPException(404)
     return templates.TemplateResponse(
         "donate/thanks.html",
         {"request": request},
