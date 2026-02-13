@@ -164,7 +164,7 @@ class CommandsCog(commands.Cog):
                     "`!server <start|stop|restart|status>` - Управление сервером",
                     "`!user <time|inventory>` - Немного магии с пользователями",
                     "`!update_status` - Прижать Эшли к полу и проверить статус сервера",
-                    "`!cleanup_ankets` - Чистка мусора с анкет",
+                    "`!cleanup` - Чистка мусора с анкет",
                 ]
             ),
             inline=False,

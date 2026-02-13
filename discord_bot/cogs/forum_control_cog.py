@@ -194,57 +194,58 @@ class ForumControlCog(commands.Cog):
             except discord.HTTPException:
                 pass
 
-    @commands.command(name="cleanup_ankets")
+    @commands.command(name="cleanup")
     @commands.has_permissions(manage_threads=True)
     async def purge_bad_forms(self, ctx: commands.Context):
         if ctx.guild is None:
             await ctx.send("Гильдия не определена.")
             return
 
-        forum_id = ForumsID.CharacterQuestionnaires.value
         target_tags_id = [
             1355814835169919052,  # 'отклонено'
             1404794315707781160,  # 'выведен из рп'
+            1410589109214515281,  # 'принято (для предложений и идей)'
+            1410589140831043594,  # 'отклонено (для предложений и идей)'
         ]
 
-        forum = ctx.guild.get_channel(forum_id)
-        if not isinstance(forum, discord.ForumChannel):
-            await ctx.send("Форум не найден или указан неверный ID.")
-            return
+        for fid in [
+            ForumsID.CharacterQuestionnaires.value,
+            ForumsID.SuggestionsIdeas.value,
+        ]:
+            forum = ctx.guild.get_channel(fid)
+            if not isinstance(forum, discord.ForumChannel):
+                await ctx.send("Форум не найден или указан неверный ID.")
+                return
 
-        target_tags = [forum.get_tag(tag_id) for tag_id in target_tags_id]
-        target_tags = [t for t in target_tags if t is not None]
+            target_tags = [forum.get_tag(tag_id) for tag_id in target_tags_id]
+            target_tags = [t for t in target_tags if t is not None]
 
-        if not target_tags:
-            await ctx.send("Теги не найдены.")
-            return
+            if not target_tags:
+                await ctx.send("Теги не найдены.")
+                return
 
-        deleted = 0
-        failed = 0
+            deleted = 0
+            failed = 0
 
-        async with ctx.typing():
-            async for thread in self._iter_forum_threads(forum):
-                try:
-                    applied_tags = getattr(thread, "applied_tags", ())
-                    if any(tag in applied_tags for tag in target_tags):
-                        await thread.delete(
-                            reason=(
-                                "Удаление анкет с тегом "
-                                "'отклонено'/'выведен из рп' "
-                                f"юзером {ctx.author.id}"
+            async with ctx.typing():
+                async for thread in self._iter_forum_threads(forum):
+                    try:
+                        applied_tags = getattr(thread, "applied_tags", ())
+                        if any(tag in applied_tags for tag in target_tags):
+                            await thread.delete(
+                                reason=f"Удаление юзером {ctx.author.id}"
                             )
-                        )
-                        deleted += 1
+                            deleted += 1
 
-                except discord.Forbidden:
-                    logging.warning(f"Нет прав на удаление темы {thread.id}")
-                    failed += 1
+                    except discord.Forbidden:
+                        logging.warning(f"Нет прав на удаление темы {thread.id}")
+                        failed += 1
 
-                except discord.HTTPException as e:
-                    logging.error(f"Ошибка при удалении темы {thread.id}: {e}")
-                    failed += 1
+                    except discord.HTTPException as e:
+                        logging.error(f"Ошибка при удалении темы {thread.id}: {e}")
+                        failed += 1
 
-        await ctx.send(f"Удалено {deleted} тредов, не удалось удалить {failed}.")
+            await ctx.send(f"Удалено {deleted} форумов\nФорум: <#{fid}>")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
