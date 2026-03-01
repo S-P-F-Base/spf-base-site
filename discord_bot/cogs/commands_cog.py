@@ -287,16 +287,22 @@ class CommandsCog(commands.Cog):
             days = total_seconds // 86400
             hours = (total_seconds % 86400) // 3600
             minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
 
             parts = []
             if days:
-                parts.append(f"{days} д.")
-            if hours:
-                parts.append(f"{hours} ч.")
-            if minutes:
-                parts.append(f"{minutes} мин.")
+                parts.append(f"{days}д")
 
-            pretty_delta = " ".join(parts) if parts else "менее минуты"
+            if hours:
+                parts.append(f"{hours}ч")
+
+            if minutes:
+                parts.append(f"{minutes}м")
+
+            if seconds:
+                parts.append(f"{seconds}с")
+
+            pretty_delta = " ".join(parts) if parts else "< 1с"
 
             embed.add_field(
                 name="Время между созданием и входом",
