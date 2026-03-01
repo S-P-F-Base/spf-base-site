@@ -252,3 +252,59 @@ class CommandsCog(commands.Cog):
             await ctx.send("Произошло что-то странное...\nМой канал удалили...")
 
         await ctx.message.delete()
+
+    @commands.command(name="wtf")
+    async def wtf(self, ctx: commands.Context, member: discord.Member):
+        author_id = ctx.author.id
+        if author_id != CAIN_ID:
+            await add_nope(ctx.message)
+            return
+
+        created_ts = int(member.created_at.timestamp())
+        joined_ts = int(member.joined_at.timestamp()) if member.joined_at else None
+
+        embed = Embed(
+            title="Информация о пользователе",
+            colour=Colour.orange(),
+        )
+
+        embed.add_field(
+            name="Аккаунт создан",
+            value=f"<t:{created_ts}:f>\n(<t:{created_ts}:R>)",
+            inline=False,
+        )
+
+        if joined_ts:
+            embed.add_field(
+                name="Присоединился к серверу",
+                value=f"<t:{joined_ts}:f>\n(<t:{joined_ts}:R>)",
+                inline=False,
+            )
+
+            delta = member.joined_at - member.created_at  # type: ignore
+            total_seconds = int(delta.total_seconds())
+
+            days = total_seconds // 86400
+            hours = (total_seconds % 86400) // 3600
+            minutes = (total_seconds % 3600) // 60
+
+            parts = []
+            if days:
+                parts.append(f"{days} д.")
+            if hours:
+                parts.append(f"{hours} ч.")
+            if minutes:
+                parts.append(f"{minutes} мин.")
+
+            pretty_delta = " ".join(parts) if parts else "менее минуты"
+
+            embed.add_field(
+                name="Время между созданием и входом",
+                value=pretty_delta,
+                inline=False,
+            )
+
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.set_footer(text=f"ID: {member.id}")
+
+        await ctx.send(embed=embed)
