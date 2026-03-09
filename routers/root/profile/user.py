@@ -3,7 +3,6 @@ from fastapi.responses import RedirectResponse
 
 import utils.jwt
 from data_class import ProfileDataBase
-from discord_bot import bot
 from templates import templates
 
 router = APIRouter()
@@ -32,18 +31,6 @@ async def render_profile_page(request: Request, template_name: str):
         resp = RedirectResponse("/profile")
         resp.delete_cookie("session")
         return resp
-
-    discord_id = profile.get("discord_id")
-    if discord_id:
-        cog = bot.get_cog("UserControlCog")
-        if cog:
-            try:
-                extra = await cog.get_user_info(discord_id)  # type: ignore
-                if isinstance(extra, dict):
-                    profile.update(extra)
-
-            except Exception:
-                pass
 
     profile.pop("notes", None)
     return templates.TemplateResponse(

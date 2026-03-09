@@ -8,7 +8,6 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-import discord_bot
 from data_bases import PaymentServiceDB
 from data_class import ProfileDataBase
 from data_control import AutoTax, Config
@@ -45,11 +44,8 @@ async def lifespan(app: FastAPI):
 
         asyncio.create_task(GameDBProcessor.pull_db_data())
         asyncio.create_task(AutoTax.run_queue_worker(interval_sec=60))
-        asyncio.create_task(discord_bot.start())
 
         yield
-
-        await discord_bot.stop()
 
     finally:
         pass

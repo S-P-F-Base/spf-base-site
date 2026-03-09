@@ -1,18 +1,16 @@
 import asyncio
-import json
 import logging
 import re
 from datetime import UTC, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import RedirectResponse
 
 import utils.admin
 import utils.error
 import utils.steam
 from data_class import ProfileData, ProfileDataBase
-from discord_bot import bot
 from templates import templates
 
 logger = logging.getLogger(__name__)
@@ -144,81 +142,8 @@ async def profile_admin_profiles(request: Request):
 
 @router.get("/profile/admin/profiles/stream")
 async def profile_admin_profiles_stream(request: Request):
-    utils.admin.require_admin(request)
-    q = (request.query_params.get("q") or "").strip()
-
-    profiles = ProfileDataBase.get_all_profiles()
-    use_for_names = [p for p in profiles if _matches_rough(p, q)]
-    if q and not use_for_names:
-        use_for_names = profiles
-
-    use_for_names = sorted(
-        use_for_names,
-        key=lambda p: (
-            (p.get("username") or "").lower(),
-            p.get("discord_id") or "",
-            p.get("uuid") or "",
-        ),
-    )
-
-    cog = bot.get_cog("UserControlCog")
-    sem = asyncio.Semaphore(8)
-
-    async def fetch_one(p: dict):
-        extra = {}
-        did = p.get("discord_id")
-        if did and cog:
-            try:
-                async with sem:
-                    info = await cog.get_user_info(int(did))  # type: ignore
-                    extra = info or {}
-            except Exception:
-                extra = {}
-        return _build_view_for_profile(p, extra)
-
-    tasks = [asyncio.create_task(fetch_one(p)) for p in use_for_names]
-
-    async def gen():
-        try:
-            for coro in asyncio.as_completed(tasks):
-                if await request.is_disconnected():
-                    break
-                try:
-                    view = await coro
-                except Exception:
-                    view = {
-                        "uuid": None,
-                        "username": "???",
-                        "avatar_url": "/static/images/logo/discord.png",
-                        "discord_id": None,
-                    }
-
-                if q:
-                    uname = (view.get("username") or "").lower()
-                    ids = (
-                        (view.get("uuid") or ""),
-                        (view.get("discord_id") or ""),
-                        (view.get("steam_id") or ""),
-                    )
-                    ql = q.lower()
-                    if not (
-                        ql in uname
-                        or any(isinstance(x, str) and ql in x.lower() for x in ids)
-                    ):
-                        continue
-
-                line = json.dumps(view, ensure_ascii=False)
-                yield (line + "\n").encode("utf-8")
-
-        finally:
-            for t in tasks:
-                if not t.done():
-                    t.cancel()
-
-    return StreamingResponse(
-        gen(),
-        media_type="application/x-ndjson",
-        headers={"Cache-Control": "no-store"},
+    utils.error.failed_dep(
+        "cog_unavailable", "UserControlCog.get_role_value is not available"
     )
 
 
@@ -528,43 +453,9 @@ async def profile_admin_create(
 
 @router.post("/profile/admin/recalc_roles")
 async def profile_admin_recalc_roles(request: Request):
-    utils.admin.require_access(request, "edit_profiles")
-
-    cog = bot.get_cog("UserControlCog")
-    if not cog or not hasattr(cog, "get_role_value"):
-        utils.error.failed_dep(
-            "cog_unavailable", "UserControlCog.get_role_value is not available"
-        )
-
-    profiles = ProfileDataBase.get_all_profiles()
-    sem = asyncio.Semaphore(8)
-
-    async def update_one(p: dict):
-        data = p.get("data", ProfileData())
-        if not isinstance(data, ProfileData):
-            logger.warning("Skip profile with invalid data type: %s", p.get("uuid"))
-            return
-
-        did_raw = (p.get("discord_id") or "").strip()
-        if not did_raw.isdigit():
-            logger.warning("Skip profile with non-numeric discord_id: %s", did_raw)
-            return
-
-        did = int(did_raw)
-        try:
-            async with sem:
-                base_limit, base_char = await cog.get_role_value(did)  # type: ignore
-
-        except Exception as e:
-            logger.warning("get_role_value failed for %s: %r", did, e)
-            return
-
-        data.limits["base_limit"] = float(base_limit)
-        data.limits["base_char"] = int(base_char)
-        ProfileDataBase.update_profile(p["uuid"], data=data)
-
-    await asyncio.gather(*(update_one(p) for p in profiles))
-    return RedirectResponse(url="/profile/admin/profiles", status_code=303)
+    utils.error.failed_dep(
+        "cog_unavailable", "UserControlCog.get_role_value is not available"
+    )
 
 
 @router.post("/profile/admin/recalc_weights")

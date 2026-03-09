@@ -1,5 +1,4 @@
 bcrypt
-discord.py
 fastapi
 jinja2
 markdown

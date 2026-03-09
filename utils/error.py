@@ -1,9 +1,9 @@
-from typing import Any
+from typing import Any, NoReturn
 
 from fastapi import HTTPException
 
 
-def bad_request(code: str, message: str, **extra) -> None:
+def bad_request(code: str, message: str, **extra) -> NoReturn:
     payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
@@ -11,7 +11,7 @@ def bad_request(code: str, message: str, **extra) -> None:
     raise HTTPException(status_code=400, detail=payload)
 
 
-def forbidden(code: str, message: str, **extra) -> None:
+def forbidden(code: str, message: str, **extra) -> NoReturn:
     payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
@@ -19,7 +19,7 @@ def forbidden(code: str, message: str, **extra) -> None:
     raise HTTPException(status_code=403, detail=payload)
 
 
-def not_found(code: str, message: str, **extra) -> None:
+def not_found(code: str, message: str, **extra) -> NoReturn:
     payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
@@ -27,7 +27,7 @@ def not_found(code: str, message: str, **extra) -> None:
     raise HTTPException(status_code=404, detail=payload)
 
 
-def failed_dep(code: str, message: str, **extra) -> None:
+def failed_dep(code: str, message: str, **extra) -> NoReturn:
     payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
@@ -35,7 +35,7 @@ def failed_dep(code: str, message: str, **extra) -> None:
     raise HTTPException(status_code=424, detail=payload)
 
 
-def server_error(code: str, message: str, **extra) -> None:
+def server_error(code: str, message: str, **extra) -> NoReturn:
     payload: dict[str, Any] = {"code": code, "message": message}
     if extra:
         payload["context"] = extra
